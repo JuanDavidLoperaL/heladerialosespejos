@@ -1,0 +1,22 @@
+# Node dependencies (si llegaste a instalar algo por error)
+node_modules/
+
+# Archivos temporales de sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Carpetas de build (si alguna vez usaste algún bundler)
+dist/
+build/
+
+# Archivos de entorno privados (si tuvieras)
+.env
+
+# Archivos del editor
+*.sublime-workspace
+*.vscode/

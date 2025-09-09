@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Los Espejos Heladería - Delivery</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <img src="images/logo.png" alt="Los Espejos Heladería" class="logo">
+            <p class="header-title">No es solo un Helado, es tradición hecha sabor</p>
+        </header>
+
+        <nav class="menu-carousel">
+            <div class="carousel-container">
+                <button class="carousel-btn prev">‹</button>
+                <div class="carousel-track" id="carousel-track">
+
+                </div>
+                <button class="carousel-btn next">›</button>
+            </div>
+        </nav>
+
+
+        <section class="content-section">
+            <div class="category-info" id="category-info">
+                <h2>Bienvenidos a Los Espejos Heladería</h2>
+                <p>Selecciona una categoría del menú para ver nuestras deliciosas opciones.</p>
+            </div>
+        </section>
+
+        <footer class="site-footer">
+            <div class="footer-content">
+                <p>Heladería Los Espejos &copy; <span id="current-year"></span> - Todos los derechos reservados</p>
+                <p>Horario de atención: Lunes a Domingo de 12:00 PM a 8:00 PM</p>
+                <p>Delivery disponible en nuestro horario de atención</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Botón flotante de confirmación -->
+    <div class="floating-order-btn">
+        <button id="confirm-order-btn">Confirmar Pedido (0)</button>
+    </div>
+
+    <div id="loading-overlay" style="
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255,255,255,0.8);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    color: #333;
+">
+        Cargando...
+    </div>
+    <script type="module" src="js/script.js"></script>
+</body>
+
+</html>
