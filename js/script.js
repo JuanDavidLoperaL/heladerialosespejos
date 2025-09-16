@@ -71,10 +71,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 const p = loadProducts(catId);
                 promises.push(p);
             });
-
+            console.log("Los valores que tengo son:", categoryData);
             // Esperar a que se terminen de cargar todos los productos
             await Promise.all(promises);
-
+            await sortProducts()
+            console.log("Los valores que tengo son:", categoryData);
             updateCarousel();
         } catch (error) {
             console.error("Error loading availability:", error);
@@ -114,6 +115,38 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error(`Error loading ${categoryId} products:`, error);
             // Manejar error si quieres
+        }
+    }
+
+    // ordenar productos segun requrimientos - [ ] Sunday, fresas, ensaladas, salpicón especialidades
+    async function sortProducts() {
+        try {
+            // Orden deseado
+            const orden = [
+                "sunday",
+                "fresas",
+                "ensaladas",
+                "salpicon",
+                "especialidades",
+                "helado",
+                "bananas",
+                "bebidas",
+                "cereales",
+                "brownie",
+                "adiciones"
+            ];
+
+            const categoriesOrdered = {};
+            orden.forEach(key => {
+                if (categoryData[key]) {
+                    categoriesOrdered[key] = categoryData[key];
+                }
+            });
+
+            categoryData = categoriesOrdered
+
+        } catch (error) {
+            console.error(`Error sorting products`, error);
         }
     }
 
@@ -204,15 +237,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     <h3>${card.title}</h3>
                     <p><strong>Ingredientes: </strong> ${card.ingredients}</p>
                     ${card.bolas > 0
-                        ? `
+                    ? `
                         <p><strong>Bolas de Helado:</strong> ${card.bolas}</p>
                         `
-                        : ''
-                    }
+                    : ''
+                }
                     ${hasToppings
                     ? `<p><strong>Toppings:</strong> ${card.toppings}</p>`
                     : ''
-                    }
+                }
                     <p><strong>Valor:</strong> $${card.price}</p>
                     <button class="select-btn">Seleccionar</button>
                 </div>
@@ -341,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function () {
                   </div>
                 `
                 : ''
-              }
+            }
              
             ${bolas > 0
                 ? `
@@ -485,8 +518,8 @@ document.addEventListener('DOMContentLoaded', function () {
                               <div class="item-info">
                                   <h4>${item.title}</h4>
                                   ${item.title.toLowerCase().includes("jugo de")
-                                  ? `<p>Jugo en: ${item.juiceFlavor.join(', ')}</p>` : ''
-                                   }
+                ? `<p>Jugo en: ${item.juiceFlavor.join(', ')}</p>` : ''
+            }
                                   <p>Sabores: ${item.flavors.join(', ')}</p>
                                   <p>ingredients: ${item.ingredients}</p>
                                   ${item.toppings && item.toppings.length > 0 ? `<p>Toppings: ${item.toppings.join(', ')}</p>` : ''}
