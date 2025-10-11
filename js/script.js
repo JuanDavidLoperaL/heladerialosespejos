@@ -236,16 +236,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     
                     <h3>${card.title}</h3>
                     <p><strong>Ingredientes: </strong> ${card.ingredients}</p>
-                    ${card.bolas > 0
-                    ? `
-                        <p><strong>Bolas de Helado:</strong> ${card.bolas}</p>
-                        `
-                    : ''
-                }
-                    ${hasToppings
-                    ? `<p><strong>Toppings:</strong> ${card.toppings}</p>`
-                    : ''
-                }
                     <p><strong>Valor:</strong> $${card.price}</p>
                     <button class="select-btn">Seleccionar</button>
                 </div>
