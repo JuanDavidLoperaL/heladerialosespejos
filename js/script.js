@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const prevBtn = document.querySelector('.prev');
     const nextBtn = document.querySelector('.next');
     const carouselTrack = document.querySelector('.carousel-track');
-    const whatsappNumber = "+573114179913";
+    const whatsappNumber = "+573007403433";
 
     // Estado del pedido
     let currentOrder = {
