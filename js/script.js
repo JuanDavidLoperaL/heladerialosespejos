@@ -16,7 +16,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Terminos y condiciones 
+const termsModal = document.getElementById('terms-modal');
+const acceptTermsBtn = document.getElementById('accept-terms-btn');
+
+
 document.addEventListener('DOMContentLoaded', function () {
+    
+    // =======================
+    // TÉRMINOS Y CONDICIONES
+    // =======================
+    const termsModal = document.getElementById('terms-modal');
+    const acceptTermsBtn = document.getElementById('accept-terms-btn');
+
+    if (termsModal && acceptTermsBtn) {
+        termsModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        acceptTermsBtn.addEventListener('click', () => {
+            termsModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        });
+    }
     const carouselItems = document.querySelectorAll('.carousel-item');
     const categoryInfo = document.getElementById('category-info');
     const prevBtn = document.querySelector('.prev');
@@ -557,7 +578,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     </select>
                   </div>
               </div>
-              
+              <p style="font-size:12px; margin-top:10px;">
+                 Al enviar el pedido aceptas los
+  <a href="terminos.html" target="_blank">Términos y Condiciones</a>
+  y la
+  <a href="tratamiento-datos.html" target="_blank">Política de Tratamiento de Datos</a>.
+</p>
+
               <button class="send-whatsapp">Enviar Pedido por WhatsApp</button>
           </div>
       `;
