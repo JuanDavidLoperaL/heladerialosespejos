@@ -620,6 +620,7 @@ document.addEventListener('DOMContentLoaded', function () {
                               <p>ingredients: ${item.ingredients}</p>
                               ${item.ingredientsNotes ? `<p>Notas: ${item.ingredientsNotes}</p>` : ''}
                               <p>Precio: $${item.price.toLocaleString('es-CO')}</p>
+                              <p>Cuantos de este mismo producto: ${item.numberOfItems}</p>
                           </div>
                           <button class="remove-item">Eliminar</button>
                       </div>
@@ -715,6 +716,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (item.ingredientsNotes) {
                 message += `   *Notas:* ${item.ingredientsNotes}\n`;
             }
+            message += `   *Quiero: ${item.numberOfItems}* de este producto\n`;
             message += `   *Precio:* $${item.price.toLocaleString('es-CO')}\n\n`;
         });
 
