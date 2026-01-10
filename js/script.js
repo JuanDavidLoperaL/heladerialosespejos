@@ -149,11 +149,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 "ensaladas",
                 "salpicon",
                 "especialidades",
-                "helado",
                 "bananas",
-                "bebidas",
                 "cereales",
                 "brownie",
+                "bebidas",
+                "helado",
                 "adiciones"
             ];
 
@@ -440,10 +440,15 @@ document.addEventListener('DOMContentLoaded', function () {
           </div>
 
           <div class="ingredients-section">
-            <label>¿Quieres adicionar ó retirar algún ingrediente?</label>
+            <label>¿Quieres retirar algún ingrediente?</label>
             <input type="text" placeholder="Ejemplo: Adicionar mas queso o retirar queso" class="ingredients-notes">
           </div>
-          
+
+          <div class="number-of-items-section">
+            <label>¿Cuantos de este mismo producto quieres?</label>
+            <input type="number" placeholder="Ejemplo: 1" class="number-items" min="1" step="1" inputmode="numeric" value="1">
+          </div>
+
           <div class="price-section">
               <h3>Total: $${priceFormatted}</h3>
               <button class="add-to-cart">Agregar al Pedido</button>
@@ -493,6 +498,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const ingredientsNotes = modal.querySelector('.ingredients-notes').value;
 
+            const numberOfItems = modal.querySelector('.number-items').value;
+            
+
             currentOrder.items.push({
                 title: sundayHelper ? `${title} (${sundayFlavor})` : title,
                 sundayFlavor: sundayHelper ? sundayFlavor : null,
@@ -502,15 +510,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 sauces: sauces,
                 ingredients: ingredients,
                 ingredientsNotes: ingredientsNotes,
+                numberOfItems: parseInt(numberOfItems),
                 price: parseInt(price)
             });
 
-            currentOrder.total = currentOrder.items.reduce((sum, item) => sum + item.price, 0);
+            currentOrder.total = currentOrder.items.reduce((sum, item) => sum + (item.price * item.numberOfItems), 0);
             updateOrderButton();
             document.body.removeChild(modal);
             showFeedback('¡Producto agregado al pedido!', 'success');
         });
-    }
+    } 
 
 
     function openCustomerInfoModal() {
@@ -537,6 +546,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                   ${item.sauces && item.sauces.length > 0 ? `<p>Salsas: ${item.sauces.join(', ')}</p>` : ''}
                                   ${item.ingredientsNotes ? `<p>Notas: ${item.ingredientsNotes}</p>` : ''}
                                   <p>Precio: $${item.price.toLocaleString('es-CO')}</p>
+                                  <p>Cuantos de este mismo producto: ${item.numberOfItems}</p>
                               </div>
                               <button class="remove-item">Eliminar</button>
                           </div>
@@ -595,12 +605,11 @@ document.addEventListener('DOMContentLoaded', function () {
             btn.addEventListener('click', function () {
                 const itemIndex = parseInt(this.closest('.order-item').getAttribute('data-index'));
                 currentOrder.items.splice(itemIndex, 1);
-                currentOrder.total = currentOrder.items.reduce((sum, item) => sum + item.price, 0);
+                currentOrder.total = currentOrder.items.reduce((sum, item) => sum + (item.price * item.numberOfItems), 0);
 
                 if (currentOrder.items.length === 0) {
                     document.body.removeChild(modal);
                     showFeedback('Has eliminado todos los productos del pedido', 'error');
-                    updateOrderButton();
                 } else {
                     const orderItemsContainer = modal.querySelector('#order-items');
                     orderItemsContainer.innerHTML = currentOrder.items.map((item, index) => `
@@ -611,12 +620,14 @@ document.addEventListener('DOMContentLoaded', function () {
                               <p>ingredients: ${item.ingredients}</p>
                               ${item.ingredientsNotes ? `<p>Notas: ${item.ingredientsNotes}</p>` : ''}
                               <p>Precio: $${item.price.toLocaleString('es-CO')}</p>
+                              <p>Cuantos de este mismo producto: ${item.numberOfItems}</p>
                           </div>
                           <button class="remove-item">Eliminar</button>
                       </div>
                   `).join('');
                     modal.querySelector('.order-total h3').textContent = `Total: $${currentOrder.total.toLocaleString('es-CO')}`;
                 }
+                updateOrderButton();
             });
         });
 
@@ -705,6 +716,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (item.ingredientsNotes) {
                 message += `   *Notas:* ${item.ingredientsNotes}\n`;
             }
+            message += `   *Quiero: ${item.numberOfItems}* de este producto\n`;
             message += `   *Precio:* $${item.price.toLocaleString('es-CO')}\n\n`;
         });
 
