@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, doc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -14,6 +15,7 @@ const firebaseConfig = {
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 const db = getFirestore(app);
 
 // Terminos y condiciones 
@@ -679,6 +681,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             currentOrder.customerInfo = { name, phone, address, neighborhood, payment };
+            logEvent(analytics, 'pedido_whatsapp', {
+                payment_method: payment,
+                neighborhood: neighborhood,
+                items_count: currentOrder.items.length,
+                order_total: currentOrder.total
+            });
             const whatsappMessage = generateWhatsAppMessage();
             const encodedMessage = encodeURIComponent(whatsappMessage);
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
