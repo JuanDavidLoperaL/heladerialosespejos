@@ -24,7 +24,7 @@ const acceptTermsBtn = document.getElementById('accept-terms-btn');
 
 
 document.addEventListener('DOMContentLoaded', function () {
-    
+
     // =======================
     // TÉRMINOS Y CONDICIONES
     // =======================
@@ -94,11 +94,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 const p = loadProducts(catId);
                 promises.push(p);
             });
-            console.log("Los valores que tengo son:", categoryData);
             // Esperar a que se terminen de cargar todos los productos
             await Promise.all(promises);
             await sortProducts()
-            console.log("Los valores que tengo son:", categoryData);
             updateCarousel();
         } catch (error) {
             console.error("Error loading availability:", error);
@@ -303,17 +301,19 @@ document.addEventListener('DOMContentLoaded', function () {
         const icecreamDoc = await getDoc(doc(db, "flavors", "icecream"));
         const toppingsDoc = await getDoc(doc(db, "toppings", "products"));
         const saucesDoc = await getDoc(doc(db, "flavors", "sauces"));
+        const fruitDoc = await getDoc(doc(db, "flavors", "fruit"));
         return {
             sundayFlavors: sundayDoc.exists() ? sundayDoc.data().flavors : [],
             icecreamFlavors: icecreamDoc.exists() ? icecreamDoc.data().flavors : [],
             toppingsFlavors: toppingsDoc.exists() ? toppingsDoc.data().toppings : [],
-            saucesFlavors: saucesDoc.exists() ? saucesDoc.data().flavors : []
+            saucesFlavors: saucesDoc.exists() ? saucesDoc.data().flavors : [],
+            fruitFlavors: fruitDoc.exists() ? fruitDoc.data().flavors : []
         };
     }
 
     // Resto de tus funciones (openFlavorSelection, openCustomerInfoModal, etc.) se mantienen igual
     async function openFlavorSelection(title, ingredients, bolas, toppings, hasSauces, price, image) {
-        const { sundayFlavors, icecreamFlavors, toppingsFlavors, saucesFlavors } = await getFlavorsFromFirebase();
+        const { sundayFlavors, icecreamFlavors, toppingsFlavors, saucesFlavors, fruitFlavors } = await getFlavorsFromFirebase();
         const isSunday = title.toLowerCase().includes("sunday");
         const sundayIsSpecial = title.toLowerCase().includes("sunday super especial");
         const sundayCount = sundayIsSpecial ? 2 : 1;
@@ -322,8 +322,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const selectJuicePreparation = title.toLowerCase().includes("jugo de");
         const shouldSelectFruit = [
             "banana especial",
-            "banana super especial",
-            "fresas con crema super especial"
+            "banana súper especial",
+            "fresas con crema súper especial",
+            "sunday súper especial"
         ].includes(title.toLowerCase());
         modal.className = 'flavor-modal';
         // Formatear precio a string con punto como miles
@@ -362,11 +363,11 @@ document.addEventListener('DOMContentLoaded', function () {
             ${shouldSelectFruit
                 ? `
                 <h3>Selecciona tu fruta:</h3>
-                ${sundayFlavors.length > 0
+                ${fruitFlavors.length > 0
                     ? Array(sundayCount).fill().map((_, i) => `
                         <div class="flavor-option">
                             <select class="sunday-flavor">
-                                ${sundayFlavors.map(f => `<option value="${f}">${f}</option>`).join('')}
+                                ${fruitFlavors.map(f => `<option value="${f}">${f}</option>`).join('')}
                             </select>
                         </div>
                       `).join('')
@@ -501,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const ingredientsNotes = modal.querySelector('.ingredients-notes').value;
 
             const numberOfItems = modal.querySelector('.number-items').value;
-            
+
 
             currentOrder.items.push({
                 title: sundayHelper ? `${title} (${sundayFlavor})` : title,
@@ -521,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.body.removeChild(modal);
             showFeedback('¡Producto agregado al pedido!', 'success');
         });
-    } 
+    }
 
 
     function openCustomerInfoModal() {
