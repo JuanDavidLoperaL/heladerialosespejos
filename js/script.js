@@ -324,7 +324,8 @@ document.addEventListener('DOMContentLoaded', function () {
             "banana especial",
             "banana súper especial",
             "fresas con crema súper especial",
-            "sunday súper especial"
+            "sunday súper especial",
+            "brownie súper especial"
         ].includes(title.toLowerCase());
         modal.className = 'flavor-modal';
         // Formatear precio a string con punto como miles
