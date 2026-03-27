@@ -1,0 +1,78 @@
+/* Login */
+.login-title {
+    color: var(--color-primario);
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.login-form {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.login-form .info-field {
+    margin-bottom: 20px;
+}
+
+.login-form .info-field label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: var(--color-texto);
+}
+
+.login-form .info-field input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    font-size: 15px;
+    margin-left: 0;
+}
+
+.password-wrapper {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.password-wrapper input {
+    border: none !important;
+    flex: 1;
+}
+
+.toggle-password-btn {
+    background: none;
+    border: none;
+    padding: 0 12px;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.login-btn {
+    background-color: var(--color-primario);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    width: 100%;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: opacity 0.3s ease;
+}
+
+.login-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.error-message {
+    color: #ff4444;
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}

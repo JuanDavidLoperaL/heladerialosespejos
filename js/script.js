@@ -24,6 +24,23 @@ const acceptTermsBtn = document.getElementById('accept-terms-btn');
 
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Login Secret Button 
+    let secretClickCount = 0;
+    let secretTimer = null;
+
+    document.getElementById('secret-btn').addEventListener('click', () => {
+        secretClickCount++;
+
+        // Resetear el timer cada click
+        clearTimeout(secretTimer);
+        secretTimer = setTimeout(() => {
+            secretClickCount = 0;
+        }, 8000);
+
+        if (secretClickCount >= 5) {
+            window.location.href = 'login.html';
+        }
+    });
 
     // =======================
     // TÉRMINOS Y CONDICIONES
