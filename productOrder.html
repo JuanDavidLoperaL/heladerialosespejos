@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos</title>
+    <link rel="stylesheet" href="css/productOrder.css">
+</head>
+<body>
+
+    <div class="orders-header">
+        <h1>📋 Pedidos Activos</h1>
+    </div>
+
+    <div class="orders-container" id="orders-container">
+        <p class="no-orders" id="no-orders">No hay pedidos activos.</p>
+    </div>
+
+    <!-- Popup Cancelar -->
+    <div class="popup-overlay" id="cancel-popup">
+        <div class="popup">
+            <h3>¿Cancelar pedido?</h3>
+            <p>Esta acción no se puede deshacer.</p>
+            <div class="popup-buttons">
+                <button class="popup-btn confirm-cancel" id="confirm-cancel">Sí, cancelar</button>
+                <button class="popup-btn dismiss" id="dismiss-cancel">No, volver</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup Imprimir -->
+    <div class="popup-overlay" id="print-popup">
+        <div class="popup">
+            <h3>¿Imprimir ticket?</h3>
+            <p>Se enviará a imprimir el ticket del pedido.</p>
+            <div class="popup-buttons">
+                <button class="popup-btn confirm-print" id="confirm-print">Sí, imprimir</button>
+                <button class="popup-btn dismiss" id="dismiss-print">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/productOrder.js"></script>
+</body>
+</html>

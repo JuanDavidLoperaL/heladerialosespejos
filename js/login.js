@@ -83,9 +83,9 @@ loginBtn.addEventListener('click', async () => {
 
     try {
         await signInWithEmailAndPassword(auth, email, password);
-        window.location.href = 'admin.html';
         loginBtn.textContent = 'Iniciar Sesión';
         loginBtn.disabled = false;
+        window.location.href = 'dashboard.html';
     } catch (error) {
         loginBtn.textContent = 'Iniciar Sesión';
         loginBtn.disabled = false;
