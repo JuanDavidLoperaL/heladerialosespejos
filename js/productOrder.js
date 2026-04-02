@@ -1,5 +1,17 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+    getFirestore,
+    collection,
+    onSnapshot,
+    doc,
+    getDoc,
+    setDoc,
+    deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// ─── Config ────────────────────────────────────────────────────────────────────
+
+const USE_MOCK = false; // 👈 cambiar a true para usar datos de prueba
 
 const firebaseConfig = {
     apiKey: "AIzaSyAFylb18Y4e1w7TAEoz3_toyCCHMy8s0xA",
@@ -14,475 +26,383 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const ordersContainer = document.getElementById('orders-container');
-const noOrders = document.getElementById('no-orders');
+// ─── Fecha ─────────────────────────────────────────────────────────────────────
 
-// Popups
-const cancelPopup = document.getElementById('cancel-popup');
-const printPopup = document.getElementById('print-popup');
-let pendingCancelId = null;
-let pendingPrintId = null;
+function todayString() {
+    return new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
+        day:   '2-digit',
+        month: '2-digit',
+        year:  'numeric'
+    }).format(new Date()).split('/').reverse().join('-');
+}
+
+function pendingPath(orderNumber) {
+    return doc(db, 'productOrder', 'pending', todayString(), orderNumber);
+}
+
+function completedPath(orderNumber) {
+    return doc(db, 'productOrder', 'completed', todayString(), orderNumber);
+}
+
+// ─── Mock ──────────────────────────────────────────────────────────────────────
+
+const mockOrders = [
+    {
+        orderNumber: '001',
+        createdAt: new Date(Date.now() - 25 * 60 * 1000),
+        customer: 'Juan Pérez',
+        customerAddress: 'Calle 45 #12-34',
+        customerPhoneNumber: '3001234567',
+        paymentMethod: 'Efectivo',
+        total: 30000,
+        order: [
+            {
+                productTitle: 'Sunday Especial Fresa',
+                flavor: 'Fresas',
+                iceCreamFlavor: 'Macadamia',
+                ingredients: 'Una bola de helado',
+                juice: '',
+                notes: 'Sin cereal',
+                price: 16000,
+                sauces: 'Mora',
+                toppings: 'Crispy'
+            },
+            {
+                productTitle: 'Jugo Natural',
+                flavor: '',
+                iceCreamFlavor: '',
+                ingredients: 'Jugo natural',
+                juice: 'Mango',
+                notes: '',
+                price: 8000,
+                sauces: '',
+                toppings: ''
+            }
+        ],
+        paymentStatus: 'pendiente'
+    },
+    {
+        orderNumber: '002',
+        createdAt: new Date(Date.now() - 19 * 60 * 1000),
+        customer: 'María López',
+        customerAddress: 'Carrera 70 #34-12',
+        customerPhoneNumber: '3109876543',
+        paymentMethod: 'Nequi',
+        total: 18000,
+        order: [
+            {
+                productTitle: 'Copa Especial',
+                flavor: '',
+                iceCreamFlavor: 'Vainilla',
+                ingredients: 'Dos bolas de helado',
+                juice: '',
+                notes: '',
+                price: 18000,
+                sauces: 'Arequipe',
+                toppings: ''
+            }
+        ],
+        paymentStatus: 'pendiente'
+    }
+];
+
+// ─── Normalizar doc Firebase ───────────────────────────────────────────────────
+
+function normalizeFirebaseOrder(docSnap) {
+    const d = docSnap.data();
+    return {
+        orderNumber:         docSnap.id,
+        createdAt:           d.createdAt?.toDate?.() ?? new Date(),
+        customer:            d.customer            ?? '—',
+        customerAddress:     d.customerAddress     ?? '—',
+        customerPhoneNumber: d.customerPhoneNumber ?? '—',
+        paymentMethod:       d.paymentMethod       ?? '—',
+        total:               d.total               ?? 0,
+        order:               Array.isArray(d.order) ? d.order : [],
+        paymentStatus:       d.paymentStatus       ?? 'pendiente'
+    };
+}
+
+// ─── Estado global ─────────────────────────────────────────────────────────────
+
+let currentOrders      = [];
+let pendingCancelOrder = null;
+let pendingPrintOrder  = null;
+let unsubscribe        = null;
+
+// ─── DOM ───────────────────────────────────────────────────────────────────────
+
+const ordersContainer = document.getElementById('orders-container');
+const noOrders        = document.getElementById('no-orders');
+const cancelPopup     = document.getElementById('cancel-popup');
+const printPopup      = document.getElementById('print-popup');
+
+// ─── Popups ────────────────────────────────────────────────────────────────────
 
 document.getElementById('dismiss-cancel').addEventListener('click', () => closePopup(cancelPopup));
-document.getElementById('dismiss-print').addEventListener('click', () => closePopup(printPopup));
+document.getElementById('dismiss-print').addEventListener('click',  () => closePopup(printPopup));
 
 document.getElementById('confirm-cancel').addEventListener('click', async () => {
-    if (!pendingCancelId) return;
-    await deleteDoc(doc(db, 'orders', pendingCancelId));
+    if (!pendingCancelOrder) return;
+    await cancelOrder(pendingCancelOrder);
     closePopup(cancelPopup);
 });
 
-//document.getElementById('confirm-print').addEventListener('click', () => {
-  //  if (!pendingPrintId) return;
-    //const ticket = document.querySelector(`.ticket[data-id="${pendingPrintId}"]`);
-    //if (ticket) printTicket(ticket);
-    //closePopup(printPopup);
-//});
-
-// Buscar el order por id
-document.getElementById('confirm-print').addEventListener('click', () => {
-    if (!pendingPrintId) return;
-    const order = currentOrders.find(o => o.id === pendingPrintId);
-    if (order) printTicket(order);
+document.getElementById('confirm-print').addEventListener('click', async () => {
+    if (!pendingPrintOrder) return;
+    await completeOrder(pendingPrintOrder);
+    printTicket(pendingPrintOrder);
     closePopup(printPopup);
 });
 
 function closePopup(popup) {
     popup.classList.remove('visible');
-    pendingCancelId = null;
-    pendingPrintId = null;
+    pendingCancelOrder = null;
+    pendingPrintOrder  = null;
 }
 
-let currentOrders = [];
+// ─── Firebase actions ──────────────────────────────────────────────────────────
 
-// Escuchar pedidos en tiempo real desde Firebase
-//onSnapshot(collection(db, 'orders'), (snapshot) => {
-  //  const orders = [];
-    //snapshot.forEach(d => orders.push({ id: d.id, ...d.data() }));
-    //renderOrders(orders);
-//});
-
-// MOCK - borrar cuando conectes Firebase
-const mockOrders = [
-    {
-        id: 'mock001',
-        orderNumber: '001',
-        createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-        customerInfo: {
-            name: 'Juan Pérez',
-            address: 'Calle 45 #12-34',
-            phone: '3001234567',
-            payment: 'Efectivo',
-            neighborhood: 'El Poblado'
-        },
-        items: [
-            {
-                title: 'Sunday Especial',
-                numberOfItems: 2,
-                price: 15000,
-                sundayFlavor: 'Maracuyá',
-                juiceFlavor: [],
-                flavors: ['Vainilla', 'Chocolate'],
-                toppings: ['Chispas', 'Maní'],
-                sauces: ['Arequipe'],
-                ingredients: 'Helado, sunday, toppings',
-                ingredientsNotes: 'Sin maní por favor'
-            }
-        ],
-        total: 30000,
-        paymentStatus: 'pendiente'
-    },
-    {
-        id: 'mock002',
-        orderNumber: '002',
-        createdAt: new Date(Date.now() - 19 * 60 * 1000).toISOString(),
-        customerInfo: {
-            name: 'Juan Pérez',
-            address: 'Calle 45 #12-34',
-            phone: '3001234567',
-            payment: 'Efectivo',
-            neighborhood: 'El Poblado'
-        },
-        items: [
-            {
-                title: 'Sunday Super Especial',
-                numberOfItems: 3,
-                price: 18000,
-                sundayFlavor: 'Maracuyá',
-                juiceFlavor: [],
-                flavors: ['Vainilla'],
-                toppings: ['Chispas', 'Maní'],
-                sauces: ['Arequipe'],
-                ingredients: 'Helado, sunday, toppings',
-                ingredientsNotes: 'Sin maní por favor'
-            }
-        ],
-        total: 30000,
-        paymentStatus: 'pendiente'
-    },
-    {
-        id: 'mock003',
-        orderNumber: '003',
-        createdAt: new Date(Date.now() - 19 * 60 * 1000).toISOString(),
-        customerInfo: {
-            name: 'Juan Camilo',
-            address: 'Calle 45 #12-34',
-            phone: '3001234567',
-            payment: 'Efectivo',
-            neighborhood: 'El Poblado'
-        },
-        items: [
-            {
-                title: 'Jugo de Mora',
-                numberOfItems: 7,
-                price: 34000,
-                sundayFlavor: '',
-                juiceFlavor: ["Mora"],
-                flavors: [],
-                toppings: [],
-                sauces: [],
-                ingredients: 'Helado, sunday, toppings',
-                ingredientsNotes: 'Sin maní por favor'
-            }
-        ],
-        total: 30000,
-        paymentStatus: 'pendiente'
+async function cancelOrder(order) {
+    if (USE_MOCK) {
+        currentOrders = currentOrders.filter(o => o.orderNumber !== order.orderNumber);
+        renderOrders(currentOrders);
+        return;
     }
-];
+    await deleteDoc(pendingPath(order.orderNumber));
+}
 
-currentOrders = mockOrders;
-renderOrders(mockOrders);
+async function completeOrder(order) {
+    if (USE_MOCK) {
+        currentOrders = currentOrders.filter(o => o.orderNumber !== order.orderNumber);
+        renderOrders(currentOrders);
+        return;
+    }
+    const snap = await getDoc(pendingPath(order.orderNumber));
+    if (!snap.exists()) return;
+    await setDoc(completedPath(order.orderNumber), snap.data());
+    await deleteDoc(pendingPath(order.orderNumber));
+}
+
+// ─── Init ──────────────────────────────────────────────────────────────────────
+
+function initOrders() {
+    if (USE_MOCK) {
+        currentOrders = mockOrders;
+        renderOrders(currentOrders);
+        return;
+    }
+
+    if (unsubscribe) unsubscribe();
+
+    const colRef = collection(db, 'productOrder', 'pending', todayString());
+    unsubscribe = onSnapshot(colRef,
+        (snapshot) => {
+            currentOrders = snapshot.docs.map(normalizeFirebaseOrder);
+            renderOrders(currentOrders);
+        },
+        (error) => {
+            console.error('Error escuchando pedidos:', error);
+            noOrders.textContent = 'Error al cargar pedidos. Recarga la página.';
+            noOrders.style.display = 'block';
+        }
+    );
+}
+
+initOrders();
+
+// ─── Render ────────────────────────────────────────────────────────────────────
 
 function renderOrders(orders) {
-    // Limpiar tickets existentes (no el mensaje de vacío)
     document.querySelectorAll('.ticket').forEach(t => t.remove());
 
     if (orders.length === 0) {
         noOrders.style.display = 'block';
+        noOrders.textContent = 'No hay pedidos activos.';
         return;
     }
 
     noOrders.style.display = 'none';
-
-    orders.forEach(order => {
-        const ticket = buildTicket(order);
-        ordersContainer.appendChild(ticket);
-    });
-
+    orders.forEach(order => ordersContainer.appendChild(buildTicket(order)));
     checkUrgentOrders();
 }
 
 function buildTicket(order) {
     const ticket = document.createElement('div');
     ticket.className = 'ticket';
-    ticket.dataset.id = order.id;
-    ticket.dataset.createdAt = order.createdAt || new Date().toISOString();
+    ticket.dataset.id        = order.orderNumber;
+    ticket.dataset.createdAt = order.createdAt instanceof Date
+        ? order.createdAt.toISOString()
+        : new Date().toISOString();
 
-    const date = order.createdAt
-        ? formatDate(new Date(order.createdAt))
-        : '—';
+    const date  = formatDate(order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt));
+const items = Array.isArray(order.order) ? order.order : [];
 
-    const itemsHTML = Array.isArray(order.items)
-    ? order.items.map(i => `
+const itemsHTML = items.length > 0
+    ? items.map(i => `
         <li>
-            <strong>${i.title} x${i.numberOfItems}</strong> — $${Number(i.price).toLocaleString('es-CO')}
-            ${i.sundayFlavor ? `<br><span class="item-detail">🍨 Sunday: ${i.sundayFlavor}</span>` : ''}
-            ${i.juiceFlavor?.length > 0 ? `<br><span class="item-detail">🥤 Jugo de: ${i.juiceFlavor.join(', ')}</span>` : ''}
-            ${i.flavors?.length > 0 ? `<br><span class="item-detail">🍦 Sabores: ${i.flavors.join(', ')}</span>` : ''}
-            ${i.toppings?.length > 0 ? `<br><span class="item-detail">🍫 Toppings: ${i.toppings.join(', ')}</span>` : ''}
-            ${i.sauces?.length > 0 ? `<br><span class="item-detail">🍯 Salsa: ${i.sauces.join(', ')}</span>` : ''}
-            ${i.ingredientsNotes ? `<br><span class="item-detail">📝 Notas: ${i.ingredientsNotes}</span>` : ''}
+            <strong>${i.productTitle}</strong> — $${Number(i.price).toLocaleString('es-CO')}
+            ${i.ingredients   ? `<br><span class="item-detail">🍨 ${i.ingredients}</span>`        : ''}
+            ${i.iceCreamFlavor ? `<br><span class="item-detail">🍦 Helado: ${i.iceCreamFlavor}</span>` : ''}
+            ${i.flavor        ? `<br><span class="item-detail">🍓 Sabor: ${i.flavor}</span>`       : ''}
+            ${i.juice         ? `<br><span class="item-detail">🥤 Jugo: ${i.juice}</span>`         : ''}
+            ${i.toppings      ? `<br><span class="item-detail">🍫 Toppings: ${i.toppings}</span>`  : ''}
+            ${i.sauces        ? `<br><span class="item-detail">🍯 Salsa: ${i.sauces}</span>`       : ''}
+            ${i.notes         ? `<br><span class="item-detail">📝 Notas: ${i.notes}</span>`        : ''}
         </li>
     `).join('')
     : '<li>Sin detalle</li>';
 
     ticket.innerHTML = `
         <div class="ticket-header">
-            <span class="ticket-number">🧾 #${order.orderNumber || order.id.slice(0,6).toUpperCase()}</span>
+            <span class="ticket-number">🧾 #${order.orderNumber}</span>
             <span class="ticket-date">${date}</span>
         </div>
-
         <div class="ticket-row">
             <span class="ticket-label">Cliente</span>
-            <span class="ticket-value">${order.customerInfo?.name || '—'}</span>
+            <span class="ticket-value">${order.customer}</span>
         </div>
-
         <div class="ticket-row">
             <span class="ticket-label">Dirección</span>
-            <span class="ticket-value">${order.customerInfo?.address || '—'}</span>
+            <span class="ticket-value">${order.customerAddress}</span>
         </div>
-
         <div class="ticket-row">
             <span class="ticket-label">Teléfono</span>
-            <span class="ticket-value">${order.customerInfo?.phone || '—'}</span>
+            <span class="ticket-value">${order.customerPhoneNumber}</span>
         </div>
-
         <div class="ticket-row">
             <span class="ticket-label">Pedido</span>
             <ul class="order-list">${itemsHTML}</ul>
         </div>
-
         <div class="ticket-row">
             <span class="ticket-label">Total</span>
-            <span class="ticket-value ticket-total">$${Number(order.total || 0).toLocaleString('es-CO')}</span>
+            <span class="ticket-value ticket-total">$${Number(order.total).toLocaleString('es-CO')}</span>
         </div>
-
         <div class="ticket-row">
             <span class="ticket-label">Método de pago</span>
-            <span class="ticket-value">${order.customerInfo?.payment || '—'}</span>
+            <span class="ticket-value">${order.paymentMethod}</span>
         </div>
-
-        <div class="ticket-row">
-            <span class="ticket-label">Estado de pago</span>
-            <select class="payment-status ${order.paymentStatus || 'pendiente'}">
-                <option value="pendiente" ${(order.paymentStatus || 'pendiente') === 'pendiente' ? 'selected' : ''}>⏳ Pendiente</option>
-                <option value="pagado"    ${order.paymentStatus === 'pagado'    ? 'selected' : ''}>✅ Pagado</option>
-            </select>
-        </div>
-
         <div class="ticket-actions">
             <button class="btn-cancel-ticket">🗑 Cancelar</button>
             <button class="btn-print-ticket">🖨 Imprimir</button>
         </div>
     `;
 
-    // Dropdown estado de pago
-    ticket.querySelector('.payment-status').addEventListener('change', async function () {
-        this.className = `payment-status ${this.value}`;
-        await updateDoc(doc(db, 'orders', order.id), { paymentStatus: this.value });
-    });
-
-    // Cancelar
     ticket.querySelector('.btn-cancel-ticket').addEventListener('click', () => {
-        pendingCancelId = order.id;
+        pendingCancelOrder = order;
         cancelPopup.classList.add('visible');
     });
 
-    // Imprimir
     ticket.querySelector('.btn-print-ticket').addEventListener('click', () => {
-        pendingPrintId = order.id;
+        pendingPrintOrder = order;
         printPopup.classList.add('visible');
     });
 
     return ticket;
 }
 
-// Revisar tickets urgentes cada 30 segundos
+// ─── Urgentes ──────────────────────────────────────────────────────────────────
+
 function checkUrgentOrders() {
     document.querySelectorAll('.ticket').forEach(ticket => {
-        const createdAt = new Date(ticket.dataset.createdAt);
-        const minutesElapsed = (Date.now() - createdAt.getTime()) / 60000;
-        if (minutesElapsed >= 20) {
-            ticket.classList.add('urgent');
-        } else {
-            ticket.classList.remove('urgent');
-        }
+        const minutesElapsed = (Date.now() - new Date(ticket.dataset.createdAt).getTime()) / 60000;
+        ticket.classList.toggle('urgent', minutesElapsed >= 20);
     });
 }
 
 setInterval(checkUrgentOrders, 30000);
 
-// Helpers
+// ─── Búsqueda ──────────────────────────────────────────────────────────────────
+
+document.getElementById('search-input').addEventListener('input', function () {
+    const query = this.value.trim().toLowerCase();
+
+    document.querySelectorAll('.ticket').forEach(ticket => {
+        const orderNumber = ticket.querySelector('.ticket-number')?.textContent?.toLowerCase() ?? '';
+        ticket.style.display = (!query || orderNumber.includes(query)) ? '' : 'none';
+    });
+
+    const hasVisible = [...document.querySelectorAll('.ticket')].some(t => t.style.display !== 'none');
+    noOrders.style.display  = hasVisible ? 'none' : 'block';
+    noOrders.textContent    = query
+        ? `No se encontró la comanda "${query.toUpperCase()}".`
+        : 'No hay pedidos activos.';
+});
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
 function formatDate(date) {
-    const dd   = String(date.getDate()).padStart(2, '0');
-    const mm   = String(date.getMonth() + 1).padStart(2, '0');
-    const yyyy = date.getFullYear();
-    const hh   = String(date.getHours()).padStart(2, '0');
-    const min  = String(date.getMinutes()).padStart(2, '0');
-    const ss   = String(date.getSeconds()).padStart(2, '0');
-    return `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss}`;
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(date.getDate())}/${pad(date.getMonth()+1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
+
+// ─── Print ─────────────────────────────────────────────────────────────────────
 
 function printTicket(order) {
     const printWindow = window.open('', '_blank');
+    const items = Array.isArray(order.order) ? order.order : [];
 
-    const itemsHTML = Array.isArray(order.items)
-        ? order.items.map((i, index) => `
-            <div class="item">
-                <strong>${index + 1}. ${i.title} x${i.numberOfItems}</strong>
-                <span>$${Number(i.price * i.numberOfItems).toLocaleString('es-CO')}</span>
-            </div>
-            ${i.sundayFlavor ? `<div class="item-detail">Sunday: ${i.sundayFlavor}</div>` : ''}
-            ${i.juiceFlavor?.length > 0 ? `<div class="item-detail">Jugo en: ${i.juiceFlavor.join(', ')}</div>` : ''}
-            ${i.flavors?.length > 0 ? `<div class="item-detail">Sabores: ${i.flavors.join(', ')}</div>` : ''}
-            ${i.toppings?.length > 0 ? `<div class="item-detail">Toppings: ${i.toppings.join(', ')}</div>` : ''}
-            ${i.sauces?.length > 0 ? `<div class="item-detail">Salsa: ${i.sauces.join(', ')}</div>` : ''}
-            ${i.ingredientsNotes ? `<div class="item-detail">Notas: ${i.ingredientsNotes}</div>` : ''}
-        `).join('<div class="divider"></div>')
-        : 'Sin detalle';
+const itemsHTML = items.length > 0
+    ? items.map((i, index) => `
+        <div class="item">
+            <strong>${index + 1}. ${i.productTitle}</strong>
+            <span>$${Number(i.price).toLocaleString('es-CO')}</span>
+        </div>
+        ${i.ingredients    ? `<div class="item-detail">${i.ingredients}</div>`          : ''}
+        ${i.iceCreamFlavor ? `<div class="item-detail">Helado: ${i.iceCreamFlavor}</div>` : ''}
+        ${i.flavor         ? `<div class="item-detail">Sabor: ${i.flavor}</div>`         : ''}
+        ${i.juice          ? `<div class="item-detail">Jugo: ${i.juice}</div>`            : ''}
+        ${i.toppings       ? `<div class="item-detail">Toppings: ${i.toppings}</div>`    : ''}
+        ${i.sauces         ? `<div class="item-detail">Salsa: ${i.sauces}</div>`          : ''}
+        ${i.notes          ? `<div class="item-detail">Notas: ${i.notes}</div>`           : ''}
+    `).join('<div class="divider"></div>')
+    : 'Sin detalle';
 
-    const date = order.createdAt
-        ? formatDate(new Date(order.createdAt))
-        : formatDate(new Date());
+    const date = formatDate(order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt));
 
     printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Ticket</title>
-            <style>
-                * {
-                    margin: 0;
-                    padding: 0;
-                    box-sizing: border-box;
-                }
-
-                body {
-                    font-family: 'Courier New', Courier, monospace;
-                    font-size: 12px;
-                    width: 72mm; /* ancho impresión térmica 80mm - márgenes */
-                    color: #000;
-                    background: #fff;
-                    padding: 4mm;
-                }
-
-                .center { text-align: center; }
-                .right  { text-align: right; }
-                .bold   { font-weight: bold; }
-
-                .logo {
-                    font-size: 16px;
-                    font-weight: bold;
-                    text-align: center;
-                    margin-bottom: 4px;
-                }
-
-                .subtitle {
-                    font-size: 10px;
-                    text-align: center;
-                    margin-bottom: 8px;
-                }
-
-                .separator {
-                    border-top: 1px dashed #000;
-                    margin: 6px 0;
-                }
-
-                .row {
-                    display: flex;
-                    justify-content: space-between;
-                    margin: 2px 0;
-                }
-
-                .label {
-                    font-weight: bold;
-                    font-size: 10px;
-                    text-transform: uppercase;
-                }
-
-                .value {
-                    font-size: 11px;
-                }
-
-                .item {
-                    display: flex;
-                    justify-content: space-between;
-                    margin: 3px 0;
-                    font-weight: bold;
-                }
-
-                .item-detail {
-                    font-size: 10px;
-                    color: #333;
-                    margin-left: 8px;
-                    margin-bottom: 2px;
-                }
-
-                .divider {
-                    border-top: 1px dotted #ccc;
-                    margin: 4px 0;
-                }
-
-                .total-section {
-                    margin-top: 6px;
-                }
-
-                .total-row {
-                    display: flex;
-                    justify-content: space-between;
-                    font-size: 14px;
-                    font-weight: bold;
-                    margin-top: 4px;
-                }
-
-                .footer {
-                    text-align: center;
-                    font-size: 10px;
-                    margin-top: 10px;
-                }
-
-                @media print {
-                    @page {
-                        margin: 0;
-                        size: 80mm auto; /* ancho fijo, alto automático */
-                    }
-                    body {
-                        width: 72mm;
-                    }
-                }
-            </style>
-        </head>
-        <body>
-
+        <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Ticket</title>
+        <style>
+            *{margin:0;padding:0;box-sizing:border-box;}
+            body{font-family:'Courier New',monospace;font-size:12px;width:72mm;color:#000;background:#fff;padding:4mm;}
+            .bold{font-weight:bold;}
+            .logo{font-size:16px;font-weight:bold;text-align:center;margin-bottom:4px;}
+            .subtitle{font-size:10px;text-align:center;margin-bottom:8px;}
+            .separator{border-top:1px dashed #000;margin:6px 0;}
+            .row{display:flex;justify-content:space-between;margin:2px 0;}
+            .label{font-weight:bold;font-size:10px;text-transform:uppercase;}
+            .value{font-size:11px;}
+            .item{display:flex;justify-content:space-between;margin:3px 0;font-weight:bold;}
+            .item-detail{font-size:10px;color:#333;margin-left:8px;margin-bottom:2px;}
+            .divider{border-top:1px dotted #ccc;margin:4px 0;}
+            .total-row{display:flex;justify-content:space-between;font-size:14px;font-weight:bold;margin-top:4px;}
+            .footer{text-align:center;font-size:10px;margin-top:10px;}
+            @media print{@page{margin:0;size:80mm auto;}body{width:72mm;}}
+        </style></head><body>
             <div class="logo">Heladería Los Espejos</div>
             <div class="subtitle">No es solo un helado, es tradición hecha sabor</div>
-
             <div class="separator"></div>
-
-            <div class="row">
-                <span class="label">Comanda #</span>
-                <span class="value bold">${order.orderNumber || order.id?.slice(0,6).toUpperCase()}</span>
-            </div>
-            <div class="row">
-                <span class="label">Fecha</span>
-                <span class="value">${date}</span>
-            </div>
-
+            <div class="row"><span class="label">Comanda #</span><span class="value bold">${order.orderNumber}</span></div>
+            <div class="row"><span class="label">Fecha</span><span class="value">${date}</span></div>
             <div class="separator"></div>
-
             <div class="label">Cliente</div>
-            <div class="value">${order.customerInfo?.name || '—'}</div>
-            <div class="value">${order.customerInfo?.phone || '—'}</div>
-            <div class="value">${order.customerInfo?.neighborhood || '—'}</div>
-            <div class="value">${order.customerInfo?.address || '—'}</div>
-
+            <div class="value">${order.customer}</div>
+            <div class="value">${order.customerPhoneNumber}</div>
+            <div class="value">${order.customerAddress}</div>
             <div class="separator"></div>
-
             <div class="label">Pedido</div>
-            <div style="margin-top: 4px;">
-                ${itemsHTML}
-            </div>
-
+            <div style="margin-top:4px;">${itemsHTML}</div>
             <div class="separator"></div>
-
-            <div class="total-section">
-                <div class="row">
-                    <span class="label">Método de pago</span>
-                    <span class="value">${order.customerInfo?.payment || '—'}</span>
-                </div>
-                <div class="total-row">
-                    <span>TOTAL</span>
-                    <span>$${Number(order.total || 0).toLocaleString('es-CO')}</span>
-                </div>
-                <div style="font-size:10px; margin-top:4px;">* Domicilio no incluido</div>
-            </div>
-
+            <div class="row"><span class="label">Método de pago</span><span class="value">${order.paymentMethod}</span></div>
+            <div class="total-row"><span>TOTAL</span><span>$${Number(order.total).toLocaleString('es-CO')}</span></div>
+            <div style="font-size:10px;margin-top:4px;">* Domicilio no incluido</div>
             <div class="separator"></div>
-
-            <div class="footer">
-                ¡Gracias por tu pedido!<br>
-                Horario: Lun - Dom 12:00 PM - 8:00 PM
-            </div>
-
-        </body>
-        </html>
+            <div class="footer">¡Gracias por tu pedido!<br>Horario: Lun - Dom 12:00 PM - 8:00 PM</div>
+        </body></html>
     `);
 
     printWindow.document.close();
     printWindow.focus();
-    setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 500);
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
 }

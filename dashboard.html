@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Los Espejos Heladería - Dashboard</title>
     <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/productOrder.css">
+    <link rel="stylesheet" href="css/businessAnalytics.css">
 </head>
-
 <body>
 
-    <!-- Menú lateral -->
     <nav class="sidebar">
         <div class="sidebar-top">
             <img src="images/logo.png" alt="Logo" class="sidebar-logo">
@@ -27,7 +26,6 @@
                 </li>
             </ul>
         </div>
-
         <div class="sidebar-bottom">
             <button class="logout-btn" id="logout-btn">
                 🚪 Cerrar Sesión
@@ -35,12 +33,10 @@
         </div>
     </nav>
 
-    <!-- Contenido principal -->
     <main class="main-content">
-        <iframe id="content-frame" src="productOrder.html"></iframe>
+        <div id="content-frame"></div>
     </main>
 
     <script type="module" src="js/dashboard.js"></script>
 </body>
-
 </html>

@@ -14,35 +14,65 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-// Proteger el dashboard — si no hay sesión, redirigir al login
-onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        window.location.href = 'login.html';
-    }
-});
-
-const contentFrame = document.getElementById('content-frame');
-const btnPedidos = document.getElementById('btn-pedidos');
+const contentFrame  = document.getElementById('content-frame');
+const btnPedidos    = document.getElementById('btn-pedidos');
 const btnAnaliticas = document.getElementById('btn-analiticas');
-const logoutBtn = document.getElementById('logout-btn');
+const logoutBtn     = document.getElementById('logout-btn');
 
-// Navegación
-btnPedidos.addEventListener('click', () => {
-    contentFrame.src = 'productOrder.html';
-    setActive(btnPedidos);
-});
+const pages = {
+    pedidos:    { html: 'productOrder.html',      js: 'js/productOrder.js' },
+    analiticas: { html: 'businessAnalytics.html', js: 'js/businessAnalytics.js' }
+};
 
-btnAnaliticas.addEventListener('click', () => {
-    contentFrame.src = 'businessAnalytics.html';
-    setActive(btnAnaliticas);
-});
+let currentScript = null;
+
+async function loadPage(page) {
+    const { html, js } = pages[page];
+
+    try {
+        const response = await fetch(html);
+        const text = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        contentFrame.innerHTML = doc.body.innerHTML;
+    } catch (error) {
+        console.error('Error cargando página:', error);
+        contentFrame.innerHTML = '<p style="padding:20px;color:red;">Error al cargar la página.</p>';
+        return;
+    }
+
+    if (currentScript) currentScript.remove();
+
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = `${js}?t=${Date.now()}`;
+    document.body.appendChild(script);
+    currentScript = script;
+}
 
 function setActive(btn) {
     document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 }
 
-// Cerrar sesión
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        window.location.href = 'login.html';
+        return;
+    }
+    loadPage('pedidos');
+});
+
+btnPedidos.addEventListener('click', () => {
+    loadPage('pedidos');
+    setActive(btnPedidos);
+});
+
+btnAnaliticas.addEventListener('click', () => {
+    loadPage('analiticas');
+    setActive(btnAnaliticas);
+});
+
 logoutBtn.addEventListener('click', async () => {
     try {
         await signOut(auth);
