@@ -21,8 +21,9 @@ body {
 
 .orders-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
+    align-items: start;
 }
 
 .no-orders {
@@ -260,4 +261,16 @@ body {
 
 .search-bar input:focus {
     border-color: #194073;
+}
+
+@media (min-width: 1600px) {
+    .orders-container {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (min-width: 1200px) and (max-width: 1599px) {
+    .orders-container {
+        grid-template-columns: repeat(4, 1fr);
+    }
 }

@@ -93,7 +93,7 @@ body {
     flex: 1;
     background-color: #f5f5f5;
     border-radius: 15px 0 0 15px;
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 #content-frame {

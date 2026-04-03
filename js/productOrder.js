@@ -55,7 +55,7 @@ const mockOrders = [
         customerAddress: 'Calle 45 #12-34',
         customerPhoneNumber: '3001234567',
         paymentMethod: 'Efectivo',
-        total: 30000,
+        total: 40000,
         order: [
             {
                 productTitle: 'Sunday Especial Fresa',
@@ -66,7 +66,8 @@ const mockOrders = [
                 notes: 'Sin cereal',
                 price: 16000,
                 sauces: 'Mora',
-                toppings: 'Crispy'
+                toppings: 'Crispy',
+                quantity: 1
             },
             {
                 productTitle: 'Jugo Natural',
@@ -77,7 +78,8 @@ const mockOrders = [
                 notes: '',
                 price: 8000,
                 sauces: '',
-                toppings: ''
+                toppings: '',
+                quantity: 3
             }
         ],
         paymentStatus: 'pendiente'
@@ -100,7 +102,8 @@ const mockOrders = [
                 notes: '',
                 price: 18000,
                 sauces: 'Arequipe',
-                toppings: ''
+                toppings: '',
+                quantity: 1
             }
         ],
         paymentStatus: 'pendiente'
@@ -223,8 +226,14 @@ function renderOrders(orders) {
         return;
     }
 
+    const sorted = [...orders].sort((a, b) => {
+        const dateA = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt);
+        const dateB = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt);
+        return dateA - dateB;
+    });
+
     noOrders.style.display = 'none';
-    orders.forEach(order => ordersContainer.appendChild(buildTicket(order)));
+    sorted.forEach(order => ordersContainer.appendChild(buildTicket(order)));
     checkUrgentOrders();
 }
 
@@ -237,12 +246,13 @@ function buildTicket(order) {
         : new Date().toISOString();
 
     const date  = formatDate(order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt));
-const items = Array.isArray(order.order) ? order.order : [];
+    const items = Array.isArray(order.order) ? order.order : [];
 
-const itemsHTML = items.length > 0
+    const itemsHTML = items.length > 0
     ? items.map(i => `
         <li>
             <strong>${i.productTitle}</strong> — $${Number(i.price).toLocaleString('es-CO')}
+            ${i.quantity   ? `<br><span class="item-detail"><strong>Cantidad:</strong> ${i.quantity}</span>`        : ''}
             ${i.ingredients   ? `<br><span class="item-detail">🍨 ${i.ingredients}</span>`        : ''}
             ${i.iceCreamFlavor ? `<br><span class="item-detail">🍦 Helado: ${i.iceCreamFlavor}</span>` : ''}
             ${i.flavor        ? `<br><span class="item-detail">🍓 Sabor: ${i.flavor}</span>`       : ''}
@@ -333,8 +343,16 @@ document.getElementById('search-input').addEventListener('input', function () {
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatDate(date) {
-    const pad = n => String(n).padStart(2, '0');
-    return `${pad(date.getDate())}/${pad(date.getMonth()+1)}/${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    return new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
+        day:    '2-digit',
+        month:  '2-digit',
+        year:   'numeric',
+        hour:   '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    }).format(date);
 }
 
 // ─── Print ─────────────────────────────────────────────────────────────────────

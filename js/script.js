@@ -575,7 +575,8 @@ document.addEventListener('DOMContentLoaded', function () {
             notes:         item.ingredientsNotes ?? '',
             price:         item.price,
             sauces:        item.sauces?.join(', ')   ?? '',
-            toppings:      item.toppings?.join(', ') ?? ''
+            toppings:      item.toppings?.join(', ') ?? '',
+            quantity:      item.numberOfItems
         }))
     };
 
