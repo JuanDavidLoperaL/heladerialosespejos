@@ -561,6 +561,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const orderDoc = {
         createdAt: serverTimestamp(),
         customer: orderData.customerInfo.name,
+        customerNeighborhood: orderData.customerInfo.neighborhood,
         customerAddress: orderData.customerInfo.address,
         customerPhoneNumber: orderData.customerInfo.phone,
         paymentMethod: orderData.customerInfo.payment,
