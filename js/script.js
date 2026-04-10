@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, doc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, doc, getDocs, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -17,11 +18,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
+const auth = getAuth(app);
+signInAnonymously(auth);
 
 // Terminos y condiciones 
 const termsModal = document.getElementById('terms-modal');
 const acceptTermsBtn = document.getElementById('accept-terms-btn');
 
+function todayStringColombia() {
+    return new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
+        day:   '2-digit',
+        month: '2-digit',
+        year:  'numeric'
+    }).format(new Date()).split('/').reverse().join('-');
+    // resultado: 01-04-2026
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     // Login Secret Button 
@@ -62,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const prevBtn = document.querySelector('.prev');
     const nextBtn = document.querySelector('.next');
     const carouselTrack = document.querySelector('.carousel-track');
-    const whatsappNumber = "+573007403433";
+    const whatsappNumber = "+573114179913";//"+573007403433";
 
     // Estado del pedido
     let currentOrder = {
@@ -542,6 +554,40 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    async function saveOrderToFirebase(orderData) {
+    const orderNumber = crypto.randomUUID();
+    const displayNumber = orderNumber.split('-')[0].toUpperCase();
+
+    const orderDoc = {
+        createdAt: serverTimestamp(),
+        customer: orderData.customerInfo.name,
+        customerNeighborhood: orderData.customerInfo.neighborhood,
+        customerAddress: orderData.customerInfo.address,
+        customerPhoneNumber: orderData.customerInfo.phone,
+        paymentMethod: orderData.customerInfo.payment,
+        total: orderData.total,
+        orderNumber: displayNumber,
+        order: orderData.items.map(item => ({
+            productTitle: item.title,
+            flavor:        item.sundayFlavor  ?? '',
+            iceCreamFlavor: item.flavors?.join(', ') ?? '',
+            ingredients:   item.ingredients  ?? '',
+            juice:         item.juiceFlavor?.join(', ') ?? '',
+            notes:         item.ingredientsNotes ?? '',
+            price:         item.price,
+            sauces:        item.sauces?.join(', ')   ?? '',
+            toppings:      item.toppings?.join(', ') ?? '',
+            quantity:      item.numberOfItems
+        }))
+    };
+
+    await setDoc(
+        doc(db, 'productOrder', 'pending', todayStringColombia(), orderNumber),
+        orderDoc
+    );
+
+    return displayNumber;
+}
 
     function openCustomerInfoModal() {
         const modal = document.createElement('div');
@@ -662,56 +708,44 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        modal.querySelector('.send-whatsapp').addEventListener('click', function () {
-            const name = document.getElementById('customer-name').value.trim();
-            const phone = document.getElementById('customer-phone').value.trim();
-            const address = document.getElementById('customer-address').value.trim();
-            const neighborhood = document.getElementById('customer-neighborhood').value.trim();
-            const payment = document.getElementById('customer-payment-method').value.trim();
+        modal.querySelector('.send-whatsapp').addEventListener('click', async function () {
+    const name         = document.getElementById('customer-name').value.trim();
+    const phone        = document.getElementById('customer-phone').value.trim();
+    const address      = document.getElementById('customer-address').value.trim();
+    const neighborhood = document.getElementById('customer-neighborhood').value.trim();
+    const payment      = document.getElementById('customer-payment-method').value.trim();
 
-            if (!name) {
-                showFeedback('Por favor ingresa tu nombre completo', 'error');
-                return;
-            }
+    if (!name) { showFeedback('Por favor ingresa tu nombre completo', 'error'); return; }
+    if (!phone) { showFeedback('Por favor ingresa tu número de teléfono', 'error'); return; }
+    if (!isValidColombianPhone(phone)) { showFeedback('Por favor ingresa un número de teléfono colombiano válido', 'error'); return; }
+    if (!address) { showFeedback('Por favor ingresa tu dirección de entrega', 'error'); return; }
+    if (!neighborhood) { showFeedback('Por favor ingresa tu barrio de entrega', 'error'); return; }
+    if (!payment) { showFeedback('Por favor ingresa tu método de pago', 'error'); return; }
 
-            if (!phone) {
-                showFeedback('Por favor ingresa tu número de teléfono', 'error');
-                return;
-            }
+    currentOrder.customerInfo = { name, phone, address, neighborhood, payment };
 
-            if (!isValidColombianPhone(phone)) {
-                showFeedback('Por favor ingresa un número de teléfono colombiano válido', 'error');
-                return;
-            }
+    // Intentar guardar en Firebase pero sin bloquear al usuario
+    let displayNumber = crypto.randomUUID().split('-')[0].toUpperCase();
+    try {
+        displayNumber = await saveOrderToFirebase(currentOrder);
+    } catch (error) {
+        console.error('Error guardando pedido en Firebase:', error);
+        // El pedido igual llega por WhatsApp aunque Firebase falle
+    }
 
-            if (!address) {
-                showFeedback('Por favor ingresa tu dirección de entrega', 'error');
-                return;
-            }
+    logEvent(analytics, 'pedido_whatsapp', {
+        payment_method: payment,
+        neighborhood:   neighborhood,
+        items_count:    currentOrder.items.length,
+        order_total:    currentOrder.total
+    });
 
-            if (!neighborhood) {
-                showFeedback('Por favor ingresa tu barrio de entrega', 'error');
-                return;
-            }
-
-            if (!payment) {
-                showFeedback('Por favor ingresa tu metodo de pago', 'error');
-                return;
-            }
-
-            currentOrder.customerInfo = { name, phone, address, neighborhood, payment };
-            logEvent(analytics, 'pedido_whatsapp', {
-                payment_method: payment,
-                neighborhood: neighborhood,
-                items_count: currentOrder.items.length,
-                order_total: currentOrder.total
-            });
-            const whatsappMessage = generateWhatsAppMessage();
-            const encodedMessage = encodeURIComponent(whatsappMessage);
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-            window.open(whatsappUrl, '_blank');
-            document.body.removeChild(modal);
-        });
+    const whatsappMessage = generateWhatsAppMessage(displayNumber);
+    const encodedMessage  = encodeURIComponent(whatsappMessage);
+    const whatsappUrl     = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
+    document.body.removeChild(modal);
+});
     }
 
     function isValidColombianPhone(phone) {

@@ -1,0 +1,276 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+    padding: 20px;
+}
+
+.orders-header {
+    margin-bottom: 25px;
+}
+
+.orders-header h1 {
+    color: #194073;
+    font-size: 24px;
+}
+
+.orders-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+
+.no-orders {
+    color: #999;
+    font-size: 16px;
+}
+
+/* Ticket */
+.ticket {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    border: 2px solid transparent;
+    transition: border-color 0.3s ease;
+}
+
+.ticket.urgent {
+    border-color: #ff4444;
+    animation: shake 0.6s infinite;
+}
+
+@keyframes shake {
+    0%   { transform: translateX(0); }
+    25%  { transform: translateX(-4px); }
+    50%  { transform: translateX(4px); }
+    75%  { transform: translateX(-4px); }
+    100% { transform: translateX(0); }
+}
+
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+.ticket-number {
+    font-size: 18px;
+    font-weight: bold;
+    color: #194073;
+}
+
+.ticket-date {
+    font-size: 12px;
+    color: #999;
+}
+
+.ticket-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+
+.ticket-label {
+    font-size: 11px;
+    font-weight: bold;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ticket-value {
+    font-size: 14px;
+    color: #333;
+    margin-top: 2px;
+}
+
+/* Lista de pedido */
+.order-list {
+    list-style: none;
+    margin-top: 4px;
+}
+
+.order-list li {
+    font-size: 13px;
+    color: #333;
+    padding: 3px 0;
+    border-bottom: 1px dashed #eee;
+}
+
+.order-list li:last-child {
+    border-bottom: none;
+}
+
+/* Total */
+.ticket-total {
+    font-size: 16px;
+    font-weight: bold;
+    color: #F27127;
+    margin-top: 4px;
+}
+
+/* Dropdown pago */
+.payment-status {
+    width: 100%;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    font-size: 14px;
+    margin-top: 4px;
+    cursor: pointer;
+    background-color: white;
+}
+
+.payment-status.pagado {
+    border-color: #4CAF50;
+    color: #4CAF50;
+}
+
+.payment-status.pendiente {
+    border-color: #F27127;
+    color: #F27127;
+}
+
+/* Botones del ticket */
+.ticket-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-cancel-ticket {
+    flex: 1;
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    transition: opacity 0.3s ease;
+}
+
+.btn-cancel-ticket:hover { opacity: 0.85; }
+
+.btn-print-ticket {
+    flex: 1;
+    background-color: #194073;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    transition: opacity 0.3s ease;
+}
+
+.btn-print-ticket:hover { opacity: 0.85; }
+
+/* Popup */
+.popup-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.popup-overlay.visible {
+    display: flex;
+}
+
+.popup {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+}
+
+.popup h3 {
+    color: #194073;
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.popup p {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.popup-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.popup-btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.item-detail {
+    font-size: 12px;
+    color: #666;
+    margin-left: 8px;
+}
+
+.confirm-cancel { background-color: #ff4444; color: white; }
+.confirm-print  { background-color: #194073; color: white; }
+.dismiss        { background-color: #eee;    color: #333;  }
+
+.orders-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.search-bar input {
+    padding: 9px 14px;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 260px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-bar input:focus {
+    border-color: #194073;
+}
+
+@media (min-width: 1600px) {
+    .orders-container {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (min-width: 1200px) and (max-width: 1599px) {
+    .orders-container {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
