@@ -18,10 +18,12 @@ const contentFrame  = document.getElementById('content-frame');
 const btnPedidos    = document.getElementById('btn-pedidos');
 const btnAnaliticas = document.getElementById('btn-analiticas');
 const logoutBtn     = document.getElementById('logout-btn');
+const btnHowToDoIt = document.getElementById('btn-howtodoit');
 
 const pages = {
     pedidos:    { html: 'productOrder.html',      js: 'js/productOrder.js' },
-    analiticas: { html: 'businessAnalytics.html', js: 'js/businessAnalytics.js' }
+    analiticas: { html: 'businessAnalytics.html', js: 'js/businessAnalytics.js' },
+    howtodoit:      { html: 'howToDoIt.html',             js: 'js/howToDoIt.js' }
 };
 
 let currentScript = null;
@@ -71,6 +73,11 @@ btnPedidos.addEventListener('click', () => {
 btnAnaliticas.addEventListener('click', () => {
     loadPage('analiticas');
     setActive(btnAnaliticas);
+});
+
+btnHowToDoIt.addEventListener('click', () => {
+    loadPage('howtodoit');
+    setActive(btnHowTo);
 });
 
 logoutBtn.addEventListener('click', async () => {
