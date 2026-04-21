@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Nómina</title>
+    <link rel="stylesheet" href="css/payrollManagement.css">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="payroll-header">
+        <h1>💼 Gestión de Nómina</h1>
+        <div class="header-actions">
+            <button class="btn-secondary" id="btn-generate-payroll">📄 Generar Nómina General</button>
+        </div>
+    </div>
+
+    <!-- PERIODO -->
+    <div class="period-bar">
+        <label>📅 Período:</label>
+        <select id="period-type">
+            <option value="monthly">Mensual</option>
+            <option value="first">1ra Quincena</option>
+            <option value="second">2da Quincena</option>
+            <option value="custom">Personalizado</option>
+        </select>
+        <input type="month" id="payroll-period" />
+        <span id="custom-range-wrapper" style="display:none; gap:6px; align-items:center;">
+            <input type="date" id="period-start" />
+            <span>→</span>
+            <input type="date" id="period-end" />
+        </span>
+        <span class="legal-badge" id="period-label-display">Período mensual</span>
+        <span class="legal-badge">⚖️ Ley 2466/2025 · SMMLV 2026: $1.750.905</span>
+    </div>
+
+    <!-- TABLA -->
+    <div class="table-wrapper">
+        <p class="no-employees" id="no-employees">Cargando empleados desde Firebase...</p>
+        <table class="payroll-table" id="payroll-table" style="display:none;">
+            <thead>
+                <tr>
+                    <th>Empleado</th>
+                    <th>Cargo</th>
+                    <th>Salario Base</th>
+                    <th>Aux. Transporte</th>
+                    <th>Extras / Recargos</th>
+                    <th>Devengado</th>
+                    <th>Deducciones</th>
+                    <th>Neto a Pagar</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="employees-tbody"></tbody>
+            <tfoot>
+                <tr class="totals-row">
+                    <td colspan="2"><strong>TOTALES</strong></td>
+                    <td id="total-base">$0</td>
+                    <td id="total-aux">$0</td>
+                    <td id="total-extras">$0</td>
+                    <td id="total-devengado">$0</td>
+                    <td id="total-deducciones">$0</td>
+                    <td id="total-pagar">$0</td>
+                    <td>—</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- ================================================
+         MODAL LIQUIDACIÓN
+    ================================================ -->
+    <div class="popup-overlay" id="liquidar-modal">
+        <div class="popup popup-xl">
+
+            <div class="modal-header-row">
+                <h3 id="liquidar-title">💰 Liquidar Nómina</h3>
+                <div class="smmlv-info">SMMLV: <strong>$1.750.905</strong> &nbsp;|&nbsp; Aux. Transporte: <strong>$249.095</strong> &nbsp;|&nbsp; Hora ord.: <strong id="info-hora-ord">$0</strong></div>
+            </div>
+
+            <!-- Datos básicos -->
+            <div class="section-block">
+                <h4 class="section-title">👤 Datos del Empleado</h4>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <input type="text" id="liq-nombre" readonly class="input-readonly" />
+                    </div>
+                    <div class="form-group">
+                        <label>Cargo</label>
+                        <input type="text" id="liq-cargo" placeholder="Ej: Heladero" />
+                    </div>
+                    <div class="form-group">
+                        <label>Salario Base ($)</label>
+                        <input type="number" id="liq-salario" min="0" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Horas -->
+            <div class="section-block">
+                <h4 class="section-title">⏱️ Horas del Período <span class="editable-badge">Ley 2466/2025</span></h4>
+                <div class="form-grid-4">
+                    <div class="form-group">
+                        <label>Horas Ordinarias</label>
+                        <input type="number" id="liq-h-ord" value="0" min="0" />
+                        <span class="field-hint">Jornada normal diurna</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Extras Diurnas</label>
+                        <input type="number" id="liq-h-extra-d" value="0" min="0" />
+                        <span class="field-hint">Recargo +25%</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Extras Nocturnas</label>
+                        <input type="number" id="liq-h-extra-n" value="0" min="0" />
+                        <span class="field-hint">Recargo +75%</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Recargo Nocturno Ord.</label>
+                        <input type="number" id="liq-h-noc-ord" value="0" min="0" />
+                        <span class="field-hint">+35% · desde 7pm</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Dominical / Festivo Diurno</label>
+                        <input type="number" id="liq-h-dom-d" value="0" min="0" />
+                        <span class="field-hint">Recargo +80%</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Dominical / Festivo Nocturno</label>
+                        <input type="number" id="liq-h-dom-n" value="0" min="0" />
+                        <span class="field-hint">Recargo +115% (80%+35%)</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Extra Dom. Diurna</label>
+                        <input type="number" id="liq-h-ext-dom-d" value="0" min="0" />
+                        <span class="field-hint">Recargo +105%</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Extra Dom. Nocturna</label>
+                        <input type="number" id="liq-h-ext-dom-n" value="0" min="0" />
+                        <span class="field-hint">Recargo +155%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Otros devengados -->
+            <div class="section-block">
+                <h4 class="section-title">➕ Otros Devengados</h4>
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label>Bonos / Comisiones ($)</label>
+                        <input type="number" id="liq-bonos" value="0" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label>Otros ingresos ($)</label>
+                        <input type="number" id="liq-otros-ing" value="0" min="0" />
+                    </div>
+                    <div class="form-group">
+                        <label>Email empleado</label>
+                        <input type="email" id="liq-email" placeholder="empleado@email.com" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deducciones editables -->
+            <div class="section-block">
+                <h4 class="section-title">➖ Deducciones <span class="editable-badge">editables</span></h4>
+                <div class="form-grid-4">
+                    <div class="form-group">
+                        <label>Salud empleado (%)</label>
+                        <input type="number" id="liq-pct-salud" value="4" min="0" max="20" step="0.1" />
+                        <span class="field-hint">Estándar: 4%</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Pensión empleado (%)</label>
+                        <input type="number" id="liq-pct-pension" value="4" min="0" max="20" step="0.1" />
+                        <span class="field-hint">Estándar: 4%</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Otros descuentos ($)</label>
+                        <input type="number" id="liq-otros-desc" value="0" min="0" />
+                        <span class="field-hint">Préstamos, libranzas...</span>
+                    </div>
+                    <div class="form-group toggle-group">
+                        <label>Auxilio de transporte</label>
+                        <label class="switch">
+                            <input type="checkbox" id="liq-aux-transp" checked />
+                            <span class="slider"></span>
+                        </label>
+                        <span class="field-hint" id="aux-hint">Aplica (salario ≤ 2 SMMLV)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RESUMEN -->
+            <div class="liquidacion-resumen" id="liq-resumen">
+                <div class="resumen-col devengado-col">
+                    <h5>📥 DEVENGADO</h5>
+                    <div class="resumen-item"><span>Salario base</span><span id="r-salario">—</span></div>
+                    <div class="resumen-item"><span>Aux. transporte</span><span id="r-aux">—</span></div>
+                    <div class="resumen-item"><span>Extras diurnas</span><span id="r-ed">—</span></div>
+                    <div class="resumen-item"><span>Extras nocturnas</span><span id="r-en">—</span></div>
+                    <div class="resumen-item"><span>Recargo nocturno</span><span id="r-noc">—</span></div>
+                    <div class="resumen-item"><span>Dominical diurno</span><span id="r-dd">—</span></div>
+                    <div class="resumen-item"><span>Dominical nocturno</span><span id="r-dn">—</span></div>
+                    <div class="resumen-item"><span>Extra dom. diurna</span><span id="r-xdd">—</span></div>
+                    <div class="resumen-item"><span>Extra dom. nocturna</span><span id="r-xdn">—</span></div>
+                    <div class="resumen-item"><span>Bonos / otros</span><span id="r-bonos">—</span></div>
+                    <div class="resumen-total"><span>Total Devengado</span><span id="r-total-dev">—</span></div>
+                </div>
+                <div class="resumen-col deducciones-col">
+                    <h5>📤 DEDUCCIONES</h5>
+                    <div class="resumen-item"><span id="r-label-salud">Salud (4%)</span><span id="r-salud">—</span></div>
+                    <div class="resumen-item"><span id="r-label-pension">Pensión (4%)</span><span id="r-pension">—</span></div>
+                    <div class="resumen-item"><span>Otros descuentos</span><span id="r-otros-desc">—</span></div>
+                    <div class="resumen-total"><span>Total Deducciones</span><span id="r-total-ded">—</span></div>
+                </div>
+                <div class="resumen-col neto-col">
+                    <h5>💵 NETO A PAGAR</h5>
+                    <div class="neto-grande" id="r-neto">—</div>
+                    <div class="hora-ord-badge">Hora ordinaria: <strong id="r-hora-ord">—</strong></div>
+                    <div class="hora-ord-badge" style="margin-top:4px;">Jornada: <strong>44 h/sem · 190.5 h/mes</strong></div>
+                </div>
+            </div>
+
+            <div class="popup-buttons">
+                <button class="popup-btn btn-calcular" id="btn-calcular">🔄 Calcular</button>
+                <button class="popup-btn confirm-cancel" id="btn-guardar-liq">💾 Guardar</button>
+                <button class="popup-btn dismiss" id="btn-cancelar-liq">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL Eliminar -->
+    <div class="popup-overlay" id="delete-popup">
+        <div class="popup">
+            <h3>¿Quitar liquidación?</h3>
+            <p>Se eliminará el registro de nómina de este empleado en el período actual.</p>
+            <div class="popup-buttons">
+                <button class="popup-btn confirm-cancel" id="confirm-delete">Sí, eliminar</button>
+                <button class="popup-btn dismiss" id="dismiss-delete">No, volver</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL Email -->
+    <div class="popup-overlay" id="email-popup">
+        <div class="popup">
+            <h3>📧 Enviar Liquidación</h3>
+            <p id="email-popup-desc">Se enviará el desprendible de nómina.</p>
+            <div class="form-group" style="margin-top:12px;">
+                <label>Email destinatario</label>
+                <input type="email" id="email-recipient" placeholder="empleado@email.com" />
+            </div>
+            <div class="popup-buttons">
+                <button class="popup-btn confirm-print" id="confirm-email">📤 Enviar</button>
+                <button class="popup-btn dismiss" id="dismiss-email">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL Preview PDF -->
+    <div class="popup-overlay" id="payroll-preview-popup">
+        <div class="popup popup-wide">
+            <h3>📄 Vista Previa de Nómina</h3>
+            <div id="payroll-preview-content"></div>
+            <div class="popup-buttons">
+                <button class="popup-btn confirm-print" id="btn-download-pdf">⬇️ Descargar PDF</button>
+                <button class="popup-btn confirm-cancel" id="btn-email-all">📧 Enviar por Email</button>
+                <button class="popup-btn dismiss" id="dismiss-preview">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL Desprendible Individual -->
+    <div class="popup-overlay" id="slip-preview-popup">
+        <div class="popup popup-wide">
+            <h3 id="slip-preview-title">📄 Desprendible de Nómina</h3>
+            <div id="slip-preview-content"></div>
+            <div class="popup-buttons">
+                <button class="popup-btn confirm-print" id="btn-download-slip">⬇️ Descargar PDF</button>
+                <button class="popup-btn confirm-cancel" id="btn-email-slip">📧 Enviar por Email</button>
+                <button class="popup-btn dismiss" id="dismiss-slip">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

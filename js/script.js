@@ -1,6 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, doc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, doc, getDocs, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -17,13 +19,75 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
+const auth = getAuth(app);
+const remoteConfig = getRemoteConfig(app);
+signInAnonymously(auth);
 
-// Terminos y condiciones 
-const termsModal = document.getElementById('terms-modal');
-const acceptTermsBtn = document.getElementById('accept-terms-btn');
+// Configuración de Remote Config
+remoteConfig.settings = {
+    minimumFetchIntervalMillis: 3 * 60 * 1000, // Cada 3 Minutos
+};
+remoteConfig.defaultConfig = {
+    save_order_enabled: false
+};
 
+
+let saveOrderEnabled = false;
+
+function todayStringColombia() {
+    return new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    }).format(new Date()).split('/').reverse().join('-');
+    // resultado: 01-04-2026
+}
+
+function updateFlags() {
+    saveOrderEnabled = getValue(remoteConfig, "save_order_enabled").asBoolean();
+    console.log("Flag actualizado:", saveOrderEnabled);
+}
+
+function initRemoteConfig() {
+    fetchAndActivate(remoteConfig)
+        .then(() => {
+            updateFlags();
+        })
+        .catch((error) => {
+            console.warn("Remote Config error:", error);
+        });
+
+
+    setInterval(() => {
+        if (document.visibilityState === 'visible') {
+            fetchAndActivate(remoteConfig)
+                .then(updateFlags)
+                .catch(() => { });
+        }
+    }, 10 * 60 * 1000);
+}
 
 document.addEventListener('DOMContentLoaded', function () {
+    initRemoteConfig();
+
+    // Login Secret Button 
+    let secretClickCount = 0;
+    let secretTimer = null;
+
+    document.getElementById('secret-btn').addEventListener('click', () => {
+        secretClickCount++;
+
+        // Resetear el timer cada click
+        clearTimeout(secretTimer);
+        secretTimer = setTimeout(() => {
+            secretClickCount = 0;
+        }, 8000);
+
+        if (secretClickCount >= 5) {
+            window.location.href = 'login.html';
+        }
+    });
 
     // =======================
     // TÉRMINOS Y CONDICIONES
@@ -45,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const prevBtn = document.querySelector('.prev');
     const nextBtn = document.querySelector('.next');
     const carouselTrack = document.querySelector('.carousel-track');
-    const whatsappNumber = "+573007403433";
+    const whatsappNumber = "+573114179913";//"+573007403433";
 
     // Estado del pedido
     let currentOrder = {
@@ -131,11 +195,37 @@ document.addEventListener('DOMContentLoaded', function () {
                     hasSauces: product.hasSauces || false,
                     price: priceFormatted,
                     image: product.images || '',
+                    hasAdditions: product.hasAdditions || false
                 });
             });
         } catch (error) {
             console.error(`Error loading ${categoryId} products:`, error);
             // Manejar error si quieres
+        }
+    }
+
+    // Cargar las adiciones desde firebase
+    async function getAdditionsFromFirebase() {
+        try {
+            const snapshot = await getDocs(collection(db, "categories/adiciones/products"));
+
+            const additions = [];
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+
+                if (data.active !== false) {
+                    additions.push({
+                        id: doc.id,
+                        name: data.title || '',
+                        price: data.price || 0
+                    });
+                }
+            });
+            return additions;
+        } catch (error) {
+            console.error("Error cargando adiciones:", error);
+            return [];
         }
     }
 
@@ -244,16 +334,17 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         let cardsHTML = availableCards.map(card => {
-            const hasToppings = card.toppings > 0;
             return `
                 <div class="product-card" 
                     data-bolas="${card.bolas}"
                     data-toppings="${card.toppings}"
                     data-sauces="${card.hasSauces}" 
-                    data-price="${card.price.replace('.', '')}" 
+                    data-price="${card.price.replace(/\./g, '')}"
                     data-title="${card.title}" 
                     data-ingredients="${card.ingredients}" 
-                    data-image="${card.image}">
+                    data-image="${card.image}"
+                    data-has-additions="${card.hasAdditions}"
+                    >
                     
                     <h3>${card.title}</h3>
                     <p><strong>Ingredientes: </strong> ${card.ingredients}</p>
@@ -290,7 +381,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     parseInt(card.dataset.toppings),
                     card.dataset.sauces,
                     card.dataset.price,
-                    card.dataset.image
+                    card.dataset.image,
+                    card.dataset.hasAdditions
                 );
             });
         });
@@ -311,12 +403,31 @@ document.addEventListener('DOMContentLoaded', function () {
         };
     }
 
+    function generateAdditionSelect(additionsList) {
+        return `
+        <div class="flavor-option addition-row">
+            <label>Adición:</label>
+            <select class="addition-dropdown">
+                <option value="">Selecciona una adición</option>
+                ${additionsList.map(add => `
+                    <option value="${add.price}" data-name="${add.name}">
+                        ${add.name} (+$${new Intl.NumberFormat('es-CO').format(add.price)})
+                    </option>
+                `).join('')}
+            </select>
+            <button type="button" class="remove-addition">❌</button>
+        </div>
+    `;
+    }
+
     // Resto de tus funciones (openFlavorSelection, openCustomerInfoModal, etc.) se mantienen igual
-    async function openFlavorSelection(title, ingredients, bolas, toppings, hasSauces, price, image) {
+    async function openFlavorSelection(title, ingredients, bolas, toppings, hasSauces, price, image, hasAdditions) {
         const { sundayFlavors, icecreamFlavors, toppingsFlavors, saucesFlavors, fruitFlavors } = await getFlavorsFromFirebase();
+        const additionsList = hasAdditions ? await getAdditionsFromFirebase() : [];
         const isSunday = title.toLowerCase().includes("sunday");
         const sundayIsSpecial = title.toLowerCase().includes("sunday super especial");
         const sundayCount = sundayIsSpecial ? 2 : 1;
+        const hasAdditionsBool = hasAdditions === true || hasAdditions === 'true';
         const hasSaucesBool = hasSauces === true || hasSauces === 'true';
         const modal = document.createElement('div');
         const selectJuicePreparation = title.toLowerCase().includes("jugo de");
@@ -326,6 +437,10 @@ document.addEventListener('DOMContentLoaded', function () {
             "fresas con crema súper especial",
             "sunday súper especial",
             "brownie súper especial"
+        ].includes(title.toLowerCase());
+        const bananaShouldSelectFruit = [
+            "banana especial",
+            "banana súper especial"
         ].includes(title.toLowerCase());
         modal.className = 'flavor-modal';
         // Formatear precio a string con punto como miles
@@ -367,8 +482,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 ${fruitFlavors.length > 0
                     ? Array(sundayCount).fill().map((_, i) => `
                         <div class="flavor-option">
-                            <select class="sunday-flavor">
-                                ${fruitFlavors.map(f => `<option value="${f}">${f}</option>`).join('')}
+                            <select class="fruit-flavor">
+                                ${fruitFlavors.map(f => `
+                                    <option 
+                                    value="${f}" 
+                                    ${(
+                            bananaShouldSelectFruit &&
+                            f.toLowerCase() === "frutos amarillos"
+                        ) ? "disabled" : ""}
+                                    >
+                                ${f}
+                                    </option>
+                                `).join('')}
                             </select>
                         </div>
                       `).join('')
@@ -441,11 +566,21 @@ document.addEventListener('DOMContentLoaded', function () {
                   `
                 : ''
             }
+            ${hasAdditionsBool && additionsList.length > 0
+                ? `
+                <h3>Adiciones:</h3>
+                <div id="additions-wrapper">
+                ${generateAdditionSelect(additionsList)}
+                </div>
+                <button type="button" id="add-addition-btn">+ Agregar otra adición</button>
+                `
+                : ''
+            }
           </div>
 
           <div class="ingredients-section">
             <label>¿Quieres retirar algún ingrediente?</label>
-            <input type="text" placeholder="Ejemplo: Adicionar mas queso o retirar queso" class="ingredients-notes">
+            <input type="text" placeholder="Ejemplo: Retirar queso o Retirar cereal" class="ingredients-notes">
           </div>
 
           <div class="number-of-items-section">
@@ -458,17 +593,77 @@ document.addEventListener('DOMContentLoaded', function () {
               <button class="add-to-cart">Agregar al Pedido</button>
           </div>
       </div>
-    `;
+        `;
 
         document.body.appendChild(modal);
 
+        const sundaySelects = modal.querySelectorAll('.sunday-flavor');
+        const fruitSelects = modal.querySelectorAll('.fruit-flavor');
+
+        function syncFruitOptions() {
+            const selectedSundayFlavors = Array.from(sundaySelects).map(s => s.value.toLowerCase());
+
+            const hasFrutosAmarillos = selectedSundayFlavors.includes('frutos amarillos');
+
+            fruitSelects.forEach(select => {
+                select.disabled = hasFrutosAmarillos;
+
+                // opcional: resetear selección si se bloquea
+                if (hasFrutosAmarillos) {
+                    select.selectedIndex = 0;
+                }
+            });
+        }
+
+        sundaySelects.forEach(select => {
+            select.addEventListener('change', syncFruitOptions);
+        });
+        syncFruitOptions();
+
+        let basePrice = Number(price) || 0;
+        let totalElement = modal.querySelector('.price-section h3');
+
+        function updateTotal() {
+            const quantity = parseInt(modal.querySelector('.number-items').value) || 1;
+
+            let additionsTotal = 0;
+
+            modal.querySelectorAll('.addition-dropdown').forEach(select => {
+                const value = parseInt(select.value);
+                if (!isNaN(value)) {
+                    additionsTotal += value;
+                }
+            });
+
+            const total = (basePrice + additionsTotal) * quantity;
+
+            totalElement.textContent = `Total: $${total.toLocaleString('es-CO')}`;
+        }
+
+        const additionsWrapper = modal.querySelector('#additions-wrapper');
+        const addBtn = modal.querySelector('#add-addition-btn');
+
+        if (addBtn) {
+            addBtn.addEventListener('click', () => {
+                additionsWrapper.insertAdjacentHTML('beforeend', generateAdditionSelect(additionsList));
+            });
+        }
         modal.querySelector('.close-modal').addEventListener('click', function () {
             document.body.removeChild(modal);
         });
 
+        modal.querySelector('.number-items').addEventListener('input', updateTotal);
+
+        modal.addEventListener('change', function (e) {
+            if (e.target.classList.contains('addition-dropdown')) {
+                updateTotal();
+            }
+        });
+
         modal.addEventListener('click', function (e) {
-            if (e.target === modal) {
-                document.body.removeChild(modal);
+            if (e.target.classList.contains('remove-addition')) {
+                e.target.closest('.addition-row').remove();
+                updateTotal();
             }
         });
 
@@ -481,8 +676,30 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const flavors = [];
+            const fruits = [];
+
+            const additions = [];
+            let additionsTotal = 0;
+
+            modal.querySelectorAll('.addition-dropdown').forEach(select => {
+                const selectedOption = select.options[select.selectedIndex];
+
+                if (select.value) {
+                    const price = parseInt(select.value);
+                    additions.push({
+                        name: selectedOption.dataset.name,
+                        price: parseInt(select.value)
+                    });
+                    additionsTotal += price;
+                }
+            });
+
             modal.querySelectorAll('.flavor-select').forEach(select => {
                 flavors.push(select.value);
+            });
+
+            modal.querySelectorAll('.fruit-flavor').forEach(select => {
+                fruits.push(select.value);
             });
 
             const juicePrepration = [];
@@ -510,12 +727,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 sundayFlavor: sundayHelper ? sundayFlavor : null,
                 juiceFlavor: juicePrepration,
                 flavors: flavors,
+                fruit: fruits,
                 toppings: toppingsSelected,
                 sauces: sauces,
                 ingredients: ingredients,
                 ingredientsNotes: ingredientsNotes,
                 numberOfItems: parseInt(numberOfItems),
-                price: parseInt(price)
+                additions: additions,
+                additionsTotal: additionsTotal,
+                price: basePrice + additionsTotal
             });
 
             currentOrder.total = currentOrder.items.reduce((sum, item) => sum + (item.price * item.numberOfItems), 0);
@@ -525,6 +745,42 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    async function saveOrderToFirebase(orderData) {
+        const orderNumber = crypto.randomUUID();
+        const displayNumber = orderNumber.split('-')[0].toUpperCase();
+
+        const orderDoc = {
+            createdAt: serverTimestamp(),
+            customer: orderData.customerInfo.name,
+            customerNeighborhood: orderData.customerInfo.neighborhood,
+            customerAddress: orderData.customerInfo.address,
+            customerPhoneNumber: orderData.customerInfo.phone,
+            paymentMethod: orderData.customerInfo.payment,
+            total: orderData.total,
+            orderNumber: displayNumber,
+            order: orderData.items.map(item => ({
+                productTitle: item.title,
+                flavor: item.sundayFlavor ?? '',
+                fruit: item.fruit?.join(', ') ?? '',
+                iceCreamFlavor: item.flavors?.join(', ') ?? '',
+                ingredients: item.ingredients ?? '',
+                juice: item.juiceFlavor?.join(', ') ?? '',
+                notes: item.ingredientsNotes ?? '',
+                additions: item.additions ?? [],
+                price: item.price,
+                sauces: item.sauces?.join(', ') ?? '',
+                toppings: item.toppings?.join(', ') ?? '',
+                quantity: item.numberOfItems
+            }))
+        };
+
+        await setDoc(
+            doc(db, 'productOrder', 'pending', todayStringColombia(), orderNumber),
+            orderDoc
+        );
+
+        return displayNumber;
+    }
 
     function openCustomerInfoModal() {
         const modal = document.createElement('div');
@@ -545,10 +801,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 ? `<p>Jugo en: ${item.juiceFlavor.join(', ')}</p>` : ''
             }
                                   <p>Sabores: ${item.flavors.join(', ')}</p>
+                                  ${item.fruit && item.fruit.length > 0
+                ? `<p>Fruta: ${item.fruit.join(', ')}</p>`
+                : ''}
                                   <p>ingredients: ${item.ingredients}</p>
                                   ${item.toppings && item.toppings.length > 0 ? `<p>Toppings: ${item.toppings.join(', ')}</p>` : ''}
                                   ${item.sauces && item.sauces.length > 0 ? `<p>Salsas: ${item.sauces.join(', ')}</p>` : ''}
                                   ${item.ingredientsNotes ? `<p>Notas: ${item.ingredientsNotes}</p>` : ''}
+                                  ${item.additions && item.additions.length > 0
+    ? `<p>Adiciones: ${item.additions.map(a => `${a.name} ($${a.price.toLocaleString('es-CO')})`).join(', ')}</p>`
+    : ''}
                                   <p>Precio: $${item.price.toLocaleString('es-CO')}</p>
                                   <p>Cuantos de este mismo producto: ${item.numberOfItems}</p>
                               </div>
@@ -645,51 +907,42 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        modal.querySelector('.send-whatsapp').addEventListener('click', function () {
+        modal.querySelector('.send-whatsapp').addEventListener('click', async function () {
             const name = document.getElementById('customer-name').value.trim();
             const phone = document.getElementById('customer-phone').value.trim();
             const address = document.getElementById('customer-address').value.trim();
             const neighborhood = document.getElementById('customer-neighborhood').value.trim();
             const payment = document.getElementById('customer-payment-method').value.trim();
 
-            if (!name) {
-                showFeedback('Por favor ingresa tu nombre completo', 'error');
-                return;
-            }
-
-            if (!phone) {
-                showFeedback('Por favor ingresa tu número de teléfono', 'error');
-                return;
-            }
-
-            if (!isValidColombianPhone(phone)) {
-                showFeedback('Por favor ingresa un número de teléfono colombiano válido', 'error');
-                return;
-            }
-
-            if (!address) {
-                showFeedback('Por favor ingresa tu dirección de entrega', 'error');
-                return;
-            }
-
-            if (!neighborhood) {
-                showFeedback('Por favor ingresa tu barrio de entrega', 'error');
-                return;
-            }
-
-            if (!payment) {
-                showFeedback('Por favor ingresa tu metodo de pago', 'error');
-                return;
-            }
+            if (!name) { showFeedback('Por favor ingresa tu nombre completo', 'error'); return; }
+            if (!phone) { showFeedback('Por favor ingresa tu número de teléfono', 'error'); return; }
+            if (!isValidColombianPhone(phone)) { showFeedback('Por favor ingresa un número de teléfono colombiano válido', 'error'); return; }
+            if (!address) { showFeedback('Por favor ingresa tu dirección de entrega', 'error'); return; }
+            if (!neighborhood) { showFeedback('Por favor ingresa tu barrio de entrega', 'error'); return; }
+            if (!payment) { showFeedback('Por favor ingresa tu método de pago', 'error'); return; }
 
             currentOrder.customerInfo = { name, phone, address, neighborhood, payment };
+
+            // Intentar guardar en Firebase pero sin bloquear al usuario
+            let displayNumber = crypto.randomUUID().split('-')[0].toUpperCase();
+            console.error('Save Order enable:', saveOrderEnabled);
+            if (saveOrderEnabled) {
+                try {
+                    displayNumber = await saveOrderToFirebase(currentOrder);
+                } catch (error) {
+                    console.error('Error guardando pedido en Firebase:', error);
+                    // El pedido igual llega por WhatsApp aunque Firebase falle
+                }
+            }
+
             logEvent(analytics, 'pedido_whatsapp', {
                 payment_method: payment,
                 neighborhood: neighborhood,
                 items_count: currentOrder.items.length,
                 order_total: currentOrder.total
             });
-            const whatsappMessage = generateWhatsAppMessage();
+
+            const whatsappMessage = generateWhatsAppMessage(displayNumber);
             const encodedMessage = encodeURIComponent(whatsappMessage);
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
             window.open(whatsappUrl, '_blank');
@@ -710,6 +963,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (item.sundayFlavor) {
                 message += `   *Sabor:* ${item.sundayFlavor}\n`;
             }
+            if (item.fruit && item.fruit.length > 0) {
+                message += `   *Fruta:* ${item.fruit.join(', ')}\n`;
+            }
             if (item.juiceFlavor.length > 0) {
                 message += `   *Juego en:* ${item.juiceFlavor.join(', ')}\n`;
             }
@@ -725,6 +981,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             if (item.ingredientsNotes) {
                 message += `   *Notas:* ${item.ingredientsNotes}\n`;
+            }
+            if (item.additions && item.additions.length > 0) {
+                message += `   *Adiciones:* ${item.additions.map(a => `${a.name} ($${a.price.toLocaleString('es-CO')})`).join(', ')}\n`;
             }
             message += `   *Quiero: ${item.numberOfItems}* de este producto\n`;
             message += `   *Precio:* $${item.price.toLocaleString('es-CO')}\n\n`;
