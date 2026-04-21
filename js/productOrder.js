@@ -80,6 +80,7 @@ const mockOrders = [
             {
                 productTitle: 'Sunday Especial Fresa',
                 flavor: 'Fresas',
+                fruit: 'Banano',
                 iceCreamFlavor: 'Macadamia',
                 ingredients: 'Una bola de helado',
                 juice: '',
@@ -92,6 +93,7 @@ const mockOrders = [
             {
                 productTitle: 'Jugo Natural',
                 flavor: '',
+                fruit: '',
                 iceCreamFlavor: '',
                 ingredients: 'Jugo natural',
                 juice: 'Mango',
@@ -117,6 +119,7 @@ const mockOrders = [
             {
                 productTitle: 'Copa Especial',
                 flavor: '',
+                fruit: 'Banano',
                 iceCreamFlavor: 'Vainilla',
                 ingredients: 'Dos bolas de helado',
                 juice: '',
@@ -278,6 +281,8 @@ function buildTicket(order) {
             ${i.ingredients   ? `<br><span class="item-detail">🍨 ${i.ingredients}</span>`        : ''}
             ${i.iceCreamFlavor ? `<br><span class="item-detail">🍦 Helado: ${i.iceCreamFlavor}</span>` : ''}
             ${i.flavor        ? `<br><span class="item-detail">🍓 Sabor: ${i.flavor}</span>`       : ''}
+            ${i.fruit        ? `<br><span class="item-detail">🍌 Fruta: ${i.fruit}</span>`       : ''}
+            ${i.additions    ? `<br><span class="item-detail"> Adiciones: ${i.additions.map(a => a.name).join(', ')}</span>` : ''}
             ${i.juice         ? `<br><span class="item-detail">🥤 Jugo: ${i.juice}</span>`         : ''}
             ${i.toppings      ? `<br><span class="item-detail">🍫 Toppings: ${i.toppings}</span>`  : ''}
             ${i.sauces        ? `<br><span class="item-detail">🍯 Salsa: ${i.sauces}</span>`       : ''}
@@ -396,6 +401,8 @@ function printTicket(order) {
         ${i.ingredients    ? `<div class="item-detail">${i.ingredients}</div>`          : ''}
         ${i.iceCreamFlavor ? `<div class="item-detail">Helado: ${i.iceCreamFlavor}</div>` : ''}
         ${i.flavor         ? `<div class="item-detail">Sabor: ${i.flavor}</div>`         : ''}
+        ${i.fruit          ? `<div class="item-detail">🍌 Fruta: ${i.fruit}</div>`           : ''}
+        ${i.additions      ? `<div class="item-detail">Adiciones: ${i.additions.map(a => a.name).join(', ')}</div>`           : ''}
         ${i.juice          ? `<div class="item-detail">Jugo: ${i.juice}</div>`            : ''}
         ${i.toppings       ? `<div class="item-detail">Toppings: ${i.toppings}</div>`    : ''}
         ${i.sauces         ? `<div class="item-detail">Salsa: ${i.sauces}</div>`          : ''}
@@ -631,10 +638,12 @@ async function printTicketWIFI(order) {
                 if (i.ingredients)    add(`   ${i.ingredients}`, LF);
                 if (i.iceCreamFlavor) add(`   Helado  : ${i.iceCreamFlavor}`, LF);
                 if (i.flavor)         add(`   Sabor   : ${i.flavor}`, LF);
+                if (i.fruit)          add(`   Fruta   : ${i.fruit}`, LF);
                 if (i.juice)          add(`   Jugo    : ${i.juice}`, LF);
                 if (i.toppings)       add(`   Toppings: ${i.toppings}`, LF);
                 if (i.sauces)         add(`   Salsa   : ${i.sauces}`, LF);
                 if (i.notes)          add(`   Notas   : ${i.notes}`, LF);
+                if (i.additions)      add(`   Adiciones: ${i.additions.map(a => a.name).join(', ')}`, LF);
             });
 
             add('--------------------------------', LF);

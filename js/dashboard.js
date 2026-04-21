@@ -14,21 +14,38 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-const contentFrame  = document.getElementById('content-frame');
-const btnPedidos    = document.getElementById('btn-pedidos');
+const contentFrame = document.getElementById('content-frame');
+const btnPedidos = document.getElementById('btn-pedidos');
 const btnAnaliticas = document.getElementById('btn-analiticas');
-const logoutBtn     = document.getElementById('logout-btn');
+const logoutBtn = document.getElementById('logout-btn');
 const btnHowToDoIt = document.getElementById('btn-howtodoit');
+const btnPayrollManagement = document.getElementById('btn-payroll-management');
+
+const ADMIN_EMAIL = "adminlosespejos@heladerialosespejos.com";
 
 const pages = {
-    pedidos:    { html: 'productOrder.html',      js: 'js/productOrder.js' },
+    pedidos: { html: 'productOrder.html', js: 'js/productOrder.js' },
     analiticas: { html: 'businessAnalytics.html', js: 'js/businessAnalytics.js' },
-    howtodoit:      { html: 'howToDoIt.html',             js: 'js/howToDoIt.js' }
+    howtodoit: { html: 'howToDoIt.html', js: 'js/howToDoIt.js' },
+    payrollManagement: { html: 'payrollManagement.html', js: 'js/Payrollmanagement.js' }
 };
 
 let currentScript = null;
 
 async function loadPage(page) {
+    const user = auth.currentUser;
+    const isAdmin = user?.email === ADMIN_EMAIL;
+
+    // Bloquear acceso
+    if (!isAdmin && (page === 'analiticas' || page === 'payrollManagement')) {
+        contentFrame.innerHTML = `
+            <p style="padding:20px;color:red;">
+                No tienes permisos para acceder a esta sección.
+            </p>
+        `;
+        return;
+    }
+
     const { html, js } = pages[page];
 
     try {
@@ -62,8 +79,25 @@ onAuthStateChanged(auth, (user) => {
         window.location.href = 'login.html';
         return;
     }
+
+    const isAdmin = user.email === ADMIN_EMAIL;
+
+    configureMenuByRole(isAdmin);
+
     loadPage('pedidos');
 });
+
+function configureMenuByRole(isAdmin) {
+    if (!isAdmin) {
+        // Ocultar opciones que NO deben ver
+        btnAnaliticas.style.display = 'none';
+        btnPayrollManagement.style.display = 'none';
+    } else {
+        // Asegurar que admin sí vea todo
+        btnAnaliticas.style.display = 'block';
+        btnPayrollManagement.style.display = 'block';
+    }
+}
 
 btnPedidos.addEventListener('click', () => {
     loadPage('pedidos');
@@ -77,7 +111,11 @@ btnAnaliticas.addEventListener('click', () => {
 
 btnHowToDoIt.addEventListener('click', () => {
     loadPage('howtodoit');
-    setActive(btnHowTo);
+    setActive(btnHowToDoIt);
+});
+btnPayrollManagement.addEventListener('click', () => {
+    loadPage('payrollManagement');
+    setActive(btnPayrollManagement);
 });
 
 logoutBtn.addEventListener('click', async () => {
