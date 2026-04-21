@@ -19,6 +19,23 @@ body {
     line-height: 1.6;
 }
 
+.addition-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.addition-row select {
+    flex: 1;
+}
+
+.remove-addition {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
