@@ -925,15 +925,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Intentar guardar en Firebase pero sin bloquear al usuario
             let displayNumber = crypto.randomUUID().split('-')[0].toUpperCase();
-            console.error('Save Order enable:', saveOrderEnabled);
-            if (saveOrderEnabled) {
-                try {
-                    displayNumber = await saveOrderToFirebase(currentOrder);
-                } catch (error) {
-                    console.error('Error guardando pedido en Firebase:', error);
-                    // El pedido igual llega por WhatsApp aunque Firebase falle
-                }
-            }
 
             logEvent(analytics, 'pedido_whatsapp', {
                 payment_method: payment,
@@ -947,6 +938,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
             window.open(whatsappUrl, '_blank');
             document.body.removeChild(modal);
+            if (saveOrderEnabled) {
+                try {
+                    displayNumber = await saveOrderToFirebase(currentOrder);
+                } catch (error) {
+                    console.error('Error guardando pedido en Firebase:', error);
+                    // El pedido igual llega por WhatsApp aunque Firebase falle
+                }
+            }
         });
     }
 
