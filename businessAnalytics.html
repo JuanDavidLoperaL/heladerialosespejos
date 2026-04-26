@@ -3,65 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cómo Hacerlo</title>
-    <link rel="stylesheet" href="css/howToDoIt.css">
+    <title>Analíticas</title>
+    <link rel="stylesheet" href="css/businessAnalytics.css">
 </head>
 <body>
 
-    <div class="analytics-container">
+<div class="analytics-container">
 
     <h1 class="analytics-title">📊 Analíticas</h1>
 
-    <div class="filters-container">
+    <!-- ── Sección 1: Resumen diario ──────────────────────────────── -->
+    <section class="section-block">
+        <h2 class="section-subtitle">Resumen del día</h2>
 
-    <div class="filter">
-        <label>Fecha</label>
-        <select id="date-filter">
-            <option value="">Cargando...</option>
-        </select>
-    </div>
-
-    <div class="filter">
-        <label>Método de pago</label>
-        <select id="payment-filter">
-            <option value="">Todos</option>
-            <option value="Efectivo">Efectivo</option>
-            <option value="Transferencia">Transferencia</option>
-        </select>
-    </div>
-
-</div>
-
-    <div class="cards-container">
-        <div class="card">
-            <h3>Pedidos hoy</h3>
-            <p id="orders-today">0</p>
+        <div class="filters-container">
+            <div class="filter">
+                <label>Fecha</label>
+                <input type="date" id="date-filter">
+            </div>
+            <div class="filter">
+                <label>Método de pago</label>
+                <select id="payment-filter">
+                    <option value="">Todos</option>
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
+                </select>
+            </div>
         </div>
 
-        <div class="card">
-            <h3>Ventas hoy</h3>
-            <p id="sales-today">$0</p>
+        <div class="cards-container">
+            <div class="card">
+                <h3>Pedidos</h3>
+                <p id="orders-today">0</p>
+            </div>
+            <div class="card">
+                <h3>Ventas</h3>
+                <p id="sales-today">$0</p>
+            </div>
+            <div class="card">
+                <h3>Ticket promedio</h3>
+                <p id="avg-ticket">$0</p>
+            </div>
         </div>
 
-        <div class="card">
-            <h3>Ticket promedio</h3>
-            <p id="avg-ticket">$0</p>
+        <div class="table-container">
+            <h2>Detalle del día</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Pedidos</th>
+                        <th>Total ventas</th>
+                    </tr>
+                </thead>
+                <tbody id="analytics-table"></tbody>
+            </table>
+            <p id="no-data-msg" style="display:none;">No se encontró información para esta fecha.</p>
         </div>
-    </div>
+    </section>
 
-    <div class="table-container">
-        <h2>Resumen por fecha</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Pedidos</th>
-                    <th>Total ventas</th>
-                </tr>
-            </thead>
-            <tbody id="analytics-table"></tbody>
-        </table>
-    </div>
+    <!-- ── Sección 2: Gráficos históricos ─────────────────────────── -->
+    <section class="section-block">
+        <h2 class="section-subtitle">Historial de ventas</h2>
+
+        <div class="filters-container">
+            <div class="filter">
+                <label>Período</label>
+                <select id="period-filter">
+                    <option value="week">Esta semana</option>
+                    <option value="month" selected>Este mes</option>
+                    <option value="year">Este año</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="chart-loading" class="chart-loading">Cargando datos...</div>
+        <div id="chart-no-data" class="chart-no-data" style="display:none;">Sin datos para este período.</div>
+
+        <div id="period-summary" style="display:none;">
+            <div class="cards-container">
+                <div class="card">
+                    <h3>Pedidos en período</h3>
+                    <p id="period-orders">0</p>
+                </div>
+                <div class="card">
+                    <h3>Ventas en período</h3>
+                    <p id="period-sales">$0</p>
+                </div>
+                <div class="card">
+                    <h3>Efectivo</h3>
+                    <p id="period-efectivo">0</p>
+                </div>
+                <div class="card">
+                    <h3>Transferencia</h3>
+                    <p id="period-transferencia">0</p>
+                </div>
+            </div>
+
+            <div class="chart-wrapper">
+                <h3 class="chart-label">Total ventas ($)</h3>
+                <canvas id="salesChart"></canvas>
+            </div>
+
+            <div class="chart-wrapper">
+                <h3 class="chart-label">Pedidos por método de pago</h3>
+                <canvas id="paymentChart"></canvas>
+            </div>
+        </div>
+    </section>
 
 </div>
 

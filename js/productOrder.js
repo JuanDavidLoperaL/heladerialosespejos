@@ -6,7 +6,8 @@ import {
     doc,
     getDoc,
     setDoc,
-    deleteDoc
+    deleteDoc,
+    increment
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 🔐 QZ SECURITY
@@ -207,10 +208,34 @@ async function completeOrder(order) {
         renderOrders(currentOrders);
         return;
     }
+
     const snap = await getDoc(pendingPath(order.orderNumber));
     if (!snap.exists()) return;
+
     await setDoc(completedPath(order.orderNumber), snap.data());
     await deleteDoc(pendingPath(order.orderNumber));
+
+    // ── DEBUG: ver qué llega ──────────────────────────────────────
+    console.log("📊 Guardando analítica:", {
+        paymentMethod: order.paymentMethod,
+        total: order.total,
+        fecha: todayString()
+    });
+
+    const date = todayString();
+    try {
+        await setDoc(doc(db, "analytics", "daily"), {
+            [date]: {
+                total:         increment(order.total ?? 0),
+                orders:        increment(1),
+                efectivo:      increment(order.paymentMethod === "Efectivo"      ? 1 : 0),
+                transferencia: increment(order.paymentMethod === "Transferencia" ? 1 : 0)
+            }
+        }, { merge: true });
+        console.log("✅ Analítica guardada correctamente");
+    } catch (err) {
+        console.error("❌ Error guardando analítica:", err);
+    }
 }
 
 // ─── Init ──────────────────────────────────────────────────────────────────────
