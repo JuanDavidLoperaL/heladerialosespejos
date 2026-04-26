@@ -14,6 +14,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
+const toggleBtn = document.getElementById('toggle-sidebar');
+const sidebar = document.querySelector('.sidebar');
 const contentFrame = document.getElementById('content-frame');
 const btnPedidos = document.getElementById('btn-pedidos');
 const btnAnaliticas = document.getElementById('btn-analiticas');
@@ -125,4 +127,8 @@ logoutBtn.addEventListener('click', async () => {
     } catch (error) {
         console.error('Error al cerrar sesión:', error);
     }
+});
+
+toggleBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
 });
