@@ -1,8 +1,13 @@
+import { checkAppVersion } from "./appVersioning.js";
+
+checkAppVersion();
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, doc, getDocs, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
+import { logError, logWarn } from "./logger.js";
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -21,18 +26,28 @@ const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const remoteConfig = getRemoteConfig(app);
-signInAnonymously(auth);
+
+let authReady = false;
+
+signInAnonymously(auth)
+    .then(() => {
+        authReady = true;
+        logInfo("auth", "Autenticación anónima exitosa");
+    })
+    .catch((error) => {
+        logError("signInAnonymously", "Error en autenticación anónima", error);
+    });
 
 // Configuración de Remote Config
 remoteConfig.settings = {
-    minimumFetchIntervalMillis: 3 * 60 * 1000, // Cada 3 Minutos
+    minimumFetchIntervalMillis: 5 * 60 * 1000, // Cada 5 Minutos
 };
 remoteConfig.defaultConfig = {
-    save_order_enabled: false
+    save_order_enabled: true
 };
 
 
-let saveOrderEnabled = false;
+let saveOrderEnabled = true;
 
 function todayStringColombia() {
     return new Intl.DateTimeFormat('es-CO', {
@@ -46,7 +61,6 @@ function todayStringColombia() {
 
 function updateFlags() {
     saveOrderEnabled = getValue(remoteConfig, "save_order_enabled").asBoolean();
-    console.log("Flag actualizado:", saveOrderEnabled);
 }
 
 function initRemoteConfig() {
@@ -55,7 +69,7 @@ function initRemoteConfig() {
             updateFlags();
         })
         .catch((error) => {
-            console.warn("Remote Config error:", error);
+            logWarn("initRemoteConfig", "fetch failed, usando defaults", { error: error.message });
         });
 
 
@@ -63,7 +77,9 @@ function initRemoteConfig() {
         if (document.visibilityState === 'visible') {
             fetchAndActivate(remoteConfig)
                 .then(updateFlags)
-                .catch(() => { });
+                .catch((error) => { 
+                    logWarn("initRemoteConfig:interval", "fallo refresh silencioso", { error: error.message });
+                });
         }
     }, 10 * 60 * 1000);
 }
@@ -163,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function () {
             await sortProducts()
             updateCarousel();
         } catch (error) {
-            console.error("Error loading availability:", error);
+            logError("loadAvailability", "Fallo cargando la disponibilidad de productos en Categories", error);
 
             // Manejo de error: podrías decidir qué hacer aquí, por ejemplo marcar todo como activo
         }
@@ -199,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             });
         } catch (error) {
-            console.error(`Error loading ${categoryId} products:`, error);
+            logError("loadProducts", `Fallo cargando productos de la categoría ${categoryId}`, error);
             // Manejar error si quieres
         }
     }
@@ -224,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             return additions;
         } catch (error) {
-            console.error("Error cargando adiciones:", error);
+            logError("getAdditionsFromFirebase", "Fallo cargando adiciones desde Firebase", error);
             return [];
         }
     }
@@ -257,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function () {
             categoryData = categoriesOrdered
 
         } catch (error) {
-            console.error(`Error sorting products`, error);
+            logError("sortProducts", "Fallo ordenando productos", error);
         }
     }
 
@@ -942,7 +958,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 try {
                     displayNumber = await saveOrderToFirebase(currentOrder);
                 } catch (error) {
-                    console.error('Error guardando pedido en Firebase:', error);
+                    logError("saveOrderToFirebase", "Fallo guardando pedido en Firebase", error);
                     // El pedido igual llega por WhatsApp aunque Firebase falle
                 }
             }
