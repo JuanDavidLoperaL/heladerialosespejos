@@ -9,6 +9,7 @@ import {
     deleteDoc,
     increment
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { logError, logWarn, logInfo } from "./logger.js";
 
 // 🔐 QZ SECURITY
 async function getQZ() {
@@ -232,9 +233,13 @@ async function completeOrder(order) {
                 transferencia: increment(order.paymentMethod === "Transferencia" ? 1 : 0)
             }
         }, { merge: true });
-        console.log("✅ Analítica guardada correctamente");
+        logInfo("completeOrder", "Analítica actualizada", {
+            paymentMethod: order.paymentMethod,
+            total: order.total,
+            fecha: todayString()
+        });
     } catch (err) {
-        console.error("❌ Error guardando analítica:", err);
+        logError("completeOrder", "Fallo guardando analítica", err);
     }
 }
 
@@ -256,7 +261,7 @@ function initOrders() {
             renderOrders(currentOrders);
         },
         (error) => {
-            console.error('Error escuchando pedidos:', error);
+            logError("initOrders", "Fallo escuchando pedidos en tiempo real", error);
             noOrders.textContent = 'Error al cargar pedidos. Recarga la página.';
             noOrders.style.display = 'block';
         }
