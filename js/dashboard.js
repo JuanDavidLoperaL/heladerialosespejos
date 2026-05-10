@@ -22,6 +22,7 @@ const btnAnaliticas = document.getElementById('btn-analiticas');
 const logoutBtn = document.getElementById('logout-btn');
 const btnHowToDoIt = document.getElementById('btn-howtodoit');
 const btnPayrollManagement = document.getElementById('btn-payroll-management');
+const btnCompletedOrders = document.getElementById('btn-completed-orders');
 
 const ADMIN_EMAIL = "adminlosespejos@heladerialosespejos.com";
 
@@ -29,7 +30,8 @@ const pages = {
     pedidos: { html: 'productOrder.html', js: 'js/productOrder.js' },
     analiticas: { html: 'businessAnalytics.html', js: 'js/businessAnalytics.js' },
     howtodoit: { html: 'howToDoIt.html', js: 'js/howToDoIt.js' },
-    payrollManagement: { html: 'payrollManagement.html', js: 'js/Payrollmanagement.js' }
+    payrollManagement: { html: 'payrollManagement.html', js: 'js/Payrollmanagement.js' },
+    completedOrders: { html: 'completed-orders.html', js: 'js/completed-orders.js' }
 };
 
 let currentScript = null;
@@ -118,6 +120,10 @@ btnHowToDoIt.addEventListener('click', () => {
 btnPayrollManagement.addEventListener('click', () => {
     loadPage('payrollManagement');
     setActive(btnPayrollManagement);
+});
+btnCompletedOrders.addEventListener('click', () => {
+    loadPage('completedOrders');
+    setActive(btnCompletedOrders);
 });
 
 logoutBtn.addEventListener('click', async () => {

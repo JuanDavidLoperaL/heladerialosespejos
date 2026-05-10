@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Pedidos</title>
+    <link rel="stylesheet" href="css/completed-orders.css">
+</head>
+<body>
+
+    <div class="page-header">
+        <div class="header-left">
+            <h1>📦 Historial de Pedidos</h1>
+            <span class="orders-count" id="orders-count">— pedidos</span>
+        </div>
+        <div class="header-controls">
+            <div class="date-picker-wrap">
+                <label for="date-input">📅 Fecha</label>
+                <input type="date" id="date-input" />
+            </div>
+            <button class="btn-search" id="btn-search">Buscar</button>
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="🔍 Buscar por # de comanda..." />
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen del día -->
+    <div class="day-summary" id="day-summary" style="display:none;">
+        <div class="summary-card">
+            <span class="summary-label">Pedidos</span>
+            <span class="summary-value" id="summary-orders">0</span>
+        </div>
+        <div class="summary-card">
+            <span class="summary-label">Efectivo</span>
+            <span class="summary-value" id="summary-efectivo">0</span>
+        </div>
+        <div class="summary-card">
+            <span class="summary-label">Transferencia / Nequi</span>
+            <span class="summary-value" id="summary-transfer">0</span>
+        </div>
+    </div>
+
+    <div class="orders-container" id="orders-container">
+        <p class="no-orders" id="no-orders">Selecciona una fecha y presiona Buscar.</p>
+    </div>
+
+    <!-- Popup Imprimir -->
+    <div class="popup-overlay" id="print-popup">
+        <div class="popup">
+            <h3>¿Reimprimir ticket?</h3>
+            <p>Se enviará a imprimir el ticket del pedido completado.</p>
+            <div class="popup-buttons">
+                <button class="popup-btn confirm-print" id="confirm-print">Sí, imprimir</button>
+                <button class="popup-btn dismiss" id="dismiss-print">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/completed-orders.js"></script>
+</body>
+</html>
