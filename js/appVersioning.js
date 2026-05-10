@@ -1,12 +1,12 @@
-import { logError } from "./logger.js";
+import { logError, logInfo } from "./logger.js";
 
-const APP_VERSION = "1.1.1";
+export const APP_VERSION = "1.1.1";
 
 export function checkAppVersion() {
     const savedVersion = localStorage.getItem("app_version");
 
     if (savedVersion !== APP_VERSION) {
-        console.log("Nueva versión detectada, limpiando cache...");
+        logInfo("checkAppVersion", `Nueva versión detectada ${APP_VERSION}, limpiando cache...`);
 
         try {
             localStorage.clear();
