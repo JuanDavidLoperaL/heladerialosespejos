@@ -7,7 +7,7 @@ import { getFirestore, collection, doc, getDocs, getDoc, setDoc, serverTimestamp
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
-import { logError, logWarn } from "./logger.js";
+import { logError, logWarn, logInfo } from "./logger.js";
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -949,14 +949,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 order_total: currentOrder.total
             });
 
-            const whatsappMessage = generateWhatsAppMessage(displayNumber);
+            const whatsappMessage = generateWhatsAppMessage();
             const encodedMessage = encodeURIComponent(whatsappMessage);
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-            window.open(whatsappUrl, '_blank');
+            //const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            logEvent(analytics, 'pedido_whatsapp', {
+                items_count: currentOrder.items.length,
+                total: currentOrder.total,
+                message_length: whatsappMessage.length,
+                user_agent: navigator.userAgent,
+                payment_method: payment,
+                neighborhood: neighborhood,
+                items_count: currentOrder.items.length,
+                order_total: currentOrder.total
+});
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedMessage}`;
+            window.location.href = whatsappUrl;
+            //window.open(whatsappUrl, '_blank');
             document.body.removeChild(modal);
             if (saveOrderEnabled) {
                 try {
-                    displayNumber = await saveOrderToFirebase(currentOrder);
+                    //displayNumber = await saveOrderToFirebase(currentOrder);
                 } catch (error) {
                     logError("saveOrderToFirebase", "Fallo guardando pedido en Firebase", error);
                     // El pedido igual llega por WhatsApp aunque Firebase falle
