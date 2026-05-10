@@ -1,4 +1,4 @@
-import { checkAppVersion } from "./appVersioning.js";
+import { checkAppVersion, APP_VERSION } from "./appVersioning.js";
 
 checkAppVersion();
 
@@ -7,7 +7,7 @@ import { getFirestore, collection, doc, getDocs, getDoc, setDoc, serverTimestamp
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
-import { logError, logWarn } from "./logger.js";
+import { logError, logWarn, logInfo } from "./logger.js";
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -35,7 +35,7 @@ signInAnonymously(auth)
         logInfo("auth", "Autenticación anónima exitosa");
     })
     .catch((error) => {
-        logError("signInAnonymously", "Error en autenticación anónima", error);
+        logError("signInAnonymously", "Error en autenticación anónima app v" + APP_VERSION, error);
     });
 
 // Configuración de Remote Config
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function () {
             await sortProducts()
             updateCarousel();
         } catch (error) {
-            logError("loadAvailability", "Fallo cargando la disponibilidad de productos en Categories", error);
+            logError("loadAvailability", "Fallo cargando la disponibilidad de productos en Categories app v" + APP_VERSION, error);
 
             // Manejo de error: podrías decidir qué hacer aquí, por ejemplo marcar todo como activo
         }
@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             });
         } catch (error) {
-            logError("loadProducts", `Fallo cargando productos de la categoría ${categoryId}`, error);
+            logError("loadProducts", `app Version ${APP_VERSION} - Fallo cargando productos de la categoría ${categoryId}`, error);
             // Manejar error si quieres
         }
     }
@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             return additions;
         } catch (error) {
-            logError("getAdditionsFromFirebase", "Fallo cargando adiciones desde Firebase", error);
+            logError("getAdditionsFromFirebase", "app Version " + APP_VERSION + " - Fallo cargando adiciones desde Firebase", error);
             return [];
         }
     }
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function () {
             categoryData = categoriesOrdered
 
         } catch (error) {
-            logError("sortProducts", "Fallo ordenando productos", error);
+            logError("sortProducts", "app Version " + APP_VERSION + " - Fallo ordenando productos", error);
         }
     }
 
@@ -942,23 +942,37 @@ document.addEventListener('DOMContentLoaded', function () {
             // Intentar guardar en Firebase pero sin bloquear al usuario
             let displayNumber = crypto.randomUUID().split('-')[0].toUpperCase();
 
+            //logEvent(analytics, 'pedido_whatsapp', {
+            //    payment_method: payment,
+            //    neighborhood: neighborhood,
+            //    items_count: currentOrder.items.length,
+            //    order_total: currentOrder.total,
+            //    app_version: APP_VERSION
+            //});
+
+            const whatsappMessage = generateWhatsAppMessage();
+            const encodedMessage = encodeURIComponent(whatsappMessage);
+            //const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
             logEvent(analytics, 'pedido_whatsapp', {
+                items_count: currentOrder.items.length,
+                total: currentOrder.total,
+                message_length: whatsappMessage.length,
+                user_agent: navigator.userAgent,
                 payment_method: payment,
                 neighborhood: neighborhood,
                 items_count: currentOrder.items.length,
-                order_total: currentOrder.total
+                order_total: currentOrder.total,
+                app_version: APP_VERSION
             });
-
-            const whatsappMessage = generateWhatsAppMessage(displayNumber);
-            const encodedMessage = encodeURIComponent(whatsappMessage);
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-            window.open(whatsappUrl, '_blank');
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedMessage}`;
+            window.location.href = whatsappUrl;
+            //window.open(whatsappUrl, '_blank');
             document.body.removeChild(modal);
             if (saveOrderEnabled) {
                 try {
                     displayNumber = await saveOrderToFirebase(currentOrder);
                 } catch (error) {
-                    logError("saveOrderToFirebase", "Fallo guardando pedido en Firebase", error);
+                    logError("saveOrderToFirebase", "Fallo guardando pedido en Firebase app " + APP_VERSION, error);
                     // El pedido igual llega por WhatsApp aunque Firebase falle
                 }
             }
