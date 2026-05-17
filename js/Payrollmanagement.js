@@ -14,7 +14,7 @@ import { getFirestore, collection, getDocs }
 const LEGAL = {
     SMMLV:        1750905,
     AUX_TRANSP:   249095,
-    HORAS_MES:    190.5,
+    HORAS_MES:    176,
     R_EXTRA_D:    0.25,
     R_EXTRA_N:    0.75,
     R_NOC_ORD:    0.35,
@@ -335,7 +335,7 @@ function calcular() {
     const valExtraN  = hExtraN  * hora * (1 + LEGAL.R_EXTRA_N);   // hora × 1.75
     const valNocOrd  = hNocOrd  * hora * (1 + LEGAL.R_NOC_ORD);   // hora × 1.35  (horas nocturnas ordinarias: ya dentro de la jornada, solo se paga el recargo sobre ellas)
     const valDomD    = hDomD    * hora * (1 + LEGAL.R_DOM_D);     // hora × 1.80
-    const valDomN    = hDomN    * hora * (1 + LEGAL.R_DOM_N);     // hora × 2.15
+    const valDomN    = hDomN    * hora * (LEGAL.R_DOM_N);     // hora × 2.15
     const valExtDomD = hExtDomD * hora * (1 + LEGAL.R_EXTRA_DOM_D); // hora × 2.05
     const valExtDomN = hExtDomN * hora * (1 + LEGAL.R_EXTRA_DOM_N); // hora × 2.55
 
@@ -532,7 +532,7 @@ function buildSlipHTML(emp, liq) {
             <div class="slip-emp-block"><label>CARGO</label><strong>${liq.cargo || '—'}</strong></div>
             <div class="slip-emp-block"><label>SALARIO MENSUAL</label><strong>${fmt(liq.salarioMensual || liq.salario)}</strong></div>
             <div class="slip-emp-block"><label>HORA ORDINARIA</label><strong>${fmt(hora)}/h</strong></div>
-            <div class="slip-emp-block"><label>JORNADA</label><strong>44 h/sem · 190.5 h/mes</strong></div>
+            <div class="slip-emp-block"><label>JORNADA</label><strong>${LEGAL.HORAS_SEMANA} h/sem · ${LEGAL.HORAS_MES} h/mes</strong></div>
         </div>
 
         <!-- CUERPO EN 2 COLUMNAS -->
