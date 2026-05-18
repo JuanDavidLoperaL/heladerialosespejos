@@ -22,6 +22,7 @@ async function saveLog(level, context, message, extra = {}) {
             context,
             message,
             ...extra,
+            deviceInfo: getDeviceInfo(),
             timestamp: new Date().toISOString(),
             userAgent: navigator.userAgent,
             url:       window.location.href
@@ -49,4 +50,54 @@ export function logWarn(context, message, extra = {}) {
 export function logInfo(context, message, extra = {}) {
     console.log(`ℹ️ [${context}]`, message, extra);
     saveLog("info", context, message, extra);
+}
+
+function getDeviceInfo() {
+
+    const userAgent = navigator.userAgent;
+
+    const isIPhone = /iPhone/i.test(userAgent);
+    const isIPad = /iPad/i.test(userAgent);
+    const isAndroid = /Android/i.test(userAgent);
+    const isMac = /Macintosh/i.test(userAgent);
+    const isWindows = /Windows/i.test(userAgent);
+
+    let deviceType = "Unknown";
+
+    if (isIPhone) {
+        deviceType = "iPhone";
+    } else if (isIPad) {
+        deviceType = "iPad";
+    } else if (isAndroid) {
+        deviceType = "Android";
+    } else if (isMac) {
+        deviceType = "Mac";
+    } else if (isWindows) {
+        deviceType = "Windows PC";
+    }
+
+    let browser = "Unknown";
+
+    if (/CriOS/i.test(userAgent)) {
+        browser = "Chrome iOS";
+    } else if (/Chrome/i.test(userAgent)) {
+        browser = "Chrome";
+    } else if (/Safari/i.test(userAgent) && !/Chrome/i.test(userAgent)) {
+        browser = "Safari";
+    } else if (/Firefox/i.test(userAgent)) {
+        browser = "Firefox";
+    } else if (/Edg/i.test(userAgent)) {
+        browser = "Edge";
+    }
+
+    return {
+        deviceType,
+        browser,
+        platform: navigator.platform,
+        language: navigator.language,
+        userAgent,
+        online: navigator.onLine,
+        screenWidth: window.screen.width,
+        screenHeight: window.screen.height
+    };
 }

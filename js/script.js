@@ -32,10 +32,11 @@ let authReady = false;
 signInAnonymously(auth)
     .then(() => {
         authReady = true;
-        logInfo("auth", "Autenticación anónima exitosa");
+        //logInfo("auth", "Autenticación anónima exitosa");
     })
     .catch((error) => {
-        logError("signInAnonymously", "Error en autenticación anónima app v" + APP_VERSION, error);
+        authReady = false;
+        //logError("signInAnonymously", "Error en autenticación anónima app v" + APP_VERSION, error);
     });
 
 // Configuración de Remote Config
@@ -972,7 +973,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 try {
                     displayNumber = await saveOrderToFirebase(currentOrder);
                 } catch (error) {
-                    logError("saveOrderToFirebase", "Fallo guardando pedido en Firebase app " + APP_VERSION, error);
+                    logError("saveOrderToFirebase", "Fallo guardando pedido en Firebase app " + APP_VERSION, {
+                        customerInfo: currentOrder.customerInfo,
+                        items: currentOrder.items,
+                        total: currentOrder.total,
+                        authenticated: !!auth.currentUser,
+                        code: error.code,
+                        message: error.message,
+                        stack: error.stack,
+                        uid: auth.currentUser?.uid ?? null,
+                        online: navigator.onLine,
+                        appVersion: APP_VERSION
+                    });
                     // El pedido igual llega por WhatsApp aunque Firebase falle
                 }
             }
