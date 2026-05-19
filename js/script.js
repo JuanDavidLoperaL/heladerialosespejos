@@ -49,6 +49,7 @@ remoteConfig.defaultConfig = {
 
 
 let saveOrderEnabled = true;
+let flavorsCache = null;
 
 function todayStringColombia() {
     return new Intl.DateTimeFormat('es-CO', {
@@ -177,6 +178,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             // Esperar a que se terminen de cargar todos los productos
             await Promise.all(promises);
+            flavorsCache = await getFlavorsFromFirebase();
             await sortProducts()
             updateCarousel();
         } catch (error) {
@@ -439,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Resto de tus funciones (openFlavorSelection, openCustomerInfoModal, etc.) se mantienen igual
     async function openFlavorSelection(title, ingredients, bolas, toppings, hasSauces, price, image, hasAdditions) {
-        const { sundayFlavors, icecreamFlavors, toppingsFlavors, saucesFlavors, fruitFlavors } = await getFlavorsFromFirebase();
+        const { sundayFlavors, icecreamFlavors, toppingsFlavors, saucesFlavors, fruitFlavors } = flavorsCache;
         const additionsList = hasAdditions ? await getAdditionsFromFirebase() : [];
         const isSunday = title.toLowerCase().includes("sunday");
         const sundayIsSpecial = title.toLowerCase().includes("sunday super especial");
