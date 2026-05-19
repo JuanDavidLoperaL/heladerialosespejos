@@ -955,7 +955,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const whatsappMessage = generateWhatsAppMessage();
             const encodedMessage = encodeURIComponent(whatsappMessage);
-            //const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
             logEvent(analytics, 'pedido_whatsapp', {
                 items_count: currentOrder.items.length,
                 total: currentOrder.total,
@@ -967,9 +967,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 order_total: currentOrder.total,
                 app_version: APP_VERSION
             });
-            const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedMessage}`;
-            window.location.href = whatsappUrl;
-            //window.open(whatsappUrl, '_blank');
+            //const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedMessage}`;
+            //window.location.href = whatsappUrl;
+            window.open(whatsappUrl, '_blank');
             document.body.removeChild(modal);
             if (saveOrderEnabled) {
                 try {

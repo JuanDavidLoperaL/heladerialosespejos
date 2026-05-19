@@ -52,9 +52,9 @@ const db = getFirestore(app);
 function todayString() {
     return new Intl.DateTimeFormat('es-CO', {
         timeZone: 'America/Bogota',
-        day:   '2-digit',
+        day: '2-digit',
         month: '2-digit',
-        year:  'numeric'
+        year: 'numeric'
     }).format(new Date()).split('/').reverse().join('-');
 }
 
@@ -141,37 +141,38 @@ const mockOrders = [
 function normalizeFirebaseOrder(docSnap) {
     const d = docSnap.data();
     return {
-        orderNumber:         docSnap.id,
-        createdAt:           d.createdAt?.toDate?.() ?? new Date(),
-        customer:            d.customer            ?? '—',
-        customerAddress:     d.customerAddress     ?? '—',
+        orderNumber: docSnap.id,
+        createdAt: d.createdAt?.toDate?.() ?? new Date(),
+        customer: d.customer ?? '—',
+        customerAddress: d.customerAddress ?? '—',
         customerNeighborhood: d.customerNeighborhood ?? '—',
         customerPhoneNumber: d.customerPhoneNumber ?? '—',
-        paymentMethod:       d.paymentMethod       ?? '—',
-        total:               d.total               ?? 0,
-        order:               Array.isArray(d.order) ? d.order : [],
-        paymentStatus:       d.paymentStatus       ?? 'pendiente'
+        paymentMethod: d.paymentMethod ?? '—',
+        total: d.total ?? 0,
+        order: Array.isArray(d.order) ? d.order : [],
+        paymentStatus: d.paymentStatus ?? 'pendiente'
     };
 }
 
 // ─── Estado global ─────────────────────────────────────────────────────────────
 
-let currentOrders      = [];
+let currentOrders = [];
 let pendingCancelOrder = null;
-let pendingPrintOrder  = null;
-let unsubscribe        = null;
+let pendingPrintOrder = null;
+let unsubscribe = null;
+const processingOrders = new Set();
 
 // ─── DOM ───────────────────────────────────────────────────────────────────────
 
 const ordersContainer = document.getElementById('orders-container');
-const noOrders        = document.getElementById('no-orders');
-const cancelPopup     = document.getElementById('cancel-popup');
-const printPopup      = document.getElementById('print-popup');
+const noOrders = document.getElementById('no-orders');
+const cancelPopup = document.getElementById('cancel-popup');
+const printPopup = document.getElementById('print-popup');
 
 // ─── Popups ────────────────────────────────────────────────────────────────────
 
 document.getElementById('dismiss-cancel').addEventListener('click', () => closePopup(cancelPopup));
-document.getElementById('dismiss-print').addEventListener('click',  () => closePopup(printPopup));
+document.getElementById('dismiss-print').addEventListener('click', () => closePopup(printPopup));
 
 document.getElementById('confirm-cancel').addEventListener('click', async () => {
     if (!pendingCancelOrder) return;
@@ -189,7 +190,7 @@ document.getElementById('confirm-print').addEventListener('click', async () => {
 function closePopup(popup) {
     popup.classList.remove('visible');
     pendingCancelOrder = null;
-    pendingPrintOrder  = null;
+    pendingPrintOrder = null;
 }
 
 // ─── Firebase actions ──────────────────────────────────────────────────────────
@@ -200,6 +201,7 @@ async function cancelOrder(order) {
         renderOrders(currentOrders);
         return;
     }
+    processingOrders.delete(order.orderNumber);
     await deleteDoc(pendingPath(order.orderNumber));
 }
 
@@ -209,7 +211,7 @@ async function completeOrder(order) {
         renderOrders(currentOrders);
         return;
     }
-
+    processingOrders.delete(order.orderNumber);
     const snap = await getDoc(pendingPath(order.orderNumber));
     if (!snap.exists()) return;
 
@@ -227,9 +229,9 @@ async function completeOrder(order) {
     try {
         await setDoc(doc(db, "analytics", "daily"), {
             [date]: {
-                total:         increment(order.total ?? 0),
-                orders:        increment(1),
-                efectivo:      increment(order.paymentMethod === "Efectivo"      ? 1 : 0),
+                total: increment(order.total ?? 0),
+                orders: increment(1),
+                efectivo: increment(order.paymentMethod === "Efectivo" ? 1 : 0),
                 transferencia: increment(order.paymentMethod === "Transferencia" ? 1 : 0)
             }
         }, { merge: true });
@@ -295,31 +297,34 @@ function renderOrders(orders) {
 function buildTicket(order) {
     const ticket = document.createElement('div');
     ticket.className = 'ticket';
-    ticket.dataset.id        = order.orderNumber;
+    if (processingOrders.has(order.orderNumber)) {
+        ticket.classList.add('processing');
+    }
+    ticket.dataset.id = order.orderNumber;
     ticket.dataset.createdAt = order.createdAt instanceof Date
         ? order.createdAt.toISOString()
         : new Date().toISOString();
 
-    const date  = formatDate(order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt));
+    const date = formatDate(order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt));
     const items = Array.isArray(order.order) ? order.order : [];
 
     const itemsHTML = items.length > 0
-    ? items.map(i => `
+        ? items.map(i => `
         <li>
             <strong>${i.productTitle}</strong> — $${Number(i.price).toLocaleString('es-CO')}
-            ${i.quantity   ? `<br><span class="item-detail"><strong>Cantidad:</strong> ${i.quantity}</span>`        : ''}
-            ${i.ingredients   ? `<br><span class="item-detail">🍨 ${i.ingredients}</span>`        : ''}
+            ${i.quantity ? `<br><span class="item-detail"><strong>Cantidad:</strong> ${i.quantity}</span>` : ''}
+            ${i.ingredients ? `<br><span class="item-detail">🍨 ${i.ingredients}</span>` : ''}
             ${i.iceCreamFlavor ? `<br><span class="item-detail">🍦 Helado: ${i.iceCreamFlavor}</span>` : ''}
-            ${i.flavor        ? `<br><span class="item-detail">🍓 Sabor: ${i.flavor}</span>`       : ''}
-            ${i.fruit        ? `<br><span class="item-detail">🍌 Fruta: ${i.fruit}</span>`       : ''}
-            ${i.additions    ? `<br><span class="item-detail"> Adiciones: ${i.additions.map(a => a.name).join(', ')}</span>` : ''}
-            ${i.juice         ? `<br><span class="item-detail">🥤 Jugo: ${i.juice}</span>`         : ''}
-            ${i.toppings      ? `<br><span class="item-detail">🍫 Toppings: ${i.toppings}</span>`  : ''}
-            ${i.sauces        ? `<br><span class="item-detail">🍯 Salsa: ${i.sauces}</span>`       : ''}
-            ${i.notes         ? `<br><span class="item-detail">📝 Notas: ${i.notes}</span>`        : ''}
+            ${i.flavor ? `<br><span class="item-detail">🍓 Sabor: ${i.flavor}</span>` : ''}
+            ${i.fruit ? `<br><span class="item-detail">🍌 Fruta: ${i.fruit}</span>` : ''}
+            ${i.additions ? `<br><span class="item-detail"> Adiciones: ${i.additions.map(a => a.name).join(', ')}</span>` : ''}
+            ${i.juice ? `<br><span class="item-detail">🥤 Jugo: ${i.juice}</span>` : ''}
+            ${i.toppings ? `<br><span class="item-detail">🍫 Toppings: ${i.toppings}</span>` : ''}
+            ${i.sauces ? `<br><span class="item-detail">🍯 Salsa: ${i.sauces}</span>` : ''}
+            ${i.notes ? `<br><span class="item-detail">📝 Notas: ${i.notes}</span>` : ''}
         </li>
     `).join('')
-    : '<li>Sin detalle</li>';
+        : '<li>Sin detalle</li>';
 
     ticket.innerHTML = `
         <div class="ticket-header">
@@ -356,7 +361,10 @@ function buildTicket(order) {
         </div>
         <div class="ticket-actions">
             <button class="btn-cancel-ticket">🗑 Cancelar</button>
-            <button class="btn-print-ticket">🖨 Imprimir</button>
+            ${processingOrders.has(order.orderNumber)
+            ? `<button class="btn-print-ticket">🖨 Imprimir</button>`
+            : `<button class="btn-in-progress-ticket">⏳ En Proceso</button>`
+            }
         </div>
     `;
 
@@ -365,10 +373,22 @@ function buildTicket(order) {
         cancelPopup.classList.add('visible');
     });
 
-    ticket.querySelector('.btn-print-ticket').addEventListener('click', () => {
-        pendingPrintOrder = order;
-        printPopup.classList.add('visible');
-    });
+    const processBtn = ticket.querySelector('.btn-in-progress-ticket');
+
+    if (processBtn) {
+        processBtn.addEventListener('click', () => {
+            processingOrders.add(order.orderNumber);
+            renderOrders(currentOrders);
+        });
+    }
+
+    const printBtn = ticket.querySelector('.btn-print-ticket');
+    if (printBtn) {
+        printBtn.addEventListener('click', () => {
+            pendingPrintOrder = order;
+            printPopup.classList.add('visible');
+        });
+    }
 
     return ticket;
 }
@@ -395,8 +415,8 @@ document.getElementById('search-input').addEventListener('input', function () {
     });
 
     const hasVisible = [...document.querySelectorAll('.ticket')].some(t => t.style.display !== 'none');
-    noOrders.style.display  = hasVisible ? 'none' : 'block';
-    noOrders.textContent    = query
+    noOrders.style.display = hasVisible ? 'none' : 'block';
+    noOrders.textContent = query
         ? `No se encontró la comanda "${query.toUpperCase()}".`
         : 'No hay pedidos activos.';
 });
@@ -406,10 +426,10 @@ document.getElementById('search-input').addEventListener('input', function () {
 function formatDate(date) {
     return new Intl.DateTimeFormat('es-CO', {
         timeZone: 'America/Bogota',
-        day:    '2-digit',
-        month:  '2-digit',
-        year:   'numeric',
-        hour:   '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
         hour12: true
@@ -428,17 +448,17 @@ function printTicket(order) {
             <strong>${index + 1}. ${i.productTitle}</strong>
             <span>$${Number(i.price).toLocaleString('es-CO')}</span>
         </div>
-        ${i.ingredients    ? `<div class="item-detail">${i.ingredients}</div>`          : ''}
+        ${i.ingredients ? `<div class="item-detail">${i.ingredients}</div>` : ''}
         ${i.iceCreamFlavor ? `<div class="item-detail">Helado: ${i.iceCreamFlavor}</div>` : ''}
-        ${i.flavor         ? `<div class="item-detail">Sabor: ${i.flavor}</div>`         : ''}
-        ${i.fruit          ? `<div class="item-detail">🍌 Fruta: ${i.fruit}</div>`           : ''}
-        ${i.additions      ? `<div class="item-detail">Adiciones: ${i.additions.map(a => a.name).join(', ')}</div>`           : ''}
-        ${i.juice          ? `<div class="item-detail">Jugo: ${i.juice}</div>`            : ''}
-        ${i.toppings       ? `<div class="item-detail">Toppings: ${i.toppings}</div>`    : ''}
-        ${i.sauces         ? `<div class="item-detail">Salsa: ${i.sauces}</div>`          : ''}
-        ${i.notes          ? `<div class="item-detail">Notas: ${i.notes}</div>`           : ''}
+        ${i.flavor ? `<div class="item-detail">Sabor: ${i.flavor}</div>` : ''}
+        ${i.fruit ? `<div class="item-detail">🍌 Fruta: ${i.fruit}</div>` : ''}
+        ${i.additions ? `<div class="item-detail">Adiciones: ${i.additions.map(a => a.name).join(', ')}</div>` : ''}
+        ${i.juice ? `<div class="item-detail">Jugo: ${i.juice}</div>` : ''}
+        ${i.toppings ? `<div class="item-detail">Toppings: ${i.toppings}</div>` : ''}
+        ${i.sauces ? `<div class="item-detail">Salsa: ${i.sauces}</div>` : ''}
+        ${i.notes ? `<div class="item-detail">Notas: ${i.notes}</div>` : ''}
     `).join('<div class="divider"></div>')
-    : 'Sin detalle';
+        : 'Sin detalle';
 
     const date = formatDate(order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt));
 
@@ -499,9 +519,9 @@ async function printTicketWIFI(order) {
     }
 
     try {
-        qz.security.setCertificatePromise(function(resolve) { resolve(""); });
-        qz.security.setSignaturePromise(function(toSign) {
-            return function(resolve) { resolve(""); };
+        qz.security.setCertificatePromise(function (resolve) { resolve(""); });
+        qz.security.setSignaturePromise(function (toSign) {
+            return function (resolve) { resolve(""); };
         });
 
         if (!qz.websocket.isActive()) {
@@ -555,12 +575,12 @@ async function printTicketWIFI(order) {
                 img.crossOrigin = 'anonymous';
 
                 img.onload = () => {
-                    const scale  = targetWidth / img.width;
-                    const width  = targetWidth;
+                    const scale = targetWidth / img.width;
+                    const width = targetWidth;
                     const height = Math.round(img.height * scale);
 
-                    const canvas  = document.createElement('canvas');
-                    canvas.width  = width;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
                     canvas.height = height;
 
                     const ctx = canvas.getContext('2d');
@@ -569,7 +589,7 @@ async function printTicketWIFI(order) {
                     ctx.drawImage(img, 0, 0, width, height);
 
                     const imageData = ctx.getImageData(0, 0, width, height);
-                    const pixels    = imageData.data; // RGBA
+                    const pixels = imageData.data; // RGBA
 
                     // Ancho en bytes (8 píxeles por byte), redondeado arriba
                     const byteWidth = Math.ceil(width / 8);
@@ -581,7 +601,7 @@ async function printTicketWIFI(order) {
                             for (let bit = 0; bit < 8; bit++) {
                                 const x = bx * 8 + bit;
                                 if (x < width) {
-                                    const idx       = (y * width + x) * 4;
+                                    const idx = (y * width + x) * 4;
                                     const luminance = 0.299 * pixels[idx] + 0.587 * pixels[idx + 1] + 0.114 * pixels[idx + 2];
                                     if (luminance < 128) byte |= (0x80 >> bit); // píxel oscuro = punto impreso
                                 }
@@ -612,8 +632,8 @@ async function printTicketWIFI(order) {
 
         async function buildTicketBytes(order) {
             const ESC = [0x1B];
-            const GS  = [0x1D];
-            const LF  = [0x0A];
+            const GS = [0x1D];
+            const LF = [0x0A];
 
             const bytes = [];
             const add = (...parts) => {
@@ -661,19 +681,19 @@ async function printTicketWIFI(order) {
             add('PEDIDO:', LF);
             const items = Array.isArray(order.order) ? order.order : [];
             items.forEach((i, index) => {
-                const qty   = i.quantity || 1;
+                const qty = i.quantity || 1;
                 const price = Number(i.price).toLocaleString('es-CO');
                 add(`${index + 1}. ${i.productTitle} x${qty}`, LF);
                 add(`   $${price}`, LF);
-                if (i.ingredients)    add(`   ${i.ingredients}`, LF);
+                if (i.ingredients) add(`   ${i.ingredients}`, LF);
                 if (i.iceCreamFlavor) add(`   Helado  : ${i.iceCreamFlavor}`, LF);
-                if (i.flavor)         add(`   Sabor   : ${i.flavor}`, LF);
-                if (i.fruit)          add(`   Fruta   : ${i.fruit}`, LF);
-                if (i.juice)          add(`   Jugo    : ${i.juice}`, LF);
-                if (i.toppings)       add(`   Toppings: ${i.toppings}`, LF);
-                if (i.sauces)         add(`   Salsa   : ${i.sauces}`, LF);
-                if (i.notes)          add(`   Notas   : ${i.notes}`, LF);
-                if (i.additions)      add(`   Adiciones: ${i.additions.map(a => a.name).join(', ')}`, LF);
+                if (i.flavor) add(`   Sabor   : ${i.flavor}`, LF);
+                if (i.fruit) add(`   Fruta   : ${i.fruit}`, LF);
+                if (i.juice) add(`   Jugo    : ${i.juice}`, LF);
+                if (i.toppings) add(`   Toppings: ${i.toppings}`, LF);
+                if (i.sauces) add(`   Salsa   : ${i.sauces}`, LF);
+                if (i.notes) add(`   Notas   : ${i.notes}`, LF);
+                if (i.additions) add(`   Adiciones: ${i.additions.map(a => a.name).join(', ')}`, LF);
             });
 
             add('--------------------------------', LF);
@@ -698,13 +718,13 @@ async function printTicketWIFI(order) {
             return bytes;
         }
 
-        const ticketBytes  = await buildTicketBytes(order);
+        const ticketBytes = await buildTicketBytes(order);
         const ticketBase64 = bytesToBase64(ticketBytes);
 
         await qz.print(config, [{
-            type:   'raw',
+            type: 'raw',
             format: 'base64',
-            data:   ticketBase64
+            data: ticketBase64
         }]);
 
         console.log("✅ Ticket impreso correctamente");
