@@ -50,6 +50,7 @@ remoteConfig.defaultConfig = {
 
 let saveOrderEnabled = true;
 let flavorsCache = null;
+let additionsCache = null;
 
 function todayStringColombia() {
     return new Intl.DateTimeFormat('es-CO', {
@@ -225,6 +226,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Cargar las adiciones desde firebase
     async function getAdditionsFromFirebase() {
+        if (additionsCache) {
+            return additionsCache;
+        }
+
         try {
             const snapshot = await getDocs(collection(db, "categories/adiciones/products"));
 
@@ -241,6 +246,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                 }
             });
+            additionsCache = additions;
             return additions;
         } catch (error) {
             logError("getAdditionsFromFirebase", "app Version " + APP_VERSION + " - Fallo cargando adiciones desde Firebase", error);
