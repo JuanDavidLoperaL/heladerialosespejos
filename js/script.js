@@ -80,7 +80,7 @@ function initRemoteConfig() {
         if (document.visibilityState === 'visible') {
             fetchAndActivate(remoteConfig)
                 .then(updateFlags)
-                .catch((error) => { 
+                .catch((error) => {
                     logWarn("initRemoteConfig:interval", "fallo refresh silencioso", { error: error.message });
                 });
         }
@@ -834,8 +834,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                   ${item.sauces && item.sauces.length > 0 ? `<p>Salsas: ${item.sauces.join(', ')}</p>` : ''}
                                   ${item.ingredientsNotes ? `<p>Notas: ${item.ingredientsNotes}</p>` : ''}
                                   ${item.additions && item.additions.length > 0
-    ? `<p>Adiciones: ${item.additions.map(a => `${a.name} ($${a.price.toLocaleString('es-CO')})`).join(', ')}</p>`
-    : ''}
+                ? `<p>Adiciones: ${item.additions.map(a => `${a.name} ($${a.price.toLocaleString('es-CO')})`).join(', ')}</p>`
+                : ''}
                                   <p>Precio: $${item.price.toLocaleString('es-CO')}</p>
                                   <p>Cuantos de este mismo producto: ${item.numberOfItems}</p>
                               </div>
@@ -948,20 +948,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
             currentOrder.customerInfo = { name, phone, address, neighborhood, payment };
 
-            // Intentar guardar en Firebase pero sin bloquear al usuario
-            let displayNumber = crypto.randomUUID().split('-')[0].toUpperCase();
+            // 1. Deshabilitar botón para evitar doble clic
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = '⏳ Procesando pedido...';
 
-            //logEvent(analytics, 'pedido_whatsapp', {
-            //    payment_method: payment,
-            //    neighborhood: neighborhood,
-            //    items_count: currentOrder.items.length,
-            //    order_total: currentOrder.total,
-            //    app_version: APP_VERSION
-            //});
-
+            // 2. Preparar URL de WhatsApp (sincrónico, sin await)
             const whatsappMessage = generateWhatsAppMessage();
             const encodedMessage = encodeURIComponent(whatsappMessage);
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+
             logEvent(analytics, 'pedido_whatsapp', {
                 items_count: currentOrder.items.length,
                 total: currentOrder.total,
@@ -969,33 +965,38 @@ document.addEventListener('DOMContentLoaded', function () {
                 user_agent: navigator.userAgent,
                 payment_method: payment,
                 neighborhood: neighborhood,
-                items_count: currentOrder.items.length,
                 order_total: currentOrder.total,
                 app_version: APP_VERSION
             });
-            //const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodedMessage}`;
-            //window.location.href = whatsappUrl;
-            window.open(whatsappUrl, '_blank');
-            document.body.removeChild(modal);
+
+            // 3. Guardar en Firebase ANTES de navegar (con timeout de seguridad)
             if (saveOrderEnabled) {
                 try {
-                    displayNumber = await saveOrderToFirebase(currentOrder);
+                    await Promise.race([
+                        saveOrderToFirebase(currentOrder),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+                    ]);
                 } catch (error) {
                     logError("saveOrderToFirebase", "Fallo guardando pedido en Firebase app " + APP_VERSION, {
                         customerInfo: currentOrder.customerInfo,
                         items: currentOrder.items,
                         total: currentOrder.total,
                         authenticated: !!auth.currentUser,
-                        code: error.code,
-                        message: error.message,
-                        stack: error.stack,
+                        code: error?.code,
+                        message: error?.message,
                         uid: auth.currentUser?.uid ?? null,
                         online: navigator.onLine,
                         appVersion: APP_VERSION
                     });
-                    // El pedido igual llega por WhatsApp aunque Firebase falle
+                    // Continuar de todas formas — el pedido llega por WhatsApp
                 }
             }
+
+            // 4. Cerrar modal
+            document.body.removeChild(modal);
+
+            // 5. Navegar a WhatsApp — funciona en iPhone, Android, Instagram, Facebook, desktop
+            window.location.href = whatsappUrl;
         });
     }
 
