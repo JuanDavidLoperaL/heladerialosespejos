@@ -1,32 +1,16 @@
 import { checkAppVersion, APP_VERSION } from "./appVersioning.js";
-
 checkAppVersion();
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { app, db, auth } from "./firebase.js";
 import { getFirestore, collection, doc, getDocs, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
 import { logError, logWarn, logInfo } from "./logger.js";
+import { todayString, isValidColombianPhone, showFeedback } from "./utils.js";
 
-// Configuración de Firebase
-const firebaseConfig = {
-    apiKey: "AIzaSyAFylb18Y4e1w7TAEoz3_toyCCHMy8s0xA",
-    authDomain: "heladerialosespejos-c645e.firebaseapp.com",
-    projectId: "heladerialosespejos-c645e",
-    storageBucket: "heladerialosespejos-c645e.appspot.com",
-    messagingSenderId: "144529838152",
-    appId: "1:144529838152:web:8336516088534940ecc87d",
-    measurementId: "G-L36FHJEM67"
-};
-
-// Inicializar Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getFirestore(app);
-const auth = getAuth(app);
+const analytics    = getAnalytics(app);
 const remoteConfig = getRemoteConfig(app);
-
 let authReady = false;
 
 signInAnonymously(auth)
@@ -51,16 +35,6 @@ remoteConfig.defaultConfig = {
 let saveOrderEnabled = true;
 let flavorsCache = null;
 let additionsCache = null;
-
-function todayStringColombia() {
-    return new Intl.DateTimeFormat('es-CO', {
-        timeZone: 'America/Bogota',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    }).format(new Date()).split('/').reverse().join('-');
-    // resultado: 01-04-2026
-}
 
 function updateFlags() {
     saveOrderEnabled = getValue(remoteConfig, "save_order_enabled").asBoolean();
@@ -800,7 +774,7 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         await setDoc(
-            doc(db, 'productOrder', 'pending', todayStringColombia(), orderNumber),
+            doc(db, 'productOrder', 'pending', todayString(), orderNumber),
             orderDoc
         );
 
@@ -1000,11 +974,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function isValidColombianPhone(phone) {
-        const regex = /^(?:\+57)?[ -]?(3[0-9]{2}|60[1-8])[ -]?[0-9]{3}[ -]?[0-9]{4}$/;
-        return regex.test(phone);
-    }
-
     function generateWhatsAppMessage() {
         let message = `¡Hola! Quiero hacer un pedido en la Heladeria Los Espejos:\n\n`;
         message += `*Pedido:*\n`;
@@ -1064,24 +1033,6 @@ document.addEventListener('DOMContentLoaded', function () {
             btn.classList.remove('active');
             btn.disabled = true;
         }
-    }
-
-    function showFeedback(message, type) {
-        const existingFeedback = document.querySelector('.order-feedback');
-        if (existingFeedback) {
-            existingFeedback.remove();
-        }
-
-        const feedback = document.createElement('div');
-        feedback.className = `order-feedback ${type}`;
-        feedback.textContent = message;
-        document.body.appendChild(feedback);
-
-        setTimeout(() => {
-            if (document.body.contains(feedback)) {
-                document.body.removeChild(feedback);
-            }
-        }, 3000);
     }
 
     document.getElementById('confirm-order-btn').addEventListener('click', function () {

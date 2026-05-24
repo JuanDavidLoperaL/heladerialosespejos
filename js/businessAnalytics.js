@@ -1,18 +1,6 @@
-import { getFirestore, collection, getDocs, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyAFylb18Y4e1w7TAEoz3_toyCCHMy8s0xA",
-    authDomain: "heladerialosespejos-c645e.firebaseapp.com",
-    projectId: "heladerialosespejos-c645e",
-    storageBucket: "heladerialosespejos-c645e.appspot.com",
-    messagingSenderId: "144529838152",
-    appId: "1:144529838152:web:8336516088534940ecc87d",
-    measurementId: "G-L36FHJEM67"
-};
-
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
+import { db } from "./firebase.js";
+import { collection, getDocs, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { todayString } from "./utils.js";
 
 // ── DOM ────────────────────────────────────────────────────────────────────────
 
@@ -27,17 +15,6 @@ const periodFilter  = document.getElementById("period-filter");
 const periodSummary = document.getElementById("period-summary");
 const chartLoading  = document.getElementById("chart-loading");
 const chartNoData   = document.getElementById("chart-no-data");
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function todayString() {
-    return new Intl.DateTimeFormat('es-CO', {
-        timeZone: 'America/Bogota',
-        day:   '2-digit',
-        month: '2-digit',
-        year:  'numeric'
-    }).format(new Date()).split('/').reverse().join('-');
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECCIÓN 1 — Resumen diario (lee productOrder/pending/{fecha})

@@ -1,18 +1,5 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyAFylb18Y4e1w7TAEoz3_toyCCHMy8s0xA",
-    authDomain: "heladerialosespejos-c645e.firebaseapp.com",
-    projectId: "heladerialosespejos-c645e",
-    storageBucket: "heladerialosespejos-c645e.appspot.com",
-    messagingSenderId: "144529838152",
-    appId: "1:144529838152:web:8336516088534940ecc87d",
-    measurementId: "G-L36FHJEM67"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+import { auth } from "./firebase.js";
+import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const toggleBtn = document.getElementById('toggle-sidebar');
 const sidebar = document.querySelector('.sidebar');

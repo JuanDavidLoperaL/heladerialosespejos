@@ -4,9 +4,8 @@
 //  Firebase Firestore → colección "employees"
 // =============================================
 
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs }
-    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { db } from "./firebase.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // =============================================
 //  CONSTANTES LEGALES 2026
@@ -26,21 +25,6 @@ const LEGAL = {
     PCT_PENSION:  0.04,
     TOPE_AUX:     2,
 };
-
-// =============================================
-//  FIREBASE CONFIG
-// =============================================
-const firebaseConfig = {
-    apiKey: "AIzaSyAFylb18Y4e1w7TAEoz3_toyCCHMy8s0xA",
-    authDomain: "heladerialosespejos-c645e.firebaseapp.com",
-    projectId: "heladerialosespejos-c645e",
-    storageBucket: "heladerialosespejos-c645e.appspot.com",
-    messagingSenderId: "144529838152",
-    appId: "1:144529838152:web:8336516088534940ecc87d"
-};
-
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const db  = getFirestore(app);
 
 // =============================================
 //  ESTADO
