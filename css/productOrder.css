@@ -287,3 +287,73 @@ body {
         grid-template-columns: repeat(4, 1fr);
     }
 }
+
+/* ─── Sección de domicilio ──────────────────────────────────────── */
+
+.ticket-delivery {
+    border-top: 2px dashed #e0e0e0;
+    border-bottom: 2px dashed #e0e0e0;
+    padding: 10px 0;
+    margin: 6px 0;
+    background: #f9fbff;
+    border-radius: 4px;
+}
+
+.delivery-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 12px;
+    gap: 8px;
+}
+
+.delivery-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    min-width: 110px;
+}
+
+.delivery-select,
+.delivery-fee {
+    flex: 1;
+    max-width: 160px;
+    border: 1px solid #d0d9e8;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 13px;
+    background: white;
+    color: #1a1a2e;
+    transition: border-color 0.2s;
+}
+
+.delivery-select:focus,
+.delivery-fee:focus {
+    outline: none;
+    border-color: #194073;
+    box-shadow: 0 0 0 2px rgba(25, 64, 115, 0.12);
+}
+
+/* ─── Fila de total con domicilio ───────────────────────────────── */
+
+.ticket-grand-total-row {
+    background: #194073;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 4px 0 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ticket-grand-total-row .ticket-label,
+.ticket-grand-total-row .ticket-value {
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.ticket-grand-total {
+    font-size: 17px;
+    font-weight: 800;
+}

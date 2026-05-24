@@ -9,6 +9,8 @@ import { printTicketWIFI } from "./printer.js";
 
 
 const USE_MOCK = false;
+const DOMICILIARIOS = ['Juan José', 'Sebastian Rico', 'Felipe Yeppes', 'Emanuel', 'Camilo Mejia', 'Don José'];
+const deliveryData = new Map();
 
 function pendingPath(orderNumber) {
     return doc(db, 'productOrder', 'pending', todayString(), orderNumber);
@@ -134,8 +136,19 @@ document.getElementById('confirm-cancel').addEventListener('click', async () => 
 
 document.getElementById('confirm-print').addEventListener('click', async () => {
     if (!pendingPrintOrder) return;
-    printTicketWIFI(pendingPrintOrder);
-    await completeOrder(pendingPrintOrder);
+
+    const delivery       = deliveryData.get(pendingPrintOrder.orderNumber) || {};
+    const valorDomicilio = Number(delivery.valorDomicilio) || 0;
+
+    const orderWithDelivery = {
+        ...pendingPrintOrder,
+        domiciliario:      delivery.domiciliario || '',
+        valorDomicilio,
+        totalConDomicilio: pendingPrintOrder.total + valorDomicilio
+    };
+
+    printTicketWIFI(orderWithDelivery);
+    await completeOrder(orderWithDelivery);
     closePopup(printPopup);
 });
 
@@ -163,38 +176,47 @@ async function completeOrder(order) {
         renderOrders(currentOrders);
         return;
     }
+
     processingOrders.delete(order.orderNumber);
+
     const snap = await getDoc(pendingPath(order.orderNumber));
     if (!snap.exists()) return;
 
-    await setDoc(completedPath(order.orderNumber), snap.data());
-    await deleteDoc(pendingPath(order.orderNumber));
+    const valorDomicilio    = order.valorDomicilio    || 0;
+    const totalConDomicilio = order.totalConDomicilio ?? order.total;
 
-    // ── DEBUG: ver qué llega ──────────────────────────────────────
-    console.log("📊 Guardando analítica:", {
-        paymentMethod: order.paymentMethod,
-        total: order.total,
-        fecha: todayString()
+    await setDoc(completedPath(order.orderNumber), {
+        ...snap.data(),
+        domiciliario:      order.domiciliario || '',
+        valorDomicilio,
+        subtotal:          order.total,          // total de productos sin domicilio
+        total:             totalConDomicilio      // total final para el cierre contable
     });
+    await deleteDoc(pendingPath(order.orderNumber));
 
     const date = todayString();
     try {
         await setDoc(doc(db, "analytics", "daily"), {
             [date]: {
-                total: increment(order.total ?? 0),
-                orders: increment(1),
-                efectivo: increment(order.paymentMethod === "Efectivo" ? 1 : 0),
+                total:         increment(totalConDomicilio),
+                orders:        increment(1),
+                efectivo:      increment(order.paymentMethod === "Efectivo"      ? 1 : 0),
                 transferencia: increment(order.paymentMethod === "Transferencia" ? 1 : 0)
             }
         }, { merge: true });
         logInfo("completeOrder", "Analítica actualizada", {
             paymentMethod: order.paymentMethod,
-            total: order.total,
-            fecha: todayString()
+            subtotal:      order.total,
+            valorDomicilio,
+            total:         totalConDomicilio,
+            domiciliario:  order.domiciliario,
+            fecha:         date
         });
     } catch (err) {
         logError("completeOrder", "Fallo guardando analítica", err);
     }
+
+    deliveryData.delete(order.orderNumber);
 }
 
 // ─── Init ──────────────────────────────────────────────────────────────────────
@@ -260,6 +282,16 @@ function buildTicket(order) {
     const date = formatDate(order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt));
     const items = Array.isArray(order.order) ? order.order : [];
 
+    // Datos de domicilio (ya guardados si el usuario los editó antes)
+    const saved = deliveryData.get(order.orderNumber) || {};
+    const valorGuardado = saved.valorDomicilio != null ? saved.valorDomicilio : '';
+    const totalConDomicilio = order.total + (Number(valorGuardado) || 0);
+
+    // Generar opciones ANTES del template para evitar backticks anidados
+    const opcionesDomiciliario = ['', ...DOMICILIARIOS]
+        .map(d => `<option value="${d}" ${saved.domiciliario === d ? 'selected' : ''}>${d || '— Sin asignar —'}</option>`)
+        .join('');
+
     const itemsHTML = items.length > 0
         ? items.map(i => `
         <li>
@@ -304,8 +336,22 @@ function buildTicket(order) {
             <ul class="order-list">${itemsHTML}</ul>
         </div>
         <div class="ticket-row">
-            <span class="ticket-label">Total</span>
-            <span class="ticket-value ticket-total">$${Number(order.total).toLocaleString('es-CO')}</span>
+            <span class="ticket-label">Subtotal</span>
+            <span class="ticket-value">$${Number(order.total).toLocaleString('es-CO')}</span>
+        </div>
+        <div class="ticket-row">
+            <span class="ticket-label">Domiciliario</span>
+            <select class="delivery-select">
+                ${opcionesDomiciliario}
+            </select>
+        </div>
+        <div class="ticket-row">
+            <span class="ticket-label">Domicilio $</span>
+            <input type="number" class="delivery-fee" placeholder="0" min="0" value="${valorGuardado}" />
+        </div>
+        <div class="ticket-row ticket-total-row">
+            <span class="ticket-label"><strong>TOTAL</strong></span>
+            <span class="ticket-value ticket-grand-total"><strong>$${totalConDomicilio.toLocaleString('es-CO')}</strong></span>
         </div>
         <div class="ticket-row">
             <span class="ticket-label">Método de pago</span>
@@ -341,6 +387,21 @@ function buildTicket(order) {
             printPopup.classList.add('visible');
         });
     }
+
+        // Event listeners para campos de domicilio
+    const deliverySelect  = ticket.querySelector('.delivery-select');
+    const deliveryFeeInput = ticket.querySelector('.delivery-fee');
+    const grandTotalEl    = ticket.querySelector('.ticket-grand-total');
+
+    function updateDelivery() {
+        const domiciliario   = deliverySelect.value;
+        const valorDomicilio = Number(deliveryFeeInput.value) || 0;
+        deliveryData.set(order.orderNumber, { domiciliario, valorDomicilio });
+        grandTotalEl.innerHTML = `<strong>$${(order.total + valorDomicilio).toLocaleString('es-CO')}</strong>`;
+    }
+
+    deliverySelect.addEventListener('change', updateDelivery);
+    deliveryFeeInput.addEventListener('input', updateDelivery);
 
     return ticket;
 }
