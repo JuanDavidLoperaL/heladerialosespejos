@@ -26,12 +26,12 @@ async function logoToESCBytes(imagePath, targetWidth = 400) {
         img.crossOrigin = 'anonymous';
 
         img.onload = () => {
-            const scale  = targetWidth / img.width;
-            const width  = targetWidth;
+            const scale = targetWidth / img.width;
+            const width = targetWidth;
             const height = Math.round(img.height * scale);
 
             const canvas = document.createElement('canvas');
-            canvas.width  = width;
+            canvas.width = width;
             canvas.height = height;
 
             const ctx = canvas.getContext('2d');
@@ -40,7 +40,7 @@ async function logoToESCBytes(imagePath, targetWidth = 400) {
             ctx.drawImage(img, 0, 0, width, height);
 
             const imageData = ctx.getImageData(0, 0, width, height);
-            const pixels    = imageData.data;
+            const pixels = imageData.data;
             const byteWidth = Math.ceil(width / 8);
 
             const imgBytes = [];
@@ -50,7 +50,7 @@ async function logoToESCBytes(imagePath, targetWidth = 400) {
                     for (let bit = 0; bit < 8; bit++) {
                         const x = bx * 8 + bit;
                         if (x < width) {
-                            const idx       = (y * width + x) * 4;
+                            const idx = (y * width + x) * 4;
                             const luminance = 0.299 * pixels[idx] + 0.587 * pixels[idx + 1] + 0.114 * pixels[idx + 2];
                             if (luminance < 128) byte |= (0x80 >> bit);
                         }
@@ -78,8 +78,8 @@ async function logoToESCBytes(imagePath, targetWidth = 400) {
 
 async function buildTicketBytes(order) {
     const ESC = [0x1B];
-    const GS  = [0x1D];
-    const LF  = [0x0A];
+    const GS = [0x1D];
+    const LF = [0x0A];
 
     const bytes = [];
     const add = (...parts) => {
@@ -118,27 +118,41 @@ async function buildTicketBytes(order) {
     add('PEDIDO:', LF);
     const items = Array.isArray(order.order) ? order.order : [];
     items.forEach((i, index) => {
-        const qty   = i.quantity || 1;
+        const qty = i.quantity || 1;
         const price = Number(i.price).toLocaleString('es-CO');
         add(`${index + 1}. ${i.productTitle} x${qty}`, LF);
         add(`   $${price}`, LF);
-        if (i.ingredients)    add(`   ${i.ingredients}`, LF);
+        if (i.ingredients) add(`   ${i.ingredients}`, LF);
         if (i.iceCreamFlavor) add(`   Helado  : ${i.iceCreamFlavor}`, LF);
-        if (i.flavor)         add(`   Sabor   : ${i.flavor}`, LF);
-        if (i.fruit)          add(`   Fruta   : ${i.fruit}`, LF);
-        if (i.juice)          add(`   Jugo    : ${i.juice}`, LF);
-        if (i.toppings)       add(`   Toppings: ${i.toppings}`, LF);
-        if (i.sauces)         add(`   Salsa   : ${i.sauces}`, LF);
-        if (i.notes)          add(`   Notas   : ${i.notes}`, LF);
-        if (i.additions)      add(`   Adiciones: ${i.additions.map(a => a.name).join(', ')}`, LF);
+        if (i.flavor) add(`   Sabor   : ${i.flavor}`, LF);
+        if (i.fruit) add(`   Fruta   : ${i.fruit}`, LF);
+        if (i.juice) add(`   Jugo    : ${i.juice}`, LF);
+        if (i.toppings) add(`   Toppings: ${i.toppings}`, LF);
+        if (i.sauces) add(`   Salsa   : ${i.sauces}`, LF);
+        if (i.notes) add(`   Notas   : ${i.notes}`, LF);
+        if (i.additions) add(`   Adiciones: ${i.additions.map(a => a.name).join(', ')}`, LF);
     });
 
     add('--------------------------------', LF);
     add(`Pago : ${order.paymentMethod}`, LF);
+
+    // Mostrar subtotal + domicilio si aplica
+    if (order.valorDomicilio) {
+        add(`Subtotal  : $${Number(order.total).toLocaleString('es-CO')}`, LF);
+        add(`Domicilio : +$${Number(order.valorDomicilio).toLocaleString('es-CO')}`, LF);
+    }
+    if (order.domiciliario) {
+        add(`Lleva     : ${order.domiciliario}`, LF);
+    }
+
     add(ESC, [0x45, 0x01]);
-    add(`TOTAL: $${Number(order.total).toLocaleString('es-CO')}`, LF);
+    const totalImpreso = order.totalConDomicilio ?? order.total;
+    add(`TOTAL: $${Number(totalImpreso).toLocaleString('es-CO')}`, LF);
     add(ESC, [0x45, 0x00]);
-    add('* Domicilio no incluido', LF);
+
+    if (!order.valorDomicilio) {
+        add('* Domicilio no incluido', LF);
+    }
     add('--------------------------------', LF);
 
     add(ESC, [0x61, 0x01]);
@@ -173,9 +187,9 @@ export async function printTicketWIFI(order) {
             return;
         }
 
-        const printerName  = printers.find(p => !/^\d+\.\d+\.\d+\.\d+$/.test(p)) ?? printers[0];
-        const config       = qz.configs.create(printerName);
-        const ticketBytes  = await buildTicketBytes(order);
+        const printerName = printers.find(p => !/^\d+\.\d+\.\d+\.\d+$/.test(p)) ?? printers[0];
+        const config = qz.configs.create(printerName);
+        const ticketBytes = await buildTicketBytes(order);
         const ticketBase64 = bytesToBase64(ticketBytes);
 
         await qz.print(config, [{ type: 'raw', format: 'base64', data: ticketBase64 }]);
