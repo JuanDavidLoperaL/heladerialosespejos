@@ -145,8 +145,24 @@ body {
     color: #194073;
 }
 
+.summary-sub-value {
+    font-size: 14px;
+    font-weight: bold;
+    color: #F27127;
+    margin-top: 2px;
+}
+
 .summary-card:first-child .summary-value {
     color: #F27127;
+}
+
+.summary-card-total {
+    border-top: 3px solid #2e7d32;
+}
+
+.summary-card-total .summary-value {
+    font-size: 22px;
+    color: #2e7d32;
 }
 
 /* ─── Orders grid ───────────────────────────────────────────────────────────── */

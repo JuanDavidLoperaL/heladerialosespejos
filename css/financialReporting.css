@@ -1,0 +1,340 @@
+/* =============================================
+   FINANCIAL REPORTING CSS
+   Paleta: #194073 azul | #F27127 naranja
+   ============================================= */
+
+/* ── Contenedor principal ─────────────────────────────────────────── */
+.fr-container {
+    padding: 20px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ── Tarjeta / bloque de sección ──────────────────────────────────── */
+.fr-form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 22px 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    border: 1px solid #e8ecf0;
+}
+
+/* ── Grid 2 columnas (ventas) ─────────────────────────────────────── */
+.fr-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+/* ── Select personalizado ─────────────────────────────────────────── */
+.fr-select {
+    padding: 8px 11px;
+    border: 1px solid #d0d0d0;
+    border-radius: 7px;
+    font-size: 14px;
+    color: #333;
+    background: white;
+    width: 100%;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.fr-select:focus { outline: none; border-color: #F27127; }
+
+/* ── Botón pequeño ────────────────────────────────────────────────── */
+.fr-btn-sm {
+    padding: 7px 14px !important;
+    font-size: 13px !important;
+}
+
+/* ── Sub-sección del formulario (Caja / DIAN) ────────────────────── */
+.fr-sub-section {
+    margin-top: 16px;
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1px solid #e8ecf0;
+}
+
+.fr-sub-section-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: #194073;
+    margin-bottom: 4px;
+    letter-spacing: .2px;
+}
+
+/* Diferencia de caja — colores semafóricos */
+.fr-caja-ok      { color: #2e7d32 !important; background: #f1faf2 !important; border-color: #a5d6a7 !important; }
+.fr-caja-surplus { color: #1565c0 !important; background: #e8f0fe !important; border-color: #90caf9 !important; }
+.fr-caja-deficit { color: #c62828 !important; background: #fff5f5 !important; border-color: #ef9a9a !important; }
+
+/* Badges en tabla */
+.fr-caja-badge { display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:bold; white-space:nowrap; }
+.fr-caja-badge.ok      { background:#e8f5e9; color:#2e7d32; }
+.fr-caja-badge.surplus { background:#e8f0fe; color:#1565c0; }
+.fr-caja-badge.deficit { background:#ffebee; color:#c62828; }
+
+/* ── Bloque de Gastos ─────────────────────────────────────────────── */
+.fr-gastos-block {
+    margin-top: 18px;
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1px solid #e8ecf0;
+}
+
+.fr-gastos-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.fr-gastos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fr-gastos-empty {
+    text-align: center;
+    color: #bbb;
+    font-size: 13px;
+    padding: 8px 0;
+    margin: 0;
+}
+
+/* Fila de un gasto: descripción | monto | borrar */
+.fr-gasto-item {
+    display: grid;
+    grid-template-columns: 1fr 150px auto;
+    gap: 8px;
+    align-items: center;
+    background: white;
+    border-radius: 8px;
+    padding: 8px 10px;
+    border: 1px solid #e0e0e0;
+}
+
+.fr-gasto-input-desc,
+.fr-gasto-input-monto {
+    padding: 7px 10px;
+    border: 1px solid #d0d0d0;
+    border-radius: 7px;
+    font-size: 13px;
+    color: #333;
+    width: 100%;
+    transition: border-color 0.2s;
+}
+.fr-gasto-input-desc:focus,
+.fr-gasto-input-monto:focus { outline: none; border-color: #F27127; }
+
+.fr-gasto-delete {
+    background: #ff4444;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+}
+.fr-gasto-delete:hover { opacity: 0.8; }
+
+.fr-gastos-total-row {
+    text-align: right;
+    font-size: 14px;
+    color: #194073;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* ── Cabecera de sección con botones de exportar ──────────────────── */
+.fr-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.fr-export-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ── Acciones del formulario ──────────────────────────────────────── */
+.fr-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+    padding-top: 14px;
+    border-top: 1px solid #f0f0f0;
+}
+
+/* ── Tabla de registros ───────────────────────────────────────────── */
+.badge-principal {
+    background: #e8f0fe;
+    color: #194073;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.badge-domicilio {
+    background: #fff3e0;
+    color: #e65100;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.btn-edit-fr {
+    background: #F27127;
+    color: white;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+}
+.btn-edit-fr:hover { opacity: 0.8; }
+
+.fr-gastos-detail {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.7;
+    max-width: 200px;
+}
+
+/* ── Resumen del mes ──────────────────────────────────────────────── */
+.fr-summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 4px;
+}
+
+.fr-summary-card {
+    background: white;
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #e8ecf0;
+}
+
+.fr-card-blue   { border-top: 4px solid #194073; }
+.fr-card-orange { border-top: 4px solid #F27127; }
+.fr-card-green  { border-top: 4px solid #2e7d32; background: #f9fafb; }
+
+.fr-summary-card h3 {
+    font-size: 15px;
+    font-weight: bold;
+    margin: 0 0 14px;
+    color: #194073;
+}
+.fr-card-orange h3 { color: #e65100; }
+.fr-card-green  h3 { color: #2e7d32; }
+
+.fr-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    font-size: 13px;
+    color: #555;
+    border-bottom: 1px solid #f0f0f0;
+}
+.fr-summary-row strong {
+    color: #194073;
+    font-size: 14px;
+}
+.fr-card-orange .fr-summary-row strong { color: #e65100; }
+.fr-card-green  .fr-summary-row strong { color: #2e7d32; }
+
+.fr-row-total {
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 2px solid rgba(25, 64, 115, 0.15);
+    border-bottom: none !important;
+    font-weight: bold;
+}
+.fr-row-total strong { font-size: 16px !important; }
+
+.fr-row-gastos { border-bottom: none !important; }
+.fr-row-gastos strong { color: #c62828 !important; }
+
+.fr-row-iva { }
+.fr-row-iva strong { color: #6a1b9a !important; font-size: 13px !important; }
+
+.fr-row-subtotal {
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 2px dashed rgba(25, 64, 115, 0.2) !important;
+    border-bottom: none !important;
+    font-weight: bold;
+}
+.fr-row-subtotal strong { color: #194073 !important; font-size: 15px !important; }
+.fr-card-orange .fr-row-subtotal strong { color: #e65100 !important; }
+.fr-card-green  .fr-row-subtotal strong { color: #2e7d32 !important; }
+
+.fr-row-neto {
+    margin-top: 6px;
+    padding: 10px 0 2px;
+    border-top: 3px solid rgba(25, 64, 115, 0.25) !important;
+    border-bottom: none !important;
+    font-weight: bold;
+}
+.fr-row-neto strong { color: #194073 !important; font-size: 17px !important; }
+.fr-card-orange .fr-row-neto strong { color: #e65100 !important; }
+.fr-card-green  .fr-row-neto strong { color: #2e7d32 !important; }
+
+/* ── Toast de feedback ────────────────────────────────────────────── */
+.fr-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #194073;
+    color: white;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 99999;
+    pointer-events: none;
+}
+.fr-toast.fr-visible  { opacity: 1; transform: translateY(0); }
+.fr-toast.fr-error    { background: #c62828; }
+.fr-toast.fr-success  { background: #2e7d32; }
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .fr-summary-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 680px) {
+    .fr-container { padding: 12px; }
+    .fr-summary-grid { grid-template-columns: 1fr; }
+    .fr-grid-2 { grid-template-columns: 1fr; }
+    .fr-gasto-item { grid-template-columns: 1fr auto; }
+    .fr-gasto-input-monto { grid-column: 1; }
+}

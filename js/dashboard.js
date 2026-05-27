@@ -9,7 +9,8 @@ const btnAnaliticas = document.getElementById('btn-analiticas');
 const logoutBtn = document.getElementById('logout-btn');
 const btnHowToDoIt = document.getElementById('btn-howtodoit');
 const btnPayrollManagement = document.getElementById('btn-payroll-management');
-const btnCompletedOrders = document.getElementById('btn-completed-orders');
+const btnCompletedOrders     = document.getElementById('btn-completed-orders');
+const btnFinancialReporting  = document.getElementById('btn-financial-reporting');
 
 const ADMIN_EMAIL = "adminlosespejos@heladerialosespejos.com";
 
@@ -18,7 +19,8 @@ const pages = {
     analiticas: { html: 'businessAnalytics.html', js: 'js/businessAnalytics.js' },
     howtodoit: { html: 'howToDoIt.html', js: 'js/howToDoIt.js' },
     payrollManagement: { html: 'payrollManagement.html', js: 'js/Payrollmanagement.js' },
-    completedOrders: { html: 'completed-orders.html', js: 'js/completed-orders.js' }
+    completedOrders    : { html: 'completed-orders.html',    js: 'js/completed-orders.js'    },
+    financialReporting : { html: 'financialReporting.html',  js: 'js/financialReporting.js'  }
 };
 
 let currentScript = null;
@@ -28,7 +30,7 @@ async function loadPage(page) {
     const isAdmin = user?.email === ADMIN_EMAIL;
 
     // Bloquear acceso
-    if (!isAdmin && (page === 'analiticas' || page === 'payrollManagement')) {
+    if (!isAdmin && (page === 'analiticas' || page === 'payrollManagement' || page === 'financialReporting')) {
         contentFrame.innerHTML = `
             <p style="padding:20px;color:red;">
                 No tienes permisos para acceder a esta sección.
@@ -81,12 +83,14 @@ onAuthStateChanged(auth, (user) => {
 function configureMenuByRole(isAdmin) {
     if (!isAdmin) {
         // Ocultar opciones que NO deben ver
-        btnAnaliticas.style.display = 'none';
-        btnPayrollManagement.style.display = 'none';
+        btnAnaliticas.style.display         = 'none';
+        btnPayrollManagement.style.display  = 'none';
+        btnFinancialReporting.style.display = 'none';
     } else {
         // Asegurar que admin sí vea todo
-        btnAnaliticas.style.display = 'block';
-        btnPayrollManagement.style.display = 'block';
+        btnAnaliticas.style.display         = 'block';
+        btnPayrollManagement.style.display  = 'block';
+        btnFinancialReporting.style.display = 'block';
     }
 }
 
@@ -111,6 +115,11 @@ btnPayrollManagement.addEventListener('click', () => {
 btnCompletedOrders.addEventListener('click', () => {
     loadPage('completedOrders');
     setActive(btnCompletedOrders);
+});
+
+btnFinancialReporting.addEventListener('click', () => {
+    loadPage('financialReporting');
+    setActive(btnFinancialReporting);
 });
 
 logoutBtn.addEventListener('click', async () => {
