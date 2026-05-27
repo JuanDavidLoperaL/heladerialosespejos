@@ -20,6 +20,15 @@ export function formatDate(date) {
     }).format(date);
 }
 
+export function timeString() {
+    return new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
+        hour:   '2-digit',
+        minute: '2-digit',
+        hour12: true
+    }).format(new Date());
+}
+
 export function isValidColombianPhone(phone) {
     const regex = /^(?:\+57)?[ -]?(3[0-9]{2}|60[1-8])[ -]?[0-9]{3}[ -]?[0-9]{4}$/;
     return regex.test(phone);
