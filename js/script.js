@@ -7,7 +7,7 @@ import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
 import { logError, logWarn, logInfo } from "./logger.js";
-import { todayString, isValidColombianPhone, showFeedback } from "./utils.js";
+import { todayString, timeString, isValidColombianPhone, showFeedback } from "./utils.js";
 
 const analytics    = getAnalytics(app);
 const remoteConfig = getRemoteConfig(app);
@@ -1010,6 +1010,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         message += `*Total productos: $${currentOrder.total.toLocaleString('es-CO')}*\n`;
         message += `*Domicilio no incluido!* Nuestra asesora te dara el precio final con domicilio incluido\n\n`;
+        message += `📅 *Fecha:* ${todayString()} — ${timeString()}\n\n`;
         message += `*Mis datos:*\n`;
         message += `*Nombre:* ${currentOrder.customerInfo.name}\n`;
         message += `*Teléfono:* ${currentOrder.customerInfo.phone}\n`;

@@ -104,12 +104,21 @@ function renderSummary(orders) {
         return;
     }
 
-    const efectivo   = orders.filter(o => o.paymentMethod === 'Efectivo').length;
-    const transfer   = orders.filter(o => o.paymentMethod !== 'Efectivo').length;
+    const fmtCO = (n) => '$' + Number(n || 0).toLocaleString('es-CO');
 
-    document.getElementById('summary-orders').textContent   = orders.length;
-    document.getElementById('summary-efectivo').textContent = efectivo;
-    document.getElementById('summary-transfer').textContent = transfer;
+    const efectivoOrders = orders.filter(o => o.paymentMethod === 'Efectivo');
+    const transferOrders = orders.filter(o => o.paymentMethod !== 'Efectivo');
+
+    const totalEfectivo = efectivoOrders.reduce((s, o) => s + (o.total || 0), 0);
+    const totalTransfer = transferOrders.reduce((s, o) => s + (o.total || 0), 0);
+    const totalGeneral  = totalEfectivo + totalTransfer;
+
+    document.getElementById('summary-orders').textContent         = orders.length;
+    document.getElementById('summary-efectivo').textContent       = efectivoOrders.length;
+    document.getElementById('summary-efectivo-total').textContent = fmtCO(totalEfectivo);
+    document.getElementById('summary-transfer').textContent       = transferOrders.length;
+    document.getElementById('summary-transfer-total').textContent = fmtCO(totalTransfer);
+    document.getElementById('summary-total').textContent          = fmtCO(totalGeneral);
 
     daySummary.style.display = 'flex';
 }

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Financiero</title>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="payroll-header">
+    <h1>💰 Reporte Financiero Diario</h1>
+</div>
+
+<!-- PERIODO -->
+<div class="period-bar">
+    <label>📅 Mes:</label>
+    <input type="month" id="fr-month" />
+    <span class="legal-badge" id="fr-month-label">Mes actual</span>
+</div>
+
+<div class="fr-container">
+
+    <!-- ======================================================
+         FORMULARIO
+    ====================================================== -->
+    <div class="fr-form-card">
+        <h2 class="section-title">📝 <span id="fr-form-mode-label">Nuevo Registro</span></h2>
+
+        <div class="form-grid-3">
+            <div class="form-group">
+                <label>Fecha</label>
+                <input type="date" id="fr-date" />
+            </div>
+            <div class="form-group">
+                <label>Punto</label>
+                <select id="fr-punto" class="fr-select">
+                    <option value="principal">🏪 Punto Principal</option>
+                    <option value="domicilio">🛵 Punto Domicilio</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Registrado por</label>
+                <input type="text" id="fr-usuario" readonly class="input-readonly" placeholder="Cargando..." />
+            </div>
+        </div>
+
+        <div class="fr-grid-2">
+            <div class="form-group">
+                <label>Ventas Transferencia ($)</label>
+                <input type="number" id="fr-transferencia" min="0" value="0" />
+                <span class="field-hint">Pagos por transferencia bancaria</span>
+            </div>
+            <div class="form-group">
+                <label>Ventas Efectivo ($)</label>
+                <input type="number" id="fr-efectivo" min="0" value="0" />
+                <span class="field-hint">Pagos en efectivo</span>
+            </div>
+        </div>
+
+        <!-- CUADRE DE CAJA -->
+        <div class="fr-sub-section">
+            <div class="fr-sub-section-title">📦 Cuadre de Caja</div>
+            <div class="fr-grid-2">
+                <div class="form-group">
+                    <label>Efectivo Contado en Caja ($)</label>
+                    <input type="number" id="fr-caja" min="0" value="0" />
+                    <span class="field-hint">Dinero físico que quedó en caja al cerrar</span>
+                </div>
+                <div class="form-group">
+                    <label>Diferencia de Caja</label>
+                    <input type="text" id="fr-caja-diff" readonly class="input-readonly" placeholder="—" />
+                    <span class="field-hint">Efectivo − Gastos vs lo contado</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- FACTURACIÓN DIAN -->
+        <div class="fr-sub-section">
+            <div class="fr-sub-section-title">🧾 Facturación DIAN</div>
+            <div class="fr-grid-2">
+                <div class="form-group">
+                    <label>Monto Facturado DIAN ($)</label>
+                    <input type="number" id="fr-dian" min="0" value="0" />
+                    <span class="field-hint">Valor facturado electrónicamente hoy</span>
+                </div>
+                <div class="form-group">
+                    <label>IVA 19%</label>
+                    <input type="text" id="fr-dian-iva" readonly class="input-readonly" placeholder="—" />
+                    <span class="field-hint">Calculado automáticamente</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- GASTOS -->
+        <div class="fr-gastos-block">
+            <div class="fr-gastos-header">
+                <h4 class="section-title" style="margin:0;">🧾 Gastos del día</h4>
+                <button class="btn-secondary fr-btn-sm" id="fr-btn-add-gasto">+ Agregar Gasto</button>
+            </div>
+            <div id="fr-gastos-list" class="fr-gastos-list">
+                <p class="fr-gastos-empty" id="fr-gastos-empty">Sin gastos registrados</p>
+            </div>
+            <div class="fr-gastos-total-row">
+                Total Gastos: <strong id="fr-gastos-total-val">$0</strong>
+            </div>
+        </div>
+
+        <div class="fr-actions">
+            <button class="btn-primary" id="fr-btn-save">💾 Guardar</button>
+            <button class="btn-secondary" id="fr-btn-cancel" style="display:none;">✖ Cancelar Edición</button>
+            <button class="popup-btn dismiss" id="fr-btn-clear">🗑 Limpiar</button>
+        </div>
+    </div>
+
+    <!-- ======================================================
+         TABLA DE REGISTROS
+    ====================================================== -->
+    <div class="fr-form-card">
+        <div class="fr-section-header">
+            <h2 class="section-title" style="margin:0;">📋 Registros del Mes</h2>
+            <div class="fr-export-btns">
+                <button class="btn-secondary fr-btn-sm" id="fr-btn-pdf">📄 Exportar PDF</button>
+                <button class="popup-btn btn-calcular fr-btn-sm" id="fr-btn-excel">📊 Exportar Excel</button>
+            </div>
+        </div>
+        <p class="no-employees" id="fr-no-data">Cargando registros...</p>
+        <div id="fr-table-wrapper" style="display:none; overflow-x:auto;">
+            <table class="payroll-table" id="fr-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Punto</th>
+                        <th>Transferencia</th>
+                        <th>Efectivo</th>
+                        <th>Total Ventas</th>
+                        <th>Total Gastos</th>
+                        <th>Detalle Gastos</th>
+                        <th>Caja Contada</th>
+                        <th>Dif. Caja</th>
+                        <th>Fact. DIAN</th>
+                        <th>IVA 19%</th>
+                        <th>Usuario</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="fr-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ======================================================
+         RESUMEN DEL MES
+    ====================================================== -->
+    <div class="fr-form-card">
+        <h2 class="section-title">📊 Resumen del Mes</h2>
+        <div class="fr-summary-grid">
+
+            <!-- Punto Principal -->
+            <div class="fr-summary-card fr-card-blue">
+                <h3>🏪 Punto Principal</h3>
+                <div class="fr-summary-row">
+                    <span>Ventas Transferencia</span>
+                    <strong id="sum-p-trans">$0</strong>
+                </div>
+                <div class="fr-summary-row">
+                    <span>Ventas Efectivo</span>
+                    <strong id="sum-p-efec">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-total">
+                    <span>Total Ventas</span>
+                    <strong id="sum-p-ventas">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-gastos">
+                    <span>Total Gastos</span>
+                    <strong id="sum-p-gastos">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-subtotal">
+                    <span>Subtotal Ventas − Gastos</span>
+                    <strong id="sum-p-subtotal">$0</strong>
+                </div>
+                <div class="fr-summary-row">
+                    <span>Facturación DIAN</span>
+                    <strong id="sum-p-dian">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-iva">
+                    <span>IVA 19% DIAN</span>
+                    <strong id="sum-p-iva">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-neto">
+                    <span>Total Ventas − Gastos − IVA</span>
+                    <strong id="sum-p-neto">$0</strong>
+                </div>
+            </div>
+
+            <!-- Punto Domicilio -->
+            <div class="fr-summary-card fr-card-orange">
+                <h3>🛵 Punto Domicilio</h3>
+                <div class="fr-summary-row">
+                    <span>Ventas Transferencia</span>
+                    <strong id="sum-d-trans">$0</strong>
+                </div>
+                <div class="fr-summary-row">
+                    <span>Ventas Efectivo</span>
+                    <strong id="sum-d-efec">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-total">
+                    <span>Total Ventas</span>
+                    <strong id="sum-d-ventas">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-gastos">
+                    <span>Total Gastos</span>
+                    <strong id="sum-d-gastos">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-subtotal">
+                    <span>Subtotal Ventas − Gastos</span>
+                    <strong id="sum-d-subtotal">$0</strong>
+                </div>
+                <div class="fr-summary-row">
+                    <span>Facturación DIAN</span>
+                    <strong id="sum-d-dian">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-iva">
+                    <span>IVA 19% DIAN</span>
+                    <strong id="sum-d-iva">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-neto">
+                    <span>Total Ventas − Gastos − IVA</span>
+                    <strong id="sum-d-neto">$0</strong>
+                </div>
+            </div>
+
+            <!-- Total General -->
+            <div class="fr-summary-card fr-card-green">
+                <h3>📊 Total General</h3>
+                <div class="fr-summary-row">
+                    <span>Ventas Transferencia</span>
+                    <strong id="sum-t-trans">$0</strong>
+                </div>
+                <div class="fr-summary-row">
+                    <span>Ventas Efectivo</span>
+                    <strong id="sum-t-efec">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-total">
+                    <span>Total Ventas</span>
+                    <strong id="sum-t-ventas">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-gastos">
+                    <span>Total Gastos</span>
+                    <strong id="sum-t-gastos">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-subtotal">
+                    <span>Subtotal Ventas − Gastos</span>
+                    <strong id="sum-t-subtotal">$0</strong>
+                </div>
+                <div class="fr-summary-row">
+                    <span>Facturación DIAN</span>
+                    <strong id="sum-t-dian">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-iva">
+                    <span>IVA 19% DIAN</span>
+                    <strong id="sum-t-iva">$0</strong>
+                </div>
+                <div class="fr-summary-row fr-row-neto">
+                    <span>Total Ventas − Gastos − IVA</span>
+                    <strong id="sum-t-neto">$0</strong>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- POPUP Confirmar guardado -->
+<div class="popup-overlay" id="fr-confirm-popup">
+    <div class="popup">
+        <h3 id="fr-confirm-title">¿Guardar registro?</h3>
+        <p id="fr-confirm-desc">Se guardará la información en Firebase.</p>
+        <div class="popup-buttons">
+            <button class="popup-btn confirm-cancel" id="fr-confirm-yes">💾 Guardar</button>
+            <button class="popup-btn dismiss" id="fr-confirm-no">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="fr-toast" id="fr-toast"></div>
+
+</body>
+</html>
