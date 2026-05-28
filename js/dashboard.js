@@ -18,6 +18,7 @@ const btnFinancialReporting  = document.getElementById('btn-financial-reporting'
 const USER_ROLES = {
     "adminlosespejos@heladerialosespejos.com": "admin",
     "andrea.moreno@heladerialosespejos.com": "manager",
+    "salome.mejia@heladerialosespejos.com": "manager"
     // "otroUsuario@ejemplo.com": "manager",
 };
 
