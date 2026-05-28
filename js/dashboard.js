@@ -12,7 +12,29 @@ const btnPayrollManagement = document.getElementById('btn-payroll-management');
 const btnCompletedOrders     = document.getElementById('btn-completed-orders');
 const btnFinancialReporting  = document.getElementById('btn-financial-reporting');
 
-const ADMIN_EMAIL = "adminlosespejos@heladerialosespejos.com";
+// ── Roles de usuario ──────────────────────────────────────────────────────────
+// Para agregar un usuario: "email@ejemplo.com": "admin" | "manager" | "default"
+// Cualquier email que no esté aquí recibe el rol "default" automáticamente.
+const USER_ROLES = {
+    "adminlosespejos@heladerialosespejos.com": "admin",
+    "andrea.moreno@heladerialosespejos.com": "manager",
+    // "otroUsuario@ejemplo.com": "manager",
+};
+
+// Páginas bloqueadas por rol (admin = sin restricciones)
+const RESTRICTED_PAGES = {
+    admin:   [],
+    manager: ["analiticas", "payrollManagement"],
+    default: ["analiticas", "payrollManagement", "financialReporting"],
+};
+
+function getRole(email) {
+    return USER_ROLES[email] ?? "default";
+}
+
+function canAccess(role, page) {
+    return !(RESTRICTED_PAGES[role] ?? RESTRICTED_PAGES.default).includes(page);
+}
 
 const pages = {
     pedidos: { html: 'productOrder.html', js: 'js/productOrder.js' },
@@ -27,10 +49,9 @@ let currentScript = null;
 
 async function loadPage(page) {
     const user = auth.currentUser;
-    const isAdmin = user?.email === ADMIN_EMAIL;
+    const role = getRole(user?.email);
 
-    // Bloquear acceso
-    if (!isAdmin && (page === 'analiticas' || page === 'payrollManagement' || page === 'financialReporting')) {
+    if (!canAccess(role, page)) {
         contentFrame.innerHTML = `
             <p style="padding:20px;color:red;">
                 No tienes permisos para acceder a esta sección.
@@ -73,25 +94,23 @@ onAuthStateChanged(auth, (user) => {
         return;
     }
 
-    const isAdmin = user.email === ADMIN_EMAIL;
-
-    configureMenuByRole(isAdmin);
-
+    const role = getRole(user.email);
+    configureMenuByRole(role);
     loadPage('pedidos');
 });
 
-function configureMenuByRole(isAdmin) {
-    if (!isAdmin) {
-        // Ocultar opciones que NO deben ver
-        btnAnaliticas.style.display         = 'none';
-        btnPayrollManagement.style.display  = 'none';
-        btnFinancialReporting.style.display = 'none';
-    } else {
-        // Asegurar que admin sí vea todo
-        btnAnaliticas.style.display         = 'block';
-        btnPayrollManagement.style.display  = 'block';
-        btnFinancialReporting.style.display = 'block';
-    }
+// Mapa página → botón del menú (solo las páginas que pueden restringirse)
+const PAGE_BUTTONS = {
+    analiticas:         btnAnaliticas,
+    payrollManagement:  btnPayrollManagement,
+    financialReporting: btnFinancialReporting,
+};
+
+function configureMenuByRole(role) {
+    const restricted = RESTRICTED_PAGES[role] ?? RESTRICTED_PAGES.default;
+    Object.entries(PAGE_BUTTONS).forEach(([page, btn]) => {
+        btn.style.display = restricted.includes(page) ? 'none' : 'block';
+    });
 }
 
 btnPedidos.addEventListener('click', () => {
