@@ -9,7 +9,7 @@ import { printTicketWIFI } from "./printer.js";
 
 
 const USE_MOCK = false;
-const DOMICILIARIOS = ['Juan José', 'Sebastian Rico', 'Felipe Yeppes', 'Emanuel', 'Camilo Mejia', 'Don José'];
+const DOMICILIARIOS = ['Juan José', 'Sebastian Rico', 'Felipe Yepes', 'Emmanuel Pareja', 'Camilo Mejia', 'Don José'];
 const deliveryData = new Map();
 
 function pendingPath(orderNumber) {

@@ -732,6 +732,12 @@ function init() {
     document.getElementById('fr-btn-pdf')?.addEventListener('click', exportPDF);
     document.getElementById('fr-btn-excel')?.addEventListener('click', exportExcel);
 
+    // Ocultar resumen del mes para el rol "reporter"
+    if (window.currentUserRole === 'reporter') {
+        const summarySection = document.getElementById('fr-summary-section');
+        if (summarySection) summarySection.style.display = 'none';
+    }
+
     // Cargar registros del mes actual
     loadRecords();
 }

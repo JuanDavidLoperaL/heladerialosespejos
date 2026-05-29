@@ -13,19 +13,24 @@ const btnCompletedOrders     = document.getElementById('btn-completed-orders');
 const btnFinancialReporting  = document.getElementById('btn-financial-reporting');
 
 // ── Roles de usuario ──────────────────────────────────────────────────────────
-// Para agregar un usuario: "email@ejemplo.com": "admin" | "manager" | "default"
+// Para agregar un usuario: "email@ejemplo.com": "admin" | "manager" | "reporter" | "default"
 // Cualquier email que no esté aquí recibe el rol "default" automáticamente.
 const USER_ROLES = {
-    "adminlosespejos@heladerialosespejos.com": "admin",
-    "andrea.moreno@heladerialosespejos.com": "manager",
-    // "otroUsuario@ejemplo.com": "manager",
+    "adminlosespejos@heladerialosespejos.com":  "admin",
+    "andrea.moreno@heladerialosespejos.com":    "manager",
+    "ximena.diaz@heladerialosespejos.com":      "reporter",
+    "salome.mejia@heladerialosespejos.com":     "reporter",
+    "saray.mejia@heladerialosespejos.com":      "reporter",
+    "sofia.raigosa@heladerialosespejos.com":    "reporter",
 };
 
 // Páginas bloqueadas por rol (admin = sin restricciones)
+// reporter: accede a financialReporting pero sin ver el resumen del mes (lo controla financialReporting.js)
 const RESTRICTED_PAGES = {
-    admin:   [],
-    manager: ["analiticas", "payrollManagement"],
-    default: ["analiticas", "payrollManagement", "financialReporting"],
+    admin:    [],
+    manager:  ["analiticas", "payrollManagement"],
+    reporter: ["analiticas", "payrollManagement"],
+    default:  ["analiticas", "payrollManagement", "financialReporting"],
 };
 
 function getRole(email) {
@@ -95,6 +100,7 @@ onAuthStateChanged(auth, (user) => {
     }
 
     const role = getRole(user.email);
+    window.currentUserRole = role;   // disponible para los módulos cargados dinámicamente
     configureMenuByRole(role);
     loadPage('pedidos');
 });
