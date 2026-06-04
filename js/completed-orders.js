@@ -7,6 +7,7 @@ import { printTicketWIFI } from "./printer.js";
 
 let allOrders        = [];   // todos los pedidos cargados para el día
 let pendingPrintOrder = null;
+let activeFilter     = 'all'; // 'all' | 'Efectivo' | 'transfer'
 
 // ─── DOM ───────────────────────────────────────────────────────────────────────
 
@@ -58,7 +59,9 @@ async function fetchCompletedOrders(dateStr) {
             return da - db_;
         });
 
-        renderOrders(allOrders);
+        activeFilter = 'all';
+        document.querySelectorAll('.btn-filter').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+        renderOrders(getFilteredOrders());
         renderSummary(allOrders);
 
     } catch (err) {
@@ -198,6 +201,25 @@ function buildTicket(order) {
 
     return ticket;
 }
+
+// ─── Filtro por método de pago ─────────────────────────────────────────────────
+
+function getFilteredOrders() {
+    if (activeFilter === 'all')      return allOrders;
+    if (activeFilter === 'Efectivo') return allOrders.filter(o => o.paymentMethod === 'Efectivo');
+    if (activeFilter === 'transfer') return allOrders.filter(o => o.paymentMethod !== 'Efectivo');
+    return allOrders;
+}
+
+document.querySelectorAll('.btn-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+        activeFilter = btn.dataset.filter;
+        document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        searchInput.value = '';
+        renderOrders(getFilteredOrders());
+    });
+});
 
 // ─── Búsqueda por comanda ──────────────────────────────────────────────────────
 

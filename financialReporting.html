@@ -47,12 +47,12 @@
         <div class="fr-grid-2">
             <div class="form-group">
                 <label>Ventas Transferencia ($)</label>
-                <input type="number" id="fr-transferencia" min="0" value="0" />
+                <input type="text" inputmode="numeric" id="fr-transferencia" value="0" />
                 <span class="field-hint">Pagos por transferencia bancaria</span>
             </div>
             <div class="form-group">
                 <label>Ventas Efectivo ($)</label>
-                <input type="number" id="fr-efectivo" min="0" value="0" />
+                <input type="text" inputmode="numeric" id="fr-efectivo" value="0" />
                 <span class="field-hint">Pagos en efectivo</span>
             </div>
         </div>
@@ -63,7 +63,7 @@
             <div class="fr-grid-2">
                 <div class="form-group">
                     <label>Efectivo Contado en Caja ($)</label>
-                    <input type="number" id="fr-caja" min="0" value="0" />
+                    <input type="text" inputmode="numeric" id="fr-caja" value="0" />
                     <span class="field-hint">Dinero físico que quedó en caja al cerrar</span>
                 </div>
                 <div class="form-group">
@@ -80,7 +80,7 @@
             <div class="fr-grid-2">
                 <div class="form-group">
                     <label>Monto Facturado DIAN ($)</label>
-                    <input type="number" id="fr-dian" min="0" value="0" />
+                    <input type="text" inputmode="numeric" id="fr-dian" value="0" />
                     <span class="field-hint">Valor facturado electrónicamente hoy</span>
                 </div>
                 <div class="form-group">
@@ -102,6 +102,34 @@
             </div>
             <div class="fr-gastos-total-row">
                 Total Gastos: <strong id="fr-gastos-total-val">$0</strong>
+            </div>
+        </div>
+
+        <!-- GASTOS EN TRANSFERENCIAS -->
+        <div class="fr-gastos-block">
+            <div class="fr-gastos-header">
+                <h4 class="section-title" style="margin:0;">📲 Gastos en Transferencias</h4>
+                <button class="btn-secondary fr-btn-sm" id="fr-btn-add-gasto-transfer">+ Agregar</button>
+            </div>
+            <div id="fr-gastos-transfer-list" class="fr-gastos-list">
+                <p class="fr-gastos-empty" id="fr-gastos-transfer-empty">Sin gastos registrados</p>
+            </div>
+            <div class="fr-gastos-total-row">
+                Total: <strong id="fr-gastos-transfer-total-val">$0</strong>
+            </div>
+        </div>
+
+        <!-- GASTOS CAJA MAYOR -->
+        <div class="fr-gastos-block">
+            <div class="fr-gastos-header">
+                <h4 class="section-title" style="margin:0;">🏦 Gastos Caja Mayor</h4>
+                <button class="btn-secondary fr-btn-sm" id="fr-btn-add-gasto-cajaMayor">+ Agregar</button>
+            </div>
+            <div id="fr-gastos-cajaMayor-list" class="fr-gastos-list">
+                <p class="fr-gastos-empty" id="fr-gastos-cajaMayor-empty">Sin gastos registrados</p>
+            </div>
+            <div class="fr-gastos-total-row">
+                Total: <strong id="fr-gastos-cajaMayor-total-val">$0</strong>
             </div>
         </div>
 
@@ -135,6 +163,10 @@
                         <th>Total Ventas</th>
                         <th>Total Gastos</th>
                         <th>Detalle Gastos</th>
+                        <th>Gastos Transfer.</th>
+                        <th>Detalle G. Transfer.</th>
+                        <th>Gastos Caja Mayor</th>
+                        <th>Detalle Caja Mayor</th>
                         <th>Caja Contada</th>
                         <th>Dif. Caja</th>
                         <th>Fact. DIAN</th>

@@ -5,12 +5,14 @@ import {
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // ── Estado ────────────────────────────────────────────────────────────────
-let currentUser  = null;
-let isEditMode   = false;
-let editMonthDoc = null;   // "YYYY-MM" del registro en edición
-let editDayKey   = null;   // "DD_punto" del registro en edición  (ej: "26_principal")
-let gastosItems  = [];
-let allRecords   = [];     // registros cargados del mes actual
+let currentUser          = null;
+let isEditMode           = false;
+let editMonthDoc         = null;
+let editDayKey           = null;
+let gastosItems          = [];
+let gastosTransferItems  = [];
+let gastosCajaMayorItems = [];
+let allRecords           = [];
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function fmt(n) {
@@ -21,6 +23,27 @@ function escHtml(s) {
     return String(s || '')
         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
         .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Parsea un string con puntos de miles → número  ("1.200.000" → 1200000)
+function parseCOP(val) {
+    return parseInt(String(val).replace(/\./g, '').replace(/,/g, ''), 10) || 0;
+}
+
+// Formatea un número con puntos de miles estilo colombiano
+function formatCOP(val) {
+    const n = parseInt(String(val).replace(/\./g, ''), 10) || 0;
+    return n > 0 ? n.toLocaleString('es-CO') : '0';
+}
+
+// Aplica formato automático a un input mientras el usuario escribe
+function attachCOPFormat(el) {
+    if (!el) return;
+    el.addEventListener('input', () => {
+        const digits = el.value.replace(/\D/g, '');
+        const n = parseInt(digits, 10) || 0;
+        el.value = n > 0 ? n.toLocaleString('es-CO') : '';
+    });
 }
 
 function monthLabel(ym) {
@@ -80,15 +103,20 @@ function clearForm() {
     document.getElementById('fr-caja').value          = '0';
     document.getElementById('fr-dian').value          = '0';
 
+
     const cajaDiff = document.getElementById('fr-caja-diff');
     if (cajaDiff) { cajaDiff.value = ''; cajaDiff.className = 'input-readonly'; }
     const dianIva  = document.getElementById('fr-dian-iva');
     if (dianIva)  dianIva.value = '';
 
-    gastosItems  = [];
+    gastosItems          = [];
+    gastosTransferItems  = [];
+    gastosCajaMayorItems = [];
     editMonthDoc = null;
     editDayKey   = null;
     renderGastos();
+    renderGastosTransfer();
+    renderGastosCajaMayor();
     setEditMode(false);
 }
 
@@ -112,9 +140,9 @@ function renderGastos() {
                     placeholder="Descripción del gasto"
                     value="${escHtml(item.descripcion)}"
                     data-i="${i}" data-f="descripcion" />
-                <input class="fr-gasto-input-monto" type="number"
-                    min="0" placeholder="0"
-                    value="${item.monto || 0}"
+                <input class="fr-gasto-input-monto" type="text" inputmode="numeric"
+                    placeholder="0"
+                    value="${item.monto > 0 ? Number(item.monto).toLocaleString('es-CO') : ''}"
                     data-i="${i}" data-f="monto" />
                 <button class="fr-gasto-delete" data-i="${i}" title="Eliminar gasto">✕</button>
             `;
@@ -125,18 +153,67 @@ function renderGastos() {
 }
 
 function updateGastosTotal() {
-    const total = gastosItems.reduce((s, g) => s + (parseFloat(g.monto) || 0), 0);
+    const total = gastosItems.reduce((s, g) => s + (parseCOP(g.monto) || 0), 0);
     const el = document.getElementById('fr-gastos-total-val');
     if (el) el.textContent = fmt(total);
     updateCajaAndDian();
 }
 
+function buildGastoRow(item, i, prefix) {
+    const div = document.createElement('div');
+    div.className = 'fr-gasto-item';
+    div.innerHTML = `
+        <input class="fr-gasto-input-desc" type="text"
+            placeholder="Descripción"
+            value="${escHtml(item.descripcion)}"
+            data-i="${i}" data-f="descripcion" data-prefix="${prefix}" />
+        <input class="fr-gasto-input-monto" type="text" inputmode="numeric"
+            placeholder="0"
+            value="${item.monto > 0 ? Number(item.monto).toLocaleString('es-CO') : ''}"
+            data-i="${i}" data-f="monto" data-prefix="${prefix}" />
+        <button class="fr-gasto-delete" data-i="${i}" data-prefix="${prefix}" title="Eliminar">✕</button>
+    `;
+    return div;
+}
+
+function renderGastosTransfer() {
+    const list  = document.getElementById('fr-gastos-transfer-list');
+    const empty = document.getElementById('fr-gastos-transfer-empty');
+    if (!list) return;
+    list.querySelectorAll('.fr-gasto-item').forEach(el => el.remove());
+    if (gastosTransferItems.length === 0) {
+        if (empty) empty.style.display = 'block';
+    } else {
+        if (empty) empty.style.display = 'none';
+        gastosTransferItems.forEach((item, i) => list.appendChild(buildGastoRow(item, i, 'transfer')));
+    }
+    const total = gastosTransferItems.reduce((s, g) => s + (parseCOP(g.monto) || 0), 0);
+    const el = document.getElementById('fr-gastos-transfer-total-val');
+    if (el) el.textContent = fmt(total);
+}
+
+function renderGastosCajaMayor() {
+    const list  = document.getElementById('fr-gastos-cajaMayor-list');
+    const empty = document.getElementById('fr-gastos-cajaMayor-empty');
+    if (!list) return;
+    list.querySelectorAll('.fr-gasto-item').forEach(el => el.remove());
+    if (gastosCajaMayorItems.length === 0) {
+        if (empty) empty.style.display = 'block';
+    } else {
+        if (empty) empty.style.display = 'none';
+        gastosCajaMayorItems.forEach((item, i) => list.appendChild(buildGastoRow(item, i, 'cajaMayor')));
+    }
+    const total = gastosCajaMayorItems.reduce((s, g) => s + (parseCOP(g.monto) || 0), 0);
+    const el = document.getElementById('fr-gastos-cajaMayor-total-val');
+    if (el) el.textContent = fmt(total);
+}
+
 // ── Cuadre de Caja y DIAN en tiempo real ──────────────────────────────────
 function updateCajaAndDian() {
-    const efectivo    = parseFloat(document.getElementById('fr-efectivo')?.value)   || 0;
-    const cajaVal     = parseFloat(document.getElementById('fr-caja')?.value)       || 0;
-    const dianVal     = parseFloat(document.getElementById('fr-dian')?.value)       || 0;
-    const totalGastos = gastosItems.reduce((s, g) => s + (parseFloat(g.monto) || 0), 0);
+    const efectivo    = parseCOP(document.getElementById('fr-efectivo')?.value);
+    const cajaVal     = parseCOP(document.getElementById('fr-caja')?.value);
+    const dianVal     = parseCOP(document.getElementById('fr-dian')?.value);
+    const totalGastos = gastosItems.reduce((s, g) => s + (parseCOP(g.monto) || 0), 0);
 
     // ── Cuadre de caja ────────────────────────────────────────────────────
     // esperado = lo que debería haber en caja = efectivo recibido − gastos pagados
@@ -171,10 +248,10 @@ function updateCajaAndDian() {
 async function saveEntry() {
     const fecha         = document.getElementById('fr-date').value;
     const punto         = document.getElementById('fr-punto').value;
-    const transferencia = parseFloat(document.getElementById('fr-transferencia').value) || 0;
-    const efectivo      = parseFloat(document.getElementById('fr-efectivo').value)      || 0;
-    const cajaContada   = parseFloat(document.getElementById('fr-caja').value)          || 0;
-    const dian          = parseFloat(document.getElementById('fr-dian').value)          || 0;
+    const transferencia = parseCOP(document.getElementById('fr-transferencia').value);
+    const efectivo      = parseCOP(document.getElementById('fr-efectivo').value);
+    const cajaContada   = parseCOP(document.getElementById('fr-caja').value);
+    const dian          = parseCOP(document.getElementById('fr-dian').value);
     const usuario       = currentUser?.email || 'desconocido';
 
     if (!fecha) { showToast('⚠️ Selecciona una fecha', 'error'); return; }
@@ -192,7 +269,15 @@ async function saveEntry() {
         facturacionDian     : dian,
         gastos              : gastosItems.map(g => ({
             descripcion : g.descripcion || '',
-            monto       : parseFloat(g.monto) || 0
+            monto       : parseCOP(g.monto)
+        })),
+        gastosTransfer      : gastosTransferItems.map(g => ({
+            descripcion : g.descripcion || '',
+            monto       : parseCOP(g.monto)
+        })),
+        gastosCajaMayor     : gastosCajaMayorItems.map(g => ({
+            descripcion : g.descripcion || '',
+            monto       : parseCOP(g.monto)
         })),
         usuario,
         updatedAt: new Date().toISOString()
@@ -279,6 +364,16 @@ async function loadRecords() {
                 ? r.gastos.map(g => `• ${escHtml(g.descripcion)}: ${fmt(g.monto)}`).join('<br>')
                 : '<em style="color:#bbb;">Sin gastos</em>';
 
+            const totalGastosTransfer = (r.gastosTransfer || []).reduce((s, g) => s + (g.monto || 0), 0);
+            const gastosTransferHtml  = (r.gastosTransfer || []).length > 0
+                ? r.gastosTransfer.map(g => `• ${escHtml(g.descripcion)}: ${fmt(g.monto)}`).join('<br>')
+                : '<em style="color:#bbb;">Sin gastos</em>';
+
+            const totalGastosCajaMayor = (r.gastosCajaMayor || []).reduce((s, g) => s + (g.monto || 0), 0);
+            const gastosCajaMayorHtml  = (r.gastosCajaMayor || []).length > 0
+                ? r.gastosCajaMayor.map(g => `• ${escHtml(g.descripcion)}: ${fmt(g.monto)}`).join('<br>')
+                : '<em style="color:#bbb;">Sin gastos</em>';
+
             const puntoBadge = r.punto === 'principal'
                 ? '<span class="badge-principal">🏪 Principal</span>'
                 : '<span class="badge-domicilio">🛵 Domicilio</span>';
@@ -301,6 +396,10 @@ async function loadRecords() {
                 <td class="total-cell">${fmt(totalVentas)}</td>
                 <td style="color:#c62828; font-weight:bold;">${fmt(totalGastos)}</td>
                 <td><div class="fr-gastos-detail">${gastosHtml}</div></td>
+                <td style="color:#0277bd; font-weight:bold;">${fmt(totalGastosTransfer)}</td>
+                <td><div class="fr-gastos-detail">${gastosTransferHtml}</div></td>
+                <td style="color:#2e7d32; font-weight:bold;">${fmt(totalGastosCajaMayor)}</td>
+                <td><div class="fr-gastos-detail">${gastosCajaMayorHtml}</div></td>
                 <td>${fmt(r.efectivoEnCaja)}</td>
                 <td>${cajaDiffHtml}</td>
                 <td>${fmt(r.facturacionDian)}</td>
@@ -331,14 +430,19 @@ function loadForEdit(dayKey) {
 
     document.getElementById('fr-date').value          = r.fecha;
     document.getElementById('fr-punto').value         = r.punto;
-    document.getElementById('fr-transferencia').value = r.ventasTransferencia || 0;
-    document.getElementById('fr-efectivo').value      = r.ventasEfectivo      || 0;
-    document.getElementById('fr-caja').value          = r.efectivoEnCaja      || 0;
-    document.getElementById('fr-dian').value          = r.facturacionDian     || 0;
-    gastosItems  = (r.gastos || []).map(g => ({ ...g }));
+    const fmtVal = v => v > 0 ? Number(v).toLocaleString('es-CO') : '0';
+    document.getElementById('fr-transferencia').value = fmtVal(r.ventasTransferencia);
+    document.getElementById('fr-efectivo').value      = fmtVal(r.ventasEfectivo);
+    document.getElementById('fr-caja').value          = fmtVal(r.efectivoEnCaja);
+    document.getElementById('fr-dian').value          = fmtVal(r.facturacionDian);
+    gastosItems          = (r.gastos          || []).map(g => ({ ...g }));
+    gastosTransferItems  = (r.gastosTransfer  || []).map(g => ({ ...g }));
+    gastosCajaMayorItems = (r.gastosCajaMayor || []).map(g => ({ ...g }));
     editMonthDoc = document.getElementById('fr-month').value;
     editDayKey   = dayKey;
-    renderGastos();          // también llama updateCajaAndDian() al final
+    renderGastos();
+    renderGastosTransfer();
+    renderGastosCajaMayor();
     setEditMode(true);
 
     document.querySelector('.fr-form-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -703,10 +807,15 @@ function init() {
         const i = parseInt(e.target.dataset.i);
         const f = e.target.dataset.f;
         if (!isNaN(i) && f && gastosItems[i] !== undefined) {
-            gastosItems[i][f] = f === 'monto'
-                ? (parseFloat(e.target.value) || 0)
-                : e.target.value;
-            if (f === 'monto') updateGastosTotal(); // también llama updateCajaAndDian
+            if (f === 'monto') {
+                const digits = e.target.value.replace(/\D/g, '');
+                const n = parseInt(digits, 10) || 0;
+                e.target.value = n > 0 ? n.toLocaleString('es-CO') : '';
+                gastosItems[i].monto = n;
+                updateGastosTotal();
+            } else {
+                gastosItems[i][f] = e.target.value;
+            }
         }
     });
     gastosList?.addEventListener('click', e => {
@@ -716,10 +825,74 @@ function init() {
         }
     });
 
+    // Formato automático de puntos en inputs de dinero
+    attachCOPFormat(document.getElementById('fr-transferencia'));
+    attachCOPFormat(document.getElementById('fr-efectivo'));
+    attachCOPFormat(document.getElementById('fr-caja'));
+    attachCOPFormat(document.getElementById('fr-dian'));
+
     // Campos que afectan el cuadre de caja y el IVA DIAN
     document.getElementById('fr-efectivo')?.addEventListener('input', updateCajaAndDian);
     document.getElementById('fr-caja')?.addEventListener('input', updateCajaAndDian);
     document.getElementById('fr-dian')?.addEventListener('input', updateCajaAndDian);
+
+    // Gastos en Transferencias
+    document.getElementById('fr-btn-add-gasto-transfer')?.addEventListener('click', () => {
+        gastosTransferItems.push({ descripcion: '', monto: 0 });
+        renderGastosTransfer();
+    });
+    document.getElementById('fr-gastos-transfer-list')?.addEventListener('input', e => {
+        const i = parseInt(e.target.dataset.i);
+        const f = e.target.dataset.f;
+        if (!isNaN(i) && f && gastosTransferItems[i] !== undefined) {
+            if (f === 'monto') {
+                const digits = e.target.value.replace(/\D/g, '');
+                const n = parseInt(digits, 10) || 0;
+                e.target.value = n > 0 ? n.toLocaleString('es-CO') : '';
+                gastosTransferItems[i].monto = n;
+                const total = gastosTransferItems.reduce((s, g) => s + (g.monto || 0), 0);
+                const el = document.getElementById('fr-gastos-transfer-total-val');
+                if (el) el.textContent = fmt(total);
+            } else {
+                gastosTransferItems[i][f] = e.target.value;
+            }
+        }
+    });
+    document.getElementById('fr-gastos-transfer-list')?.addEventListener('click', e => {
+        if (e.target.classList.contains('fr-gasto-delete')) {
+            gastosTransferItems.splice(parseInt(e.target.dataset.i), 1);
+            renderGastosTransfer();
+        }
+    });
+
+    // Gastos Caja Mayor
+    document.getElementById('fr-btn-add-gasto-cajaMayor')?.addEventListener('click', () => {
+        gastosCajaMayorItems.push({ descripcion: '', monto: 0 });
+        renderGastosCajaMayor();
+    });
+    document.getElementById('fr-gastos-cajaMayor-list')?.addEventListener('input', e => {
+        const i = parseInt(e.target.dataset.i);
+        const f = e.target.dataset.f;
+        if (!isNaN(i) && f && gastosCajaMayorItems[i] !== undefined) {
+            if (f === 'monto') {
+                const digits = e.target.value.replace(/\D/g, '');
+                const n = parseInt(digits, 10) || 0;
+                e.target.value = n > 0 ? n.toLocaleString('es-CO') : '';
+                gastosCajaMayorItems[i].monto = n;
+                const total = gastosCajaMayorItems.reduce((s, g) => s + (g.monto || 0), 0);
+                const el = document.getElementById('fr-gastos-cajaMayor-total-val');
+                if (el) el.textContent = fmt(total);
+            } else {
+                gastosCajaMayorItems[i][f] = e.target.value;
+            }
+        }
+    });
+    document.getElementById('fr-gastos-cajaMayor-list')?.addEventListener('click', e => {
+        if (e.target.classList.contains('fr-gasto-delete')) {
+            gastosCajaMayorItems.splice(parseInt(e.target.dataset.i), 1);
+            renderGastosCajaMayor();
+        }
+    });
 
     // Guardar
     document.getElementById('fr-btn-save')?.addEventListener('click', saveEntry);
