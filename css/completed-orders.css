@@ -394,6 +394,35 @@ body {
 .confirm-print { background-color: #194073; color: white; }
 .dismiss       { background-color: #eee;    color: #333;  }
 
+/* ─── Filtros ───────────────────────────────────────────────────────────────── */
+.filter-bar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.btn-filter {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 2px solid #194073;
+    background: white;
+    color: #194073;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+.btn-filter:hover {
+    background: #dce8f7;
+}
+
+.btn-filter.active {
+    background: #194073;
+    color: white;
+}
+
 /* ─── Responsive ────────────────────────────────────────────────────────────── */
 @media (min-width: 1600px) {
     .orders-container { grid-template-columns: repeat(5, 1fr); }
