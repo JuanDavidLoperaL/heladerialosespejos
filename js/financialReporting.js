@@ -453,16 +453,20 @@ function updateSummary(records) {
     const p = records.filter(r => r.punto === 'principal');
     const d = records.filter(r => r.punto === 'domicilio');
 
-    const sumF = (arr, field) => arr.reduce((s, r) => s + (r[field] || 0), 0);
-    const sumG = (arr) => arr.reduce((s, r) =>
+    const sumF   = (arr, field) => arr.reduce((s, r) => s + (r[field] || 0), 0);
+    const sumG   = (arr) => arr.reduce((s, r) =>
         s + (r.gastos || []).reduce((sg, g) => sg + (g.monto || 0), 0), 0);
+    const sumGT  = (arr) => arr.reduce((s, r) =>
+        s + (r.gastosTransfer  || []).reduce((sg, g) => sg + (g.monto || 0), 0), 0);
+    const sumGCM = (arr) => arr.reduce((s, r) =>
+        s + (r.gastosCajaMayor || []).reduce((sg, g) => sg + (g.monto || 0), 0), 0);
 
     const pT = sumF(p, 'ventasTransferencia'), pE = sumF(p, 'ventasEfectivo');
-    const pV = pT + pE,  pG = sumG(p);
+    const pV = pT + pE,  pG = sumG(p), pGT = sumGT(p), pGCM = sumGCM(p);
     const pD = sumF(p, 'facturacionDian');
 
     const dT = sumF(d, 'ventasTransferencia'), dE = sumF(d, 'ventasEfectivo');
-    const dV = dT + dE,  dG = sumG(d);
+    const dV = dT + dE,  dG = sumG(d), dGT = sumGT(d), dGCM = sumGCM(d);
     const dD = sumF(d, 'facturacionDian');
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = fmt(val); };
@@ -473,25 +477,28 @@ function updateSummary(records) {
     const tSub = (pV + dV) - (pG + dG); const tNeto = (pV + dV) - (pG + dG) - (pD + dD) * 0.19;
 
     // Principal
-    set('sum-p-trans',    pT);    set('sum-p-efec',     pE);
-    set('sum-p-ventas',   pV);    set('sum-p-gastos',   pG);
-    set('sum-p-subtotal', pSub);
-    set('sum-p-dian',     pD);    set('sum-p-iva',      pD * 0.19);
-    set('sum-p-neto',     pNeto);
+    set('sum-p-trans',      pT);    set('sum-p-efec',       pE);
+    set('sum-p-ventas',     pV);    set('sum-p-gastos',     pG);
+    set('sum-p-subtotal',   pSub);
+    set('sum-p-dian',       pD);    set('sum-p-iva',        pD * 0.19);
+    set('sum-p-neto',       pNeto);
+    set('sum-p-gtransfer',  pGT);   set('sum-p-gcajaMayor', pGCM);
 
     // Domicilio
-    set('sum-d-trans',    dT);    set('sum-d-efec',     dE);
-    set('sum-d-ventas',   dV);    set('sum-d-gastos',   dG);
-    set('sum-d-subtotal', dSub);
-    set('sum-d-dian',     dD);    set('sum-d-iva',      dD * 0.19);
-    set('sum-d-neto',     dNeto);
+    set('sum-d-trans',      dT);    set('sum-d-efec',       dE);
+    set('sum-d-ventas',     dV);    set('sum-d-gastos',     dG);
+    set('sum-d-subtotal',   dSub);
+    set('sum-d-dian',       dD);    set('sum-d-iva',        dD * 0.19);
+    set('sum-d-neto',       dNeto);
+    set('sum-d-gtransfer',  dGT);   set('sum-d-gcajaMayor', dGCM);
 
     // Total general
-    set('sum-t-trans',    pT + dT);  set('sum-t-efec',     pE + dE);
-    set('sum-t-ventas',   pV + dV);  set('sum-t-gastos',   pG + dG);
-    set('sum-t-subtotal', tSub);
-    set('sum-t-dian',     pD + dD);  set('sum-t-iva',     (pD + dD) * 0.19);
-    set('sum-t-neto',     tNeto);
+    set('sum-t-trans',      pT + dT);   set('sum-t-efec',       pE + dE);
+    set('sum-t-ventas',     pV + dV);   set('sum-t-gastos',     pG + dG);
+    set('sum-t-subtotal',   tSub);
+    set('sum-t-dian',       pD + dD);   set('sum-t-iva',       (pD + dD) * 0.19);
+    set('sum-t-neto',       tNeto);
+    set('sum-t-gtransfer',  pGT + dGT); set('sum-t-gcajaMayor', pGCM + dGCM);
 }
 
 // ── Exportar PDF ───────────────────────────────────────────────────────────
@@ -517,12 +524,21 @@ function buildPDFReport(month, records) {
     const sumG = (arr) => arr.reduce((s, r) =>
         s + (r.gastos || []).reduce((sg, g) => sg + (g.monto || 0), 0), 0);
 
+    const sumGpdf  = (arr) => arr.reduce((s, r) =>
+        s + (r.gastos || []).reduce((sg, g) => sg + (g.monto || 0), 0), 0);
+    const sumGTpdf  = (arr) => arr.reduce((s, r) =>
+        s + (r.gastosTransfer  || []).reduce((sg, g) => sg + (g.monto || 0), 0), 0);
+    const sumGCMpdf = (arr) => arr.reduce((s, r) =>
+        s + (r.gastosCajaMayor || []).reduce((sg, g) => sg + (g.monto || 0), 0), 0);
+
     const pT = sumF(p, 'ventasTransferencia'), pE = sumF(p, 'ventasEfectivo');
-    const pV = pT + pE, pG = sumG(p), pD = sumF(p, 'facturacionDian');
+    const pV = pT + pE, pG = sumGpdf(p), pD = sumF(p, 'facturacionDian');
+    const pGT = sumGTpdf(p), pGCM = sumGCMpdf(p);
     const pSub = pV - pG, pNeto = pV - pG - pD * 0.19;
 
     const dT = sumF(d, 'ventasTransferencia'), dE = sumF(d, 'ventasEfectivo');
-    const dV = dT + dE, dG = sumG(d), dD = sumF(d, 'facturacionDian');
+    const dV = dT + dE, dG = sumGpdf(d), dD = sumF(d, 'facturacionDian');
+    const dGT = sumGTpdf(d), dGCM = sumGCMpdf(d);
     const dSub = dV - dG, dNeto = dV - dG - dD * 0.19;
 
     const tSub = (pV + dV) - (pG + dG);
@@ -531,6 +547,8 @@ function buildPDFReport(month, records) {
     const filas = records.map(r => {
         const tv        = (r.ventasTransferencia || 0) + (r.ventasEfectivo || 0);
         const tg        = (r.gastos || []).reduce((s, g) => s + (g.monto || 0), 0);
+        const tgt       = (r.gastosTransfer  || []).reduce((s, g) => s + (g.monto || 0), 0);
+        const tgcm      = (r.gastosCajaMayor || []).reduce((s, g) => s + (g.monto || 0), 0);
         const esperado  = (r.ventasEfectivo || 0) - tg;
         const cajaDiff  = (r.efectivoEnCaja || 0) - esperado;
         const dianIva   = (r.facturacionDian || 0) * 0.19;
@@ -540,9 +558,12 @@ function buildPDFReport(month, records) {
         else if (cajaDiff > 0)   { cajaDiffTxt = `▲ Sobra ${fmt(cajaDiff)}`; cajaDiffClass = 'surplus'; }
         else                     { cajaDiffTxt = `▼ Falta ${fmt(Math.abs(cajaDiff))}`; cajaDiffClass = 'deficit'; }
 
-        const gd = (r.gastos || []).length > 0
-            ? r.gastos.map(g => `• ${escHtml(g.descripcion)}: ${fmt(g.monto)}`).join('<br>')
-            : '—';
+        const gd   = (r.gastos         || []).length > 0
+            ? r.gastos.map(g         => `• ${escHtml(g.descripcion)}: ${fmt(g.monto)}`).join('<br>') : '—';
+        const gdT  = (r.gastosTransfer || []).length > 0
+            ? r.gastosTransfer.map(g  => `• ${escHtml(g.descripcion)}: ${fmt(g.monto)}`).join('<br>') : '—';
+        const gdCM = (r.gastosCajaMayor || []).length > 0
+            ? r.gastosCajaMayor.map(g => `• ${escHtml(g.descripcion)}: ${fmt(g.monto)}`).join('<br>') : '—';
 
         return `<tr>
             <td>${escHtml(r.fecha)}</td>
@@ -552,6 +573,10 @@ function buildPDFReport(month, records) {
             <td class="num bold blue">${fmt(tv)}</td>
             <td class="num bold red">${fmt(tg)}</td>
             <td class="detalle">${gd}</td>
+            <td class="num" style="color:#0277bd;font-weight:bold;">${fmt(tgt)}</td>
+            <td class="detalle">${gdT}</td>
+            <td class="num" style="color:#2e7d32;font-weight:bold;">${fmt(tgcm)}</td>
+            <td class="detalle">${gdCM}</td>
             <td class="num">${fmt(r.efectivoEnCaja)}</td>
             <td class="num caja-${cajaDiffClass}">${cajaDiffTxt}</td>
             <td class="num">${fmt(r.facturacionDian)}</td>
@@ -625,6 +650,8 @@ function buildPDFReport(month, records) {
       <th class="num">Transferencia</th><th class="num">Efectivo</th>
       <th class="num">Total Ventas</th><th class="num">Total Gastos</th>
       <th>Detalle Gastos</th>
+      <th class="num">G. Transfer.</th><th>Detalle G.T.</th>
+      <th class="num">Caja Mayor</th><th>Detalle C.M.</th>
       <th class="num">Caja Contada</th><th class="num">Dif. Caja</th>
       <th class="num">Fact. DIAN</th><th class="num">IVA 19%</th>
       <th>Usuario</th>
@@ -651,7 +678,7 @@ function buildPDFReport(month, records) {
   <tfoot>
     <tr><td>Total Ventas</td>
         <td class="num">${fmt(pV)}</td><td class="num">${fmt(dV)}</td><td class="num">${fmt(pV+dV)}</td></tr>
-    <tr class="red-row"><td>Total Gastos</td>
+    <tr class="red-row"><td>Total Gastos del Día</td>
         <td class="num">${fmt(pG)}</td><td class="num">${fmt(dG)}</td><td class="num">${fmt(pG+dG)}</td></tr>
     <tr class="sub-row"><td>Subtotal Ventas − Gastos</td>
         <td class="num">${fmt(pSub)}</td><td class="num">${fmt(dSub)}</td><td class="num">${fmt(tSub)}</td></tr>
@@ -661,6 +688,10 @@ function buildPDFReport(month, records) {
         <td class="num">${fmt(pD*0.19)}</td><td class="num">${fmt(dD*0.19)}</td><td class="num">${fmt((pD+dD)*0.19)}</td></tr>
     <tr class="neto-row"><td>💰 Total Ventas − Gastos − IVA</td>
         <td class="num">${fmt(pNeto)}</td><td class="num">${fmt(dNeto)}</td><td class="num">${fmt(tNeto)}</td></tr>
+    <tr style="border-top:2px dashed #90a4ae;"><td>📲 Gastos en Transferencias</td>
+        <td class="num" style="color:#0277bd;">${fmt(pGT)}</td><td class="num" style="color:#0277bd;">${fmt(dGT)}</td><td class="num" style="color:#0277bd;">${fmt(pGT+dGT)}</td></tr>
+    <tr><td>🏦 Gastos Caja Mayor</td>
+        <td class="num" style="color:#2e7d32;">${fmt(pGCM)}</td><td class="num" style="color:#2e7d32;">${fmt(dGCM)}</td><td class="num" style="color:#2e7d32;">${fmt(pGCM+dGCM)}</td></tr>
   </tfoot>
 </table>
 <div class="footer">Heladería Los Espejos © ${new Date().getFullYear()} — Documento generado automáticamente</div>
@@ -684,19 +715,25 @@ function exportExcel() {
     // ── Hoja 1: Detalle ──────────────────────────────────────────────────
     const detHeaders = [
         'Fecha', 'Punto',
-        'Ventas Transferencia', 'Ventas Efectivo', 'Total Ventas', 'Total Gastos',
-        'Detalle Gastos',
+        'Ventas Transferencia', 'Ventas Efectivo', 'Total Ventas',
+        'Total Gastos del Día', 'Detalle Gastos',
+        'Gastos en Transferencias', 'Detalle G. Transferencias',
+        'Gastos Caja Mayor', 'Detalle Caja Mayor',
         'Caja Contada', 'Diferencia Caja',
         'Facturación DIAN', 'IVA 19% DIAN',
         'Usuario', 'Última actualización'
     ];
     const detRows = allRecords.map(r => {
         const tv       = (r.ventasTransferencia || 0) + (r.ventasEfectivo || 0);
-        const tg       = (r.gastos || []).reduce((s, g) => s + (g.monto || 0), 0);
-        const esperado = (r.ventasEfectivo || 0) - tg;
-        const cajaDiff = (r.efectivoEnCaja || 0) - esperado;
+        const tg       = (r.gastos         || []).reduce((s, g) => s + (g.monto || 0), 0);
+        const tgt      = (r.gastosTransfer  || []).reduce((s, g) => s + (g.monto || 0), 0);
+        const tgcm     = (r.gastosCajaMayor || []).reduce((s, g) => s + (g.monto || 0), 0);
+        const esperado = (r.ventasEfectivo  || 0) - tg;
+        const cajaDiff = (r.efectivoEnCaja  || 0) - esperado;
         const dianIva  = (r.facturacionDian || 0) * 0.19;
-        const gd       = (r.gastos || []).map(g => `${g.descripcion}: $${g.monto}`).join(' | ') || 'Sin gastos';
+        const gd   = (r.gastos         || []).map(g => `${g.descripcion}: $${g.monto}`).join(' | ') || 'Sin gastos';
+        const gdT  = (r.gastosTransfer  || []).map(g => `${g.descripcion}: $${g.monto}`).join(' | ') || 'Sin gastos';
+        const gdCM = (r.gastosCajaMayor || []).map(g => `${g.descripcion}: $${g.monto}`).join(' | ') || 'Sin gastos';
 
         let cajaDiffTxt;
         if (cajaDiff === 0)    cajaDiffTxt = 'Cuadrado ($0)';
@@ -709,6 +746,8 @@ function exportExcel() {
             r.ventasTransferencia || 0,
             r.ventasEfectivo      || 0,
             tv, tg, gd,
+            tgt, gdT,
+            tgcm, gdCM,
             r.efectivoEnCaja  || 0,
             cajaDiffTxt,
             r.facturacionDian || 0,
@@ -721,7 +760,9 @@ function exportExcel() {
     const ws1 = XLSX.utils.aoa_to_sheet([detHeaders, ...detRows]);
     ws1['!cols'] = [
         {wch:12},{wch:18},{wch:22},{wch:16},
-        {wch:14},{wch:14},{wch:42},
+        {wch:14},{wch:14},{wch:40},
+        {wch:22},{wch:40},
+        {wch:18},{wch:40},
         {wch:14},{wch:20},
         {wch:18},{wch:14},
         {wch:30},{wch:22}
@@ -729,34 +770,43 @@ function exportExcel() {
     XLSX.utils.book_append_sheet(wb, ws1, 'Detalle');
 
     // ── Hoja 2: Resumen ──────────────────────────────────────────────────
-    const p = allRecords.filter(r => r.punto === 'principal');
-    const d = allRecords.filter(r => r.punto === 'domicilio');
-    const sumF = (arr, f) => arr.reduce((s, r) => s + (r[f] || 0), 0);
-    const sumG = (arr)    => arr.reduce((s, r) =>
-        s + (r.gastos || []).reduce((sg, g) => sg + (g.monto || 0), 0), 0);
+    const pxl = allRecords.filter(r => r.punto === 'principal');
+    const dxl = allRecords.filter(r => r.punto === 'domicilio');
+    const sumFx   = (arr, f) => arr.reduce((s, r) => s + (r[f] || 0), 0);
+    const sumGx   = (arr) => arr.reduce((s, r) => s + (r.gastos         || []).reduce((sg, g) => sg + (g.monto || 0), 0), 0);
+    const sumGTx  = (arr) => arr.reduce((s, r) => s + (r.gastosTransfer  || []).reduce((sg, g) => sg + (g.monto || 0), 0), 0);
+    const sumGCMx = (arr) => arr.reduce((s, r) => s + (r.gastosCajaMayor || []).reduce((sg, g) => sg + (g.monto || 0), 0), 0);
 
-    const pT = sumF(p,'ventasTransferencia'), pE = sumF(p,'ventasEfectivo');
-    const pV = pT+pE, pG = sumG(p), pD = sumF(p,'facturacionDian');
-    const pSub = pV-pG, pNeto = pV-pG-pD*0.19;
-    const dT = sumF(d,'ventasTransferencia'), dE = sumF(d,'ventasEfectivo');
-    const dV = dT+dE, dG = sumG(d), dD = sumF(d,'facturacionDian');
-    const dSub = dV-dG, dNeto = dV-dG-dD*0.19;
-    const tSub = (pV+dV)-(pG+dG), tNeto = (pV+dV)-(pG+dG)-(pD+dD)*0.19;
+    const pTx = sumFx(pxl,'ventasTransferencia'), pEx = sumFx(pxl,'ventasEfectivo');
+    const pVx = pTx+pEx, pGx = sumGx(pxl), pDx = sumFx(pxl,'facturacionDian');
+    const pGTx = sumGTx(pxl), pGCMx = sumGCMx(pxl);
+    const pSubx = pVx-pGx, pNetox = pVx-pGx-pDx*0.19;
+
+    const dTx = sumFx(dxl,'ventasTransferencia'), dEx = sumFx(dxl,'ventasEfectivo');
+    const dVx = dTx+dEx, dGx = sumGx(dxl), dDx = sumFx(dxl,'facturacionDian');
+    const dGTx = sumGTx(dxl), dGCMx = sumGCMx(dxl);
+    const dSubx = dVx-dGx, dNetox = dVx-dGx-dDx*0.19;
+
+    const tSubx = (pVx+dVx)-(pGx+dGx), tNetox = (pVx+dVx)-(pGx+dGx)-(pDx+dDx)*0.19;
 
     const ws2 = XLSX.utils.aoa_to_sheet([
         [`Reporte Financiero — ${label}`, '', '', ''],
         [''],
-        ['Concepto',                   'Punto Principal', 'Punto Domicilio', 'Total General'],
-        ['Ventas Transferencia',         pT,                dT,                pT+dT],
-        ['Ventas Efectivo',              pE,                dE,                pE+dE],
-        ['Total Ventas',                 pV,                dV,                pV+dV],
-        ['Total Gastos',                 pG,                dG,                pG+dG],
-        ['Subtotal Ventas - Gastos',     pSub,              dSub,              tSub],
+        ['Concepto',                        'Punto Principal', 'Punto Domicilio', 'Total General'],
+        ['Ventas Transferencia',              pTx,               dTx,               pTx+dTx],
+        ['Ventas Efectivo',                   pEx,               dEx,               pEx+dEx],
+        ['Total Ventas',                      pVx,               dVx,               pVx+dVx],
+        ['Total Gastos del Día',              pGx,               dGx,               pGx+dGx],
+        ['Subtotal Ventas - Gastos',          pSubx,             dSubx,             tSubx],
         [''],
-        ['Facturación DIAN',             pD,                dD,                pD+dD],
-        ['IVA 19% DIAN',                 pD*0.19,           dD*0.19,           (pD+dD)*0.19],
+        ['Facturación DIAN',                  pDx,               dDx,               pDx+dDx],
+        ['IVA 19% DIAN',                      pDx*0.19,          dDx*0.19,          (pDx+dDx)*0.19],
         [''],
-        ['Total Ventas - Gastos - IVA',  pNeto,             dNeto,             tNeto],
+        ['Total Ventas - Gastos - IVA',       pNetox,            dNetox,            tNetox],
+        [''],
+        ['--- Registro (no afectan cálculos) ---', '', '', ''],
+        ['Gastos en Transferencias',           pGTx,              dGTx,              pGTx+dGTx],
+        ['Gastos Caja Mayor',                  pGCMx,             dGCMx,             pGCMx+dGCMx],
     ]);
     ws2['!cols'] = [{wch:26},{wch:18},{wch:18},{wch:16}];
     XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
