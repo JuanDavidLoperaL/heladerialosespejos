@@ -2,13 +2,13 @@ import { checkAppVersion, APP_VERSION } from "./appVersioning.js";
 checkAppVersion();
 
 import { app, db, auth } from "./firebase.js";
-import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
 import { logError, logWarn, logInfo } from "./logger.js";
 import { todayString, timeString, isValidColombianPhone, showFeedback } from "./utils.js";
-import { loadCatalog, getAdditionsFromCatalog } from "./catalog.js";
+import { loadCatalogWithCache, getAdditionsFromCatalog } from "./catalog.js";
 
 const analytics    = getAnalytics(app);
 const remoteConfig = getRemoteConfig(app);
@@ -37,23 +37,8 @@ let saveOrderEnabled = true;
 let flavorsCache = null;
 let additionsCache = null;
 
-// ── Cache localStorage para flavors (evita 5 lecturas en visitas repetidas) ──
-const FLAVORS_CACHE_KEY = 'hle_flavors_v2';
-const FLAVORS_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 horas
-
-function getFlavorsFromLocalStorage() {
-    try {
-        const raw = localStorage.getItem(FLAVORS_CACHE_KEY);
-        if (!raw) return null;
-        const { data, ts } = JSON.parse(raw);
-        if (Date.now() - ts > FLAVORS_CACHE_TTL) { localStorage.removeItem(FLAVORS_CACHE_KEY); return null; }
-        return data;
-    } catch { return null; }
-}
-
-function saveFlavorsToLocalStorage(data) {
-    try { localStorage.setItem(FLAVORS_CACHE_KEY, JSON.stringify({ data, ts: Date.now() })); } catch {}
-}
+// Limpiar cache viejo si existe (migración)
+try { localStorage.removeItem('hle_flavors_v2'); } catch {}
 
 // ── Skeleton loading ──────────────────────────────────────────────────────────
 function showSkeletonLoading() {
@@ -179,24 +164,15 @@ document.addEventListener('DOMContentLoaded', function () {
     let availability = { categories: {} };
     let categoryData = {};
 
-    // Cargar catálogo desde Firebase (1 sola lectura)
+    // Cargar catálogo y flavors (con cache + validación de versión)
     async function loadAvailability() {
         showSkeletonLoading();
 
         try {
-            // Cargar catálogo y flavors en paralelo
-            const [catalog] = await Promise.all([
-                loadCatalog(),
-                (async () => {
-                    const cached = getFlavorsFromLocalStorage();
-                    if (cached) { flavorsCache = cached; return; }
-                    flavorsCache = await getFlavorsFromFirebase();
-                    saveFlavorsToLocalStorage(flavorsCache);
-                })()
-            ]);
-
-            categoryData = catalog.categoryData;
-            availability = catalog.availability;
+            const result = await loadCatalogWithCache();
+            categoryData  = result.categoryData;
+            availability  = result.availability;
+            flavorsCache  = result.flavors;
 
             updateCarousel();
         } catch (error) {
@@ -336,23 +312,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 );
             });
         });
-    }
-
-    async function getFlavorsFromFirebase() {
-        // 1 sola lectura en lugar de 6
-        const ingredientsDoc = await getDoc(doc(db, "productIngredients", "ingredients"));
-        if (!ingredientsDoc.exists()) {
-            logWarn("getFlavorsFromFirebase", "Documento productIngredients/ingredients no encontrado");
-            return { sundayFlavors: [], icecreamFlavors: [], toppingsFlavors: [], saucesFlavors: [], fruitFlavors: [] };
-        }
-        const data = ingredientsDoc.data();
-        return {
-            sundayFlavors:   data.sunday   || [],
-            icecreamFlavors: data.iceCream || [],
-            toppingsFlavors: data.toppings || [],
-            saucesFlavors:   data.sauces   || [],
-            fruitFlavors:    data.fruit    || []
-        };
     }
 
     function generateAdditionSelect(additionsList) {
