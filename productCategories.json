@@ -1,0 +1,808 @@
+{
+    "products": [
+        {
+            "active": true,
+            "title": "Adiciones",
+            "description": "Detalle extra. Lo clásico también se personaliza.",
+            "items": [
+                {
+                    "name": "Arequipe",
+                    "price": 6000,
+                    "image": "images/adicionesArequipe.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Arequipe",
+                    "toppings": 0
+                },
+                {
+                    "name": "Banano",
+                    "price": 2000,
+                    "image": "images/adicionesBanano.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Banano",
+                    "toppings": 0
+                },
+                {
+                    "name": "Paquete de Barquillos",
+                    "price": 3500,
+                    "image": "images/barquillos.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Barquillos",
+                    "toppings": 0
+                },
+                {
+                    "name": "Bola de Helado",
+                    "price": 3500,
+                    "image": "images/bolahelado.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Bola de Helado",
+                    "toppings": 0
+                },
+                {
+                    "name": "Brevas",
+                    "price": 6000,
+                    "image": "images/adicionesBrevas.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Brevas",
+                    "toppings": 0
+                },
+                {
+                    "name": "Cerezas",
+                    "price": 8000,
+                    "image": "images/adicionesCerezas.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Cerezas",
+                    "toppings": 0
+                },
+                {
+                    "name": "Chantilly",
+                    "price": 4000,
+                    "image": "images/chantilly.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Chantilly",
+                    "toppings": 0
+                },
+                {
+                    "name": "Chips de Chocolate",
+                    "price": 4000,
+                    "image": "images/adcionesChipsChocolate.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Chips de Chocolate",
+                    "toppings": 0
+                },
+                {
+                    "name": "Paquete de Conchas",
+                    "price": 11000,
+                    "image": "images/conchas.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Paquete de conchas x15",
+                    "toppings": 0
+                },
+                {
+                    "name": "Paquete de Cucuruchos",
+                    "price": 8000,
+                    "image": "images/cucuruchos.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Paquete de Cucuruchos x10",
+                    "toppings": 0
+                },
+                {
+                    "name": "Leche Klim",
+                    "price": 5000,
+                    "image": "images/adicionesLecheKlim.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Leche Klim",
+                    "toppings": 0
+                },
+                {
+                    "name": "Maní",
+                    "price": 4000,
+                    "image": "images/adicionesMani.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Maní",
+                    "toppings": 0
+                },
+                {
+                    "name": "Milo",
+                    "price": 4000,
+                    "image": "images/adicionesMilo.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Milo",
+                    "toppings": 0
+                },
+                {
+                    "name": "Oreo",
+                    "price": 4000,
+                    "image": "images/adicionesOreo.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Oreo",
+                    "toppings": 0
+                },
+                {
+                    "name": "Queso",
+                    "price": 7000,
+                    "image": "images/adicionesQueso.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Queso",
+                    "toppings": 0
+                }
+            ]
+        },
+        {
+            "active": true,
+            "title": "Bananas",
+            "description": "Sabor que se disfruta en cada cucharada.",
+            "items": [
+                {
+                    "name": "Banana Sencilla",
+                    "price": 19000,
+                    "image": "images/bananaSencilla.png",
+                    "active": true,
+                    "bolas": 4,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "4 Bolas de Helado, Cereal, Crema de leche, Lecherita, Chantilly, Banano Picado, 2 Barquillos y salsas",
+                    "toppings": 0
+                },
+                {
+                    "name": "Banana Especial",
+                    "price": 24000,
+                    "image": "images/bananaEspecial.png",
+                    "active": true,
+                    "bolas": 3,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "3 Bolas de helado, Cereal, Crema de leche, Lecherita, Chantilly, 2 Barquillos, Banano picado, Queso o Fruta y salsas",
+                    "toppings": 0
+                },
+                {
+                    "name": "Banana Súper Especial",
+                    "price": 29000,
+                    "image": "images/bananaSuper.png",
+                    "active": true,
+                    "bolas": 3,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "3 Bolas de Helado, Cereal, Crema de leche, Lecherita, Chantilly, 2 Barquillos, Banano picado, Queso, Fruta y salsas",
+                    "toppings": 0
+                }
+            ]
+        },
+        {
+            "active": true,
+            "title": "Bebidas",
+            "description": "Preparadas al momento, con sabores auténticos y refrescantes.",
+            "items": [
+                {
+                    "name": "Jugo de Fresa",
+                    "price": 6000,
+                    "image": "images/jugofresa.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Jugo de Fresas, Agua o Leche",
+                    "toppings": 0
+                },
+                {
+                    "name": "Jugo de Guanábana",
+                    "price": 6000,
+                    "image": "images/jugoguanabana.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Jugo de Guanábana, Agua o Leche",
+                    "toppings": 0
+                },
+                {
+                    "name": "Jugo de Mango",
+                    "price": 6000,
+                    "image": "images/jugomango.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Jugo de Mango, Agua o Leche",
+                    "toppings": 0
+                },
+                {
+                    "name": "Jugo de Maracuyá",
+                    "price": 6000,
+                    "image": "images/jugomaracuya.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Jugo de Maracuyá, Agua o Leche",
+                    "toppings": 0
+                },
+                {
+                    "name": "Jugo de Mora",
+                    "price": 6000,
+                    "image": "images/jugomora.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Jugo de Mora, Agua o Leche",
+                    "toppings": 0
+                },
+                {
+                    "name": "Malteada de Café grande",
+                    "price": 17000,
+                    "image": "images/malteadaCafeGrande.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Helado de Vainilla, Café, Leche, Chantilly, Chips de Chocolate, Salsa de Arequipe y 2 Barquillos",
+                    "toppings": 0
+                },
+                {
+                    "name": "Malteada de Café Pequeña",
+                    "price": 12000,
+                    "image": "images/malteadaCafePequena.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "Helado de Vainilla, Café, Leche, Chantilly, Chips de chocolate, Salsa de Arequipe y 1 Barquillo",
+                    "toppings": 0
+                },
+                {
+                    "name": "Malteada Grande",
+                    "price": 16000,
+                    "image": "images/malteadaGrande.png",
+                    "active": true,
+                    "bolas": 1,
+                    "hasAdditions": false,
+                    "hasSauces": true,
+                    "ingredients": "Sabor de Malteada a gusto, Helado, Leche, Chantilly, Toppings, Salsa y 2 Barquillos",
+                    "toppings": 1
+                },
+                {
+                    "name": "Malteada Pequeña",
+                    "price": 11000,
+                    "image": "images/malteadaPequena.png",
+                    "active": true,
+                    "bolas": 1,
+                    "hasAdditions": false,
+                    "hasSauces": true,
+                    "ingredients": "Sabor de Malteada a gusto, Helado, Leche, Chantilly, Toppings, Salsa y 1 Barquillo",
+                    "toppings": 1
+                }
+            ]
+        },
+        {
+            "active": true,
+            "title": "Brownie",
+            "description": "Combinación irresistible, ideal para endulzar tu día.",
+            "items": [
+                {
+                    "name": "Brownie sencillo",
+                    "price": 19000,
+                    "image": "images/brownieSencillo.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "2 Bolas de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, 2 Barquillos, Torta de Brownie, Salsa y toppings a elección",
+                    "toppings": 1
+                },
+                {
+                    "name": "Brownie Súper Especial",
+                    "price": 38000,
+                    "image": "images/brownieSuper.png",
+                    "active": true,
+                    "bolas": 3,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "3 Bolas de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, 2 Barquillos, Torta de Brownie, Salsa y toppings a elección",
+                    "toppings": 2
+                }
+            ]
+        },
+        {
+            "active": true,
+            "title": "Cereales",
+            "description": "Ese gusto sencillo que nos recuerda la infancia.",
+            "items": [
+                {
+                    "name": "Cereal Original",
+                    "price": 10000,
+                    "image": "images/cerealClasico.png",
+                    "active": true,
+                    "bolas": 1,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "1 Bola de Helado, Cereal, Crema de Leche, Lecherita y Chantilly",
+                    "toppings": 0
+                },
+                {
+                    "name": "Cereal Pequeño",
+                    "price": 6500,
+                    "image": "images/cerealPequeno.png",
+                    "active": true,
+                    "bolas": 1,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "1 Bola de Helado, Cereal, Crema de Leche y Lecherita",
+                    "toppings": 0
+                },
+                {
+                    "name": "Cereal Sencillo",
+                    "price": 9000,
+                    "image": "images/cerealSencillo.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Cereal, Crema de Leche, Lecherita y 1 Barquillo",
+                    "toppings": 0
+                },
+                {
+                    "name": "Cereal Especial",
+                    "price": 17000,
+                    "image": "images/cerealEspecial.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Cereal, Crema de Leche, Lecherita, Chantilly y 2 Barquillos",
+                    "toppings": 0
+                },
+                {
+                    "name": "Cereal Súper Especial",
+                    "price": 20000,
+                    "image": "images/cerealSuper.png",
+                    "active": true,
+                    "bolas": 3,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "3 Bolas de Helado, Cereal, Crema de Leche, Lecherita, Chantilly y 2 Barquillos",
+                    "toppings": 0
+                }
+            ]
+        },
+        {
+            "active": true,
+            "title": "Ensaladas",
+            "description": "Fresca y deliciosa combinación de sabores.",
+            "items": [
+                {
+                    "name": "Ensalada Sencilla",
+                    "price": 20000,
+                    "image": "images/ensaladaSencilla.png",
+                    "active": true,
+                    "bolas": 1,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "1 Bola de Helado, Crema de Leche, Lecherita, Chantilly, 2 Barquillos, Mango, Papaya, Manzana, Pera, Banano Picado, 1 Cereza y Queso.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Ensalada Especial",
+                    "price": 29000,
+                    "image": "images/ensaladaEspecial.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Crema de Leche, Lecherita, Chantilly, 2 Barquillos, Mango, Papaya, Manzana, Pera, Banano Picado, Fresas, 2 Cerezas y Doble Queso.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Ensalada Súper Especial",
+                    "price": 34000,
+                    "image": "images/ensaladaSuper.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Crema de Leche, Lecherita, Chantilly, 2 Barquillos, Mango, Papaya, Manzana, Pera, Banano Picado, Fresas, Duraznos, 2 Cerezas y Doble Queso.",
+                    "toppings": 0
+                }
+            ]
+        },
+        {
+            "active": true,
+            "title": "Especialidades",
+            "description": "Ideas de la casa que se volvieron favoritas.",
+            "items": [
+                {
+                    "name": "Choco Amor Sencillo",
+                    "price": 15000,
+                    "image": "images/chocoamorSencillo.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Crema de Leche, Salsa de mora, Chantilly, Chips de chocolate, 1 Barquillo, Chocoramo y 2 Cerezas.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Choco Amor Especial",
+                    "price": 22000,
+                    "image": "images/chocoamorEspecial.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Crema de Leche, Salsa de Mora, Chantilly, Chips de chocolate, 2 Barquillos, Chocoramo, 4 Cerezas y Queso.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Choco Amor Súper Especial",
+                    "price": 25000,
+                    "image": "images/chocoamorSuper.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Crema de Leche, Salsa de Mora, Chantilly, Chips de chocolate, 2 Barquillos, Chocoramo,  Cerezas, y Queso.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Copa Delirio",
+                    "price": 15900,
+                    "image": "images/delirio.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": false,
+                    "hasSauces": false,
+                    "ingredients": "por Una Copa creada para los verdaderos amantes del dulce. Base a elección de helado (Recomendado vainilla o yogur de frutos amarillos)
+Salsa a elección, oreo triturado, trufas de chocolate, crema de leche, chantilly, cereza.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Frutas y Fresas",
+                    "price": 25000,
+                    "image": "images/frutasyfresas.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, Mango, Papaya, Pera, Manzana, Banano, Fresas, Duraznos, Cerezas y 2 Barquillos.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Milover",
+                    "price": 18000,
+                    "image": "images/milover.png",
+                    "active": true,
+                    "bolas": 0,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "Fresas, Chantilly, Chips de chocolate, Milo, 1 Barquillo, Salsa Untable Milo.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Mix",
+                    "price": 22000,
+                    "image": "images/mix.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "2 Bolas de Helado, Crema de Leche, Chantilly, 2 Barquillos, 2 Toppings a Elección y Salsa a Elección.",
+                    "toppings": 2
+                },
+                {
+                    "name": "Mixto",
+                    "price": 25000,
+                    "image": "images/mixto.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "2 Bolas de Helado, Crema de Leche, Chantilly, 2 Barquillos, Queso, 2 Toppings a Elección y Salsa a Elección.",
+                    "toppings": 2
+                },
+                {
+                    "name": "Tornado De Arequipe",
+                    "price": 15000,
+                    "image": "images/tornadoArequipe.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Cereal, Crema de Leche, Chantilly, 1 Barquillo y Arequipe.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Tornado de Milo",
+                    "price": 15000,
+                    "image": "images/tornadoMilo.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "2 Bolas de Helado, Crema de Leche, Chantilly, 1 Barquillo, Milo y Salsa a Elección.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Tornado de Oreo",
+                    "price": 15000,
+                    "image": "images/tornadoOreo.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "2 Bolas de Helado, Crema de Leche, Chantilly, 1 Barquillo, Oreo y Salsa a Elección.",
+                    "toppings": 0
+                }
+            ]
+        },
+        {
+            "active": true,
+            "title": "Fresas con Crema",
+            "description": "Sabor natural e irresistible que no pasa de moda.",
+            "items": [
+                {
+                    "name": "Fresas con Crema Sencillas",
+                    "price": 15000,
+                    "image": "images/fresasSencilla.png",
+                    "active": true,
+                    "bolas": 1,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "1 Bola de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, 1 Barquillo y Fresas.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Fresas con Crema Especial",
+                    "price": 22000,
+                    "image": "images/fresasEspecial.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, 2 Barquillos, Queso y Fresas.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Fresas con Crema Súper Especial",
+                    "price": 25000,
+                    "image": "images/ensaladaSuper.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, 2 Barquillos, Queso, Fresas y 1 Fruta a Elección.",
+                    "toppings": 0
+                }
+            ]
+        },
+        {
+            "active": true,
+            "title": "Helado",
+            "description": "Lo clásico siempre te acompaña.",
+            "items": [
+                {
+                    "name": "1 Bola Helado",
+                    "price": 3500,
+                    "image": "images/heladoUno.png",
+                    "active": true,
+                    "bolas": 1,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "1 Bola de Helado, Salsa a Elección, 1 Barquillo aplica solo para vasos.",
+                    "toppings": 0
+                },
+                {
+                    "name": "2 Bolas de Helado",
+                    "price": 5500,
+                    "image": "images/heladoDos.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "2 Bola de helado, Salsa a Elección, 1 Barquillo aplica solo para vasos.",
+                    "toppings": 0
+                },
+                {
+                    "name": "3 Bolas de Helado",
+                    "price": 7500,
+                    "image": "images/heladoTres.png",
+                    "active": true,
+                    "bolas": 3,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "3 Bolas de Helado, Salsa a Elección, 1 Barquillo aplica solo para vasos.",
+                    "toppings": 0
+                },
+                {
+                    "name": "4 Bolas de Helado",
+                    "price": 9500,
+                    "image": "images/heladoCuatro.png",
+                    "active": true,
+                    "bolas": 4,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "4 Bolas de Helado, Salsa a Elección, 1 Barquillo aplica solo para vasos.",
+                    "toppings": 0
+                },
+                {
+                    "name": "5 Bolas de Helado",
+                    "price": 11500,
+                    "image": "images/heladoCinco.png",
+                    "active": true,
+                    "bolas": 5,
+                    "hasAdditions": true,
+                    "hasSauces": true,
+                    "ingredients": "5 Bolas de Helado, Salsa a Elección, 1 Barquillo aplica solo para vasos.",
+                    "toppings": 0
+                },
+                {
+                    "name": "1 Litro de Helado",
+                    "price": 17000,
+                    "image": "images/litroHelado.png",
+                    "active": true,
+                    "bolas": 3,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "1 Litro de Helado.",
+                    "toppings": 0
+                },
+                {
+                    "name": "5 Litros de Helado",
+                    "price": 60000,
+                    "image": "images/litroHelado.png",
+                    "active": true,
+                    "bolas": 1,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "5 Litros de Helado.",
+                    "toppings": 0
+                },
+                {
+                    "name": "10 Litros de Helado",
+                    "price": 90000,
+                    "image": "images/litroHelado.png",
+                    "active": true,
+                    "bolas": 1,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "10 Litros de Helado.",
+                    "toppings": 0
+                }
+            ]
+        },
+        {
+            "active": true,
+            "title": "Salpicones",
+            "description": "Mezcla perfecta de lo tradicional y auténtico.",
+            "items": [
+                {
+                    "name": "Salpicón Pequeño",
+                    "price": 12000,
+                    "image": "images/salpiconPequeno.png",
+                    "active": true,
+                    "bolas": 1,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "1 Bola de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, 1 Barquillo, Mango, Papaya, Pera, Manzana y Banano Picado.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Salpicón Sencillo",
+                    "price": 15000,
+                    "image": "images/salpiconSencillo.png",
+                    "active": true,
+                    "bolas": 1,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "1 Bola de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, 1 Barquillo, Mango, Papaya, Pera, Manzana y Banano Picado.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Salpicón Especial",
+                    "price": 22000,
+                    "image": "images/salpiconEspecial.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, 2 Barquillos, Queso, Mango, Papaya, Pera, Manzana y Banano Picado.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Salpicón Súper Especial",
+                    "price": 25000,
+                    "image": "images/salpiconSuper.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, 2 Barquillos, Doble Queso, Mango, Papaya, Pera, Manzana y Banano Picado.",
+                    "toppings": 0
+                }
+            ]
+        },
+        {
+            "active": true,
+            "title": "Sunday",
+            "description": "El clásico que despierta antojos y ha acompañado generaciones.",
+            "items": [
+                {
+                    "name": "Sunday Sencillo",
+                    "price": 15000,
+                    "image": "images/sundaySencillo.png",
+                    "active": true,
+                    "bolas": 1,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "1 Bola de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, 1 Barquillo, Queso o 1 Fruta a elección.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Sunday Especial",
+                    "price": 22000,
+                    "image": "images/sundayEspecial.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, 2 Barquillos, Queso y 1 Fruta a elección.",
+                    "toppings": 0
+                },
+                {
+                    "name": "Sunday Súper Especial",
+                    "price": 25000,
+                    "image": "images/sundaySuper.png",
+                    "active": true,
+                    "bolas": 2,
+                    "hasAdditions": true,
+                    "hasSauces": false,
+                    "ingredients": "2 Bolas de Helado, Cereal, Crema de Leche, Lecherita, Chantilly, 2 Barquillos, Queso y 2 Frutas a elección.",
+                    "toppings": 0
+                }
+            ]
+        }
+    ]
+}

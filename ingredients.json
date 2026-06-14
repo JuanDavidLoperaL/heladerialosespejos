@@ -1,0 +1,62 @@
+{
+    "toppings": [
+        "n/a",
+        "oreo",
+        "milo",
+        "maní",
+        "chips chocolate",
+        "leche klim"
+    ],
+    "flavors": {
+        "fruit": [
+            "n/a",
+            "+ Queso",
+            "Mango",
+            "Frutos Amarillos",
+            "Durazno",
+            "Cerezas",
+            "Banano",
+            "Brevas"
+        ],
+        "iceCream": [
+            "n/a",
+            "Vainilla",
+            "Chocolate",
+            "Ron Pasas",
+            "Nata Maní",
+            "Frutos Rojos",
+            "Veteado de Mora",
+            "Macadamia",
+            "Fresa",
+            "Chicle",
+            "3 Leches",
+            "Vainilla Chips",
+            "Caramelo",
+            "Café",
+            "Arequipe",
+            "Frutos Amarillos",
+            "Acid Mix",
+            "Nucita",
+            "Brownie",
+            "Maracuyá",
+            "Lulo",
+        ],
+        "sauces": [
+            "n/a",
+            "Arequipe",
+            "Chocolate",
+            "Mora",
+            "Lecherita"
+        ],
+        "sunday": [
+            "n/a",
+            "+ Queso",
+            "Duraznos",
+            "Cerezas",
+            "Brevas",
+            "Banano",
+            "Mango",
+            "Frutos Amarillos"
+        ]
+    }
+}
