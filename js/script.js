@@ -335,24 +335,25 @@ document.addEventListener('DOMContentLoaded', function () {
     async function openFlavorSelection(title, ingredients, bolas, toppings, hasSauces, price, image, hasAdditions) {
         const { sundayFlavors, icecreamFlavors, toppingsFlavors, saucesFlavors, fruitFlavors } = flavorsCache;
         const additionsList = hasAdditions ? getAdditionsFromFirebase() : [];
-        const isSunday = title.toLowerCase().includes("sunday");
-        const sundayIsSpecial = title.toLowerCase().includes("sunday super especial");
+        const titleNorm = title.toLowerCase().normalize('NFD').replace(/\p{Mn}/gu, '');
+        const isSunday = titleNorm.includes("sunday");
+        const sundayIsSpecial = titleNorm.includes("sunday super especial");
         const sundayCount = sundayIsSpecial ? 2 : 1;
         const hasAdditionsBool = hasAdditions === true || hasAdditions === 'true';
         const hasSaucesBool = hasSauces === true || hasSauces === 'true';
         const modal = document.createElement('div');
-        const selectJuicePreparation = title.toLowerCase().includes("jugo de");
+        const selectJuicePreparation = titleNorm.includes("jugo de");
         const shouldSelectFruit = [
             "banana especial",
-            "banana súper especial",
-            "fresas con crema súper especial",
-            "sunday súper especial",
-            "brownie súper especial"
-        ].includes(title.toLowerCase());
+            "banana super especial",
+            "fresas con crema super especial",
+            "sunday super especial",
+            "brownie super especial"
+        ].includes(titleNorm);
         const bananaShouldSelectFruit = [
             "banana especial",
-            "banana súper especial"
-        ].includes(title.toLowerCase());
+            "banana super especial"
+        ].includes(titleNorm);
         modal.className = 'flavor-modal';
         // Formatear precio a string con punto como miles
         const priceFormatted = new Intl.NumberFormat('es-CO').format(price || 0);
@@ -712,7 +713,7 @@ document.addEventListener('DOMContentLoaded', function () {
                           <div class="order-item" data-index="${index}">
                               <div class="item-info">
                                   <h4>${item.title}</h4>
-                                  ${item.title.toLowerCase().includes("jugo de")
+                                  ${item.title.toLowerCase().normalize('NFD').replace(/\p{Mn}/gu, '').includes("jugo de")
                 ? `<p>Jugo en: ${item.juiceFlavor.join(', ')}</p>` : ''
             }
                                   <p>Sabores: ${item.flavors.join(', ')}</p>
