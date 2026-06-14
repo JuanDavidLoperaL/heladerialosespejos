@@ -2,12 +2,13 @@ import { checkAppVersion, APP_VERSION } from "./appVersioning.js";
 checkAppVersion();
 
 import { app, db, auth } from "./firebase.js";
-import { getFirestore, collection, doc, getDocs, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
 import { logError, logWarn, logInfo } from "./logger.js";
 import { todayString, timeString, isValidColombianPhone, showFeedback } from "./utils.js";
+import { loadCatalog, getAdditionsFromCatalog } from "./catalog.js";
 
 const analytics    = getAnalytics(app);
 const remoteConfig = getRemoteConfig(app);
@@ -35,6 +36,63 @@ remoteConfig.defaultConfig = {
 let saveOrderEnabled = true;
 let flavorsCache = null;
 let additionsCache = null;
+
+// ── Cache localStorage para flavors (evita 5 lecturas en visitas repetidas) ──
+const FLAVORS_CACHE_KEY = 'hle_flavors_v2';
+const FLAVORS_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 horas
+
+function getFlavorsFromLocalStorage() {
+    try {
+        const raw = localStorage.getItem(FLAVORS_CACHE_KEY);
+        if (!raw) return null;
+        const { data, ts } = JSON.parse(raw);
+        if (Date.now() - ts > FLAVORS_CACHE_TTL) { localStorage.removeItem(FLAVORS_CACHE_KEY); return null; }
+        return data;
+    } catch { return null; }
+}
+
+function saveFlavorsToLocalStorage(data) {
+    try { localStorage.setItem(FLAVORS_CACHE_KEY, JSON.stringify({ data, ts: Date.now() })); } catch {}
+}
+
+// ── Skeleton loading ──────────────────────────────────────────────────────────
+function showSkeletonLoading() {
+    const track = document.getElementById('carousel-track');
+    if (track) {
+        track.innerHTML = Array(5).fill(
+            `<div class="carousel-item skeleton-item" style="
+                min-width:80px; height:36px; border-radius:20px;
+                background:linear-gradient(90deg,#eee 25%,#f5f5f5 50%,#eee 75%);
+                background-size:200% 100%; animation:hle-shimmer 1.2s infinite;
+            "></div>`
+        ).join('');
+    }
+
+    const info = document.getElementById('category-info');
+    if (info) {
+        info.innerHTML = `
+            <style>
+              @keyframes hle-shimmer {
+                0%   { background-position: 200% 0; }
+                100% { background-position: -200% 0; }
+              }
+              .hle-skel {
+                border-radius:8px;
+                background:linear-gradient(90deg,#eee 25%,#f5f5f5 50%,#eee 75%);
+                background-size:200% 100%;
+                animation:hle-shimmer 1.2s infinite;
+              }
+            </style>
+            <div class="hle-skel" style="width:40%;height:28px;margin-bottom:12px;"></div>
+            <div class="hle-skel" style="width:70%;height:16px;margin-bottom:24px;"></div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+              ${Array(4).fill(`
+                <div class="hle-skel" style="width:200px;height:160px;border-radius:12px;"></div>
+              `).join('')}
+            </div>
+        `;
+    }
+}
 
 function updateFlags() {
     saveOrderEnabled = getValue(remoteConfig, "save_order_enabled").asBoolean();
@@ -117,147 +175,40 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    // Estado de disponibilidad
-    let availability = {
-        categories: {},
-        products: {}
-    };
+    // Estado de disponibilidad y catálogo
+    let availability = { categories: {} };
+    let categoryData = {};
 
-    // Datos base de productos
-    let categoryData = {};  // Aquí guardarás título, descripción y productos por categoría
-
-    // Cargar disponibilidad desde Firebase
+    // Cargar catálogo desde Firebase (1 sola lectura)
     async function loadAvailability() {
+        showSkeletonLoading();
+
         try {
-            const categoriesSnapshot = await getDocs(collection(db, 'categories'));
+            // Cargar catálogo y flavors en paralelo
+            const [catalog] = await Promise.all([
+                loadCatalog(),
+                (async () => {
+                    const cached = getFlavorsFromLocalStorage();
+                    if (cached) { flavorsCache = cached; return; }
+                    flavorsCache = await getFlavorsFromFirebase();
+                    saveFlavorsToLocalStorage(flavorsCache);
+                })()
+            ]);
 
-            // Usar Promise.all para esperar a cargar productos de todas categorías
-            const promises = [];
+            categoryData = catalog.categoryData;
+            availability = catalog.availability;
 
-            categoriesSnapshot.forEach(doc => {
-                const catId = doc.id;
-                const catData = doc.data();
-
-                availability.categories[catId] = catData.active || false;
-
-                // Guardar título y descripción para la categoría
-                categoryData[catId] = {
-                    title: catData.title || '',
-                    description: catData.description || '',
-                    cards: []  // productos
-                };
-
-                // Cargar productos y guardar la promesa para esperar después
-                const p = loadProducts(catId);
-                promises.push(p);
-            });
-            // Esperar a que se terminen de cargar todos los productos
-            await Promise.all(promises);
-            flavorsCache = await getFlavorsFromFirebase();
-            await sortProducts()
             updateCarousel();
         } catch (error) {
-            logError("loadAvailability", "Fallo cargando la disponibilidad de productos en Categories app v" + APP_VERSION, error);
-
-            // Manejo de error: podrías decidir qué hacer aquí, por ejemplo marcar todo como activo
+            logError("loadAvailability", "Fallo cargando el catálogo app v" + APP_VERSION, error);
         }
     }
 
-
-    // Cargar productos de Sunday
-    async function loadProducts(categoryId) {
-        try {
-            const productsSnapshot = await getDocs(collection(db, `categories/${categoryId}/products`));
-
-            categoryData[categoryId].cards = []; // vaciar antes de agregar
-
-            productsSnapshot.forEach(doc => {
-                const product = doc.data();
-
-                availability.products[doc.id] = product.active || false;
-
-                // Formatear precio a string con punto como miles
-                const priceFormatted = new Intl.NumberFormat('es-CO').format(product.price || 0);
-
-                // Agregar producto a categoryData para esa categoría
-                categoryData[categoryId].cards.push({
-                    id: doc.id,
-                    title: product.title || '',
-                    ingredients: product.ingredients || '',
-                    bolas: product.bolas || 0,
-                    toppings: product.toppings || 0,
-                    hasSauces: product.hasSauces || false,
-                    price: priceFormatted,
-                    image: product.images || '',
-                    hasAdditions: product.hasAdditions || false
-                });
-            });
-        } catch (error) {
-            logError("loadProducts", `app Version ${APP_VERSION} - Fallo cargando productos de la categoría ${categoryId}`, error);
-            // Manejar error si quieres
-        }
-    }
-
-    // Cargar las adiciones desde firebase
-    async function getAdditionsFromFirebase() {
-        if (additionsCache) {
-            return additionsCache;
-        }
-
-        try {
-            const snapshot = await getDocs(collection(db, "categories/adiciones/products"));
-
-            const additions = [];
-
-            snapshot.forEach(doc => {
-                const data = doc.data();
-
-                if (data.active !== false) {
-                    additions.push({
-                        id: doc.id,
-                        name: data.title || '',
-                        price: data.price || 0
-                    });
-                }
-            });
-            additionsCache = additions;
-            return additions;
-        } catch (error) {
-            logError("getAdditionsFromFirebase", "app Version " + APP_VERSION + " - Fallo cargando adiciones desde Firebase", error);
-            return [];
-        }
-    }
-
-    // ordenar productos segun requrimientos - [ ] Sunday, fresas, ensaladas, salpicón especialidades
-    async function sortProducts() {
-        try {
-            // Orden deseado
-            const orden = [
-                "sunday",
-                "fresas",
-                "ensaladas",
-                "salpicon",
-                "especialidades",
-                "bananas",
-                "cereales",
-                "brownie",
-                "bebidas",
-                "helado",
-                "adiciones"
-            ];
-
-            const categoriesOrdered = {};
-            orden.forEach(key => {
-                if (categoryData[key]) {
-                    categoriesOrdered[key] = categoryData[key];
-                }
-            });
-
-            categoryData = categoriesOrdered
-
-        } catch (error) {
-            logError("sortProducts", "app Version " + APP_VERSION + " - Fallo ordenando productos", error);
-        }
+    // Obtener adiciones desde el catálogo ya cargado (sin lecturas extra)
+    function getAdditionsFromFirebase() {
+        if (additionsCache) return additionsCache;
+        additionsCache = getAdditionsFromCatalog(categoryData);
+        return additionsCache;
     }
 
     // Actualizar el carrusel según disponibilidad
@@ -323,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Filtrar productos activos
-        const availableCards = message.cards.filter(card => availability.products[card.id] !== false);
+        const availableCards = message.cards.filter(card => card.active !== false);
 
         if (availableCards.length === 0) {
             categoryInfo.innerHTML = `
@@ -388,17 +339,19 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function getFlavorsFromFirebase() {
-        const sundayDoc = await getDoc(doc(db, "flavors", "sunday"));
-        const icecreamDoc = await getDoc(doc(db, "flavors", "icecream"));
-        const toppingsDoc = await getDoc(doc(db, "toppings", "products"));
-        const saucesDoc = await getDoc(doc(db, "flavors", "sauces"));
-        const fruitDoc = await getDoc(doc(db, "flavors", "fruit"));
+        // 1 sola lectura en lugar de 6
+        const ingredientsDoc = await getDoc(doc(db, "productIngredients", "ingredients"));
+        if (!ingredientsDoc.exists()) {
+            logWarn("getFlavorsFromFirebase", "Documento productIngredients/ingredients no encontrado");
+            return { sundayFlavors: [], icecreamFlavors: [], toppingsFlavors: [], saucesFlavors: [], fruitFlavors: [] };
+        }
+        const data = ingredientsDoc.data();
         return {
-            sundayFlavors: sundayDoc.exists() ? sundayDoc.data().flavors : [],
-            icecreamFlavors: icecreamDoc.exists() ? icecreamDoc.data().flavors : [],
-            toppingsFlavors: toppingsDoc.exists() ? toppingsDoc.data().toppings : [],
-            saucesFlavors: saucesDoc.exists() ? saucesDoc.data().flavors : [],
-            fruitFlavors: fruitDoc.exists() ? fruitDoc.data().flavors : []
+            sundayFlavors:   data.sunday   || [],
+            icecreamFlavors: data.iceCream || [],
+            toppingsFlavors: data.toppings || [],
+            saucesFlavors:   data.sauces   || [],
+            fruitFlavors:    data.fruit    || []
         };
     }
 
@@ -422,7 +375,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Resto de tus funciones (openFlavorSelection, openCustomerInfoModal, etc.) se mantienen igual
     async function openFlavorSelection(title, ingredients, bolas, toppings, hasSauces, price, image, hasAdditions) {
         const { sundayFlavors, icecreamFlavors, toppingsFlavors, saucesFlavors, fruitFlavors } = flavorsCache;
-        const additionsList = hasAdditions ? await getAdditionsFromFirebase() : [];
+        const additionsList = hasAdditions ? getAdditionsFromFirebase() : [];
         const isSunday = title.toLowerCase().includes("sunday");
         const sundayIsSpecial = title.toLowerCase().includes("sunday super especial");
         const sundayCount = sundayIsSpecial ? 2 : 1;
@@ -718,8 +671,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const ingredientsNotes = modal.querySelector('.ingredients-notes').value;
 
-            const numberOfItems = modal.querySelector('.number-items').value;
+            const numberOfItems = Math.max(1, parseInt(modal.querySelector('.number-items').value) || 1);
 
+            if (numberOfItems < 1) {
+                showFeedback('La cantidad debe ser al menos 1', 'error');
+                return;
+            }
 
             currentOrder.items.push({
                 title: sundayHelper ? `${title} (${sundayFlavor})` : title,
@@ -731,7 +688,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 sauces: sauces,
                 ingredients: ingredients,
                 ingredientsNotes: ingredientsNotes,
-                numberOfItems: parseInt(numberOfItems),
+                numberOfItems: numberOfItems,
                 additions: additions,
                 additionsTotal: additionsTotal,
                 price: basePrice + additionsTotal
