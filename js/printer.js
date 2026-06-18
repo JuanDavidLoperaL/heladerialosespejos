@@ -129,7 +129,7 @@ async function buildTicketBytes(order) {
         if (i.juice) add(`   Jugo    : ${i.juice}`, LF);
         if (i.toppings) add(`   Toppings: ${i.toppings}`, LF);
         if (i.sauces) add(`   Salsa   : ${i.sauces}`, LF);
-        if (i.notes) add(`   Notas   : ${i.notes}`, LF);
+        if (i.notes) add(`   Retirar porfavor   : ${i.notes}`, LF);
         if (i.additions) add(`   Adiciones: ${i.additions.map(a => a.name).join(', ')}`, LF);
     });
 
