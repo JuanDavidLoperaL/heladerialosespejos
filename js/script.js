@@ -723,7 +723,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                   <p>ingredients: ${item.ingredients}</p>
                                   ${item.toppings && item.toppings.length > 0 ? `<p>Toppings: ${item.toppings.join(', ')}</p>` : ''}
                                   ${item.sauces && item.sauces.length > 0 ? `<p>Salsas: ${item.sauces.join(', ')}</p>` : ''}
-                                  ${item.ingredientsNotes ? `<p>Notas: ${item.ingredientsNotes}</p>` : ''}
+                                  ${item.ingredientsNotes ? `<p>Porfavor Retirar: ${item.ingredientsNotes}</p>` : ''}
                                   ${item.additions && item.additions.length > 0
                 ? `<p>Adiciones: ${item.additions.map(a => `${a.name} ($${a.price.toLocaleString('es-CO')})`).join(', ')}</p>`
                 : ''}
@@ -800,7 +800,7 @@ document.addEventListener('DOMContentLoaded', function () {
                               <h4>${item.title}</h4>
                               <p>Sabores: ${item.flavors.join(', ')}</p>
                               <p>ingredients: ${item.ingredients}</p>
-                              ${item.ingredientsNotes ? `<p>Notas: ${item.ingredientsNotes}</p>` : ''}
+                              ${item.ingredientsNotes ? `<p>Porfavor Retirar: ${item.ingredientsNotes}</p>` : ''}
                               <p>Precio: $${item.price.toLocaleString('es-CO')}</p>
                               <p>Cuantos de este mismo producto: ${item.numberOfItems}</p>
                           </div>
@@ -916,7 +916,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 message += `   *Salsa:* ${item.sauces.join(', ')}\n`;
             }
             if (item.ingredientsNotes) {
-                message += `   *Notas:* ${item.ingredientsNotes}\n`;
+                message += `   *Porfavor Retirar:* ${item.ingredientsNotes}\n`;
             }
             if (item.additions && item.additions.length > 0) {
                 message += `   *Adiciones:* ${item.additions.map(a => `${a.name} ($${a.price.toLocaleString('es-CO')})`).join(', ')}\n`;

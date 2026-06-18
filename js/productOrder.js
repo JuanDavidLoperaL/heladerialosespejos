@@ -305,7 +305,7 @@ function buildTicket(order) {
             ${i.juice ? `<br><span class="item-detail">🥤 Jugo: ${i.juice}</span>` : ''}
             ${i.toppings ? `<br><span class="item-detail">🍫 Toppings: ${i.toppings}</span>` : ''}
             ${i.sauces ? `<br><span class="item-detail">🍯 Salsa: ${i.sauces}</span>` : ''}
-            ${i.notes ? `<br><span class="item-detail">📝 Notas: ${i.notes}</span>` : ''}
+            ${i.notes ? `<br><span class="item-detail">📝 Porfavor Retirar: ${i.notes}</span>` : ''}
         </li>
     `).join('')
         : '<li>Sin detalle</li>';

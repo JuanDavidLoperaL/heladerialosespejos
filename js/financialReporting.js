@@ -300,6 +300,16 @@ async function saveEntry() {
         }
         showToast('✅ Registro guardado correctamente', 'success');
         clearForm();
+
+        // Sincronizar el selector de mes con el mes del registro guardado,
+        // para que loadRecords muestre el mes correcto aunque difieran.
+        const monthInput = document.getElementById('fr-month');
+        if (monthInput && monthInput.value !== monthDoc) {
+            monthInput.value = monthDoc;
+            const lbl = document.getElementById('fr-month-label');
+            if (lbl) lbl.textContent = monthLabel(monthDoc);
+        }
+
         await loadRecords();
     } catch (err) {
         console.error('Error guardando financialReporting:', err);
