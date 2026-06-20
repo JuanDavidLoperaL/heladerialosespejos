@@ -7,7 +7,7 @@ import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
 import { logError, logWarn, logInfo } from "./logger.js";
-import { todayString, timeString, isValidColombianPhone, showFeedback } from "./utils.js";
+import { todayString, timeString, isValidColombianPhone, showFeedback, isBeforeOpening } from "./utils.js";
 import { loadCatalogWithCache, getAdditionsFromCatalog } from "./catalog.js";
 
 const analytics    = getAnalytics(app);
@@ -681,13 +681,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function openCustomerInfoModal() {
+        const scheduledBanner = isBeforeOpening()
+            ? `<div class="scheduled-order-notice">
+                   ⏰ <strong>Pedido agendado</strong> — Aún no hemos abierto.
+                   Tu pedido quedará registrado y la distribución de productos comienza a la <strong>1:00 PM</strong>.
+               </div>`
+            : '';
+
         const modal = document.createElement('div');
         modal.className = 'order-modal';
         modal.innerHTML = `
           <div class="modal-content">
               <span class="close-modal">&times;</span>
               <h2>Confirmar Pedido</h2>
-              
+              ${scheduledBanner}
               <div class="order-summary">
                   <h3>Tu Pedido:</h3>
                   <div class="order-items" id="order-items">
@@ -805,44 +812,80 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        modal.querySelector('.send-whatsapp').addEventListener('click', async function () {
-            const name = document.getElementById('customer-name').value.trim();
-            const phone = document.getElementById('customer-phone').value.trim();
-            const address = document.getElementById('customer-address').value.trim();
-            const neighborhood = document.getElementById('customer-neighborhood').value.trim();
-            const payment = document.getElementById('customer-payment-method').value.trim();
+        const sendWhatsappBtn = modal.querySelector('.send-whatsapp');
 
-            if (!name) { showFeedback('Por favor ingresa tu nombre completo', 'error'); return; }
-            if (!phone) { showFeedback('Por favor ingresa tu número de teléfono', 'error'); return; }
+        async function submitOrder() {
+            const name         = document.getElementById('customer-name').value.trim();
+            const phone        = document.getElementById('customer-phone').value.trim();
+            const address      = document.getElementById('customer-address').value.trim();
+            const neighborhood = document.getElementById('customer-neighborhood').value.trim();
+            const payment      = document.getElementById('customer-payment-method').value.trim();
+
+            if (!name)         { showFeedback('Por favor ingresa tu nombre completo', 'error'); return; }
+            if (!phone)        { showFeedback('Por favor ingresa tu número de teléfono', 'error'); return; }
             if (!isValidColombianPhone(phone)) { showFeedback('Por favor ingresa un número de teléfono colombiano válido', 'error'); return; }
-            if (!address) { showFeedback('Por favor ingresa tu dirección de entrega', 'error'); return; }
+            if (!address)      { showFeedback('Por favor ingresa tu dirección de entrega', 'error'); return; }
             if (!neighborhood) { showFeedback('Por favor ingresa tu barrio de entrega', 'error'); return; }
-            if (!payment) { showFeedback('Por favor ingresa tu método de pago', 'error'); return; }
+            if (!payment)      { showFeedback('Por favor ingresa tu método de pago', 'error'); return; }
 
             currentOrder.customerInfo = { name, phone, address, neighborhood, payment };
 
-            // 1. Deshabilitar botón para evitar doble clic
-            const btn = this;
-            btn.disabled = true;
-            btn.textContent = '⏳ Procesando pedido...';
+            // Si es antes de apertura, mostrar popup de confirmación de pedido agendado
+            if (isBeforeOpening()) {
+                const schedulePopup = document.createElement('div');
+                schedulePopup.className = 'schedule-confirm-overlay';
+                schedulePopup.innerHTML = `
+                    <div class="schedule-confirm-popup">
+                        <button class="schedule-confirm-close">&times;</button>
+                        <div class="schedule-confirm-icon">⏰</div>
+                        <h3>Pedido agendado</h3>
+                        <p>
+                            Entiendo que la atención al público empieza a las
+                            <strong>12:30 PM</strong> y mi pedido queda agendado
+                            para entrega a partir de la <strong>1:00 PM</strong>.
+                        </p>
+                        <button class="schedule-confirm-send">Enviar pedido por WhatsApp</button>
+                    </div>
+                `;
+                document.body.appendChild(schedulePopup);
 
-            // 2. Preparar URL de WhatsApp (sincrónico, sin await)
+                schedulePopup.querySelector('.schedule-confirm-close').addEventListener('click', () => {
+                    document.body.removeChild(schedulePopup);
+                    // Re-habilitar el botón principal para que puedan volver a intentarlo
+                    sendWhatsappBtn.disabled = false;
+                    sendWhatsappBtn.textContent = '📲 Enviar pedido por WhatsApp';
+                });
+
+                schedulePopup.querySelector('.schedule-confirm-send').addEventListener('click', async () => {
+                    document.body.removeChild(schedulePopup);
+                    await dispatchOrder();
+                });
+
+                return;
+            }
+
+            await dispatchOrder();
+        }
+
+        async function dispatchOrder() {
+            sendWhatsappBtn.disabled = true;
+            sendWhatsappBtn.textContent = '⏳ Procesando pedido...';
+
             const whatsappMessage = generateWhatsAppMessage();
-            const encodedMessage = encodeURIComponent(whatsappMessage);
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            const encodedMessage  = encodeURIComponent(whatsappMessage);
+            const whatsappUrl     = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
 
             logEvent(analytics, 'pedido_whatsapp', {
-                items_count: currentOrder.items.length,
-                total: currentOrder.total,
+                items_count:    currentOrder.items.length,
+                total:          currentOrder.total,
                 message_length: whatsappMessage.length,
-                user_agent: navigator.userAgent,
-                payment_method: payment,
-                neighborhood: neighborhood,
-                order_total: currentOrder.total,
-                app_version: APP_VERSION
+                user_agent:     navigator.userAgent,
+                payment_method: currentOrder.customerInfo.payment,
+                neighborhood:   currentOrder.customerInfo.neighborhood,
+                order_total:    currentOrder.total,
+                app_version:    APP_VERSION
             });
 
-            // 3. Guardar en Firebase ANTES de navegar (con timeout de seguridad)
             if (saveOrderEnabled) {
                 try {
                     await Promise.race([
@@ -852,29 +895,30 @@ document.addEventListener('DOMContentLoaded', function () {
                 } catch (error) {
                     logError("saveOrderToFirebase", "Fallo guardando pedido en Firebase app " + APP_VERSION, {
                         customerInfo: currentOrder.customerInfo,
-                        items: currentOrder.items,
-                        total: currentOrder.total,
+                        items:        currentOrder.items,
+                        total:        currentOrder.total,
                         authenticated: !!auth.currentUser,
-                        code: error?.code,
-                        message: error?.message,
-                        uid: auth.currentUser?.uid ?? null,
-                        online: navigator.onLine,
-                        appVersion: APP_VERSION
+                        code:         error?.code,
+                        message:      error?.message,
+                        uid:          auth.currentUser?.uid ?? null,
+                        online:       navigator.onLine,
+                        appVersion:   APP_VERSION
                     });
-                    // Continuar de todas formas — el pedido llega por WhatsApp
                 }
             }
 
-            // 4. Cerrar modal
             document.body.removeChild(modal);
-
-            // 5. Navegar a WhatsApp — funciona en iPhone, Android, Instagram, Facebook, desktop
             window.location.href = whatsappUrl;
-        });
+        }
+
+        sendWhatsappBtn.addEventListener('click', submitOrder);
     }
 
     function generateWhatsAppMessage() {
         let message = `¡Hola! Quiero hacer un pedido en la Heladeria Los Espejos:\n\n`;
+        if (isBeforeOpening()) {
+            message += `⏰ *PEDIDO AGENDADO* — La distribución de productos comienza a la 1:00 PM.\n\n`;
+        }
         message += `*Pedido:*\n`;
         currentOrder.items.forEach((item, index) => {
             message += `${index + 1}. ${item.title}\n`;

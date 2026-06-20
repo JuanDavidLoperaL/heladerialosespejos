@@ -29,6 +29,18 @@ export function timeString() {
     }).format(new Date());
 }
 
+export function isBeforeOpening() {
+    const hour = parseInt(
+        new Intl.DateTimeFormat('es-CO', {
+            timeZone: 'America/Bogota',
+            hour:   '2-digit',
+            hour12: false
+        }).format(new Date()),
+        10
+    );
+    return hour < 12;
+}
+
 export function isValidColombianPhone(phone) {
     const regex = /^(?:\+57)?[ -]?(3[0-9]{2}|60[1-8])[ -]?[0-9]{3}[ -]?[0-9]{4}$/;
     return regex.test(phone);
