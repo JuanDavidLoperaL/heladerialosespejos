@@ -328,13 +328,26 @@
 </div>
 
 <!-- POPUP Confirmar guardado -->
-<div class="popup-overlay" id="fr-confirm-popup">
+<div class="popup-overlay" id="fr-confirm-popup" style="display:none;">
     <div class="popup">
         <h3 id="fr-confirm-title">¿Guardar registro?</h3>
         <p id="fr-confirm-desc">Se guardará la información en Firebase.</p>
         <div class="popup-buttons">
             <button class="popup-btn confirm-cancel" id="fr-confirm-yes">💾 Guardar</button>
             <button class="popup-btn dismiss" id="fr-confirm-no">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- POPUP Registro duplicado -->
+<div class="popup-overlay" id="fr-duplicate-popup" style="display:none;">
+    <div class="popup">
+        <h3 style="color:#c62828;">⚠️ Registro ya existe</h3>
+        <p id="fr-duplicate-msg" style="margin:12px 0; line-height:1.5;"></p>
+        <p style="font-size:13px; color:#888;">Puedes editar ese registro o cambiar la fecha / punto antes de guardar.</p>
+        <div class="popup-buttons">
+            <button class="popup-btn confirm-cancel" id="fr-duplicate-edit">✏️ Editar ese registro</button>
+            <button class="popup-btn dismiss" id="fr-duplicate-close">Cambiar fecha/punto</button>
         </div>
     </div>
 </div>
