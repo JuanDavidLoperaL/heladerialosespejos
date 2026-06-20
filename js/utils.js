@@ -29,6 +29,30 @@ export function timeString() {
     }).format(new Date());
 }
 
+export function isBeforeOpening() {
+    const hour = parseInt(
+        new Intl.DateTimeFormat('es-CO', {
+            timeZone: 'America/Bogota',
+            hour:   '2-digit',
+            hour12: false
+        }).format(new Date()),
+        10
+    );
+    return hour < 12;
+}
+
+export function isAfterClosing() {
+    const parts = new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
+        hour:   '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).formatToParts(new Date());
+    const hour   = parseInt(parts.find(p => p.type === 'hour').value,   10);
+    const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
+    return hour > 19 || (hour === 19 && minute >= 40);
+}
+
 export function isValidColombianPhone(phone) {
     const regex = /^(?:\+57)?[ -]?(3[0-9]{2}|60[1-8])[ -]?[0-9]{3}[ -]?[0-9]{4}$/;
     return regex.test(phone);
