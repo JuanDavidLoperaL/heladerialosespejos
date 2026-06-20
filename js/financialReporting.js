@@ -15,10 +15,6 @@ let gastosTransferItems  = [];
 let gastosCajaMayorItems = [];
 let allRecords           = [];
 
-const DOMICILIO_USERS = [
-    'saray.mejia@heladerialosespejos.com',
-    'salome.mejia@heladerialosespejos.com'
-];
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function fmt(n) {
@@ -65,10 +61,9 @@ function getMonthDoc(fecha) { return fecha.slice(0, 7); }
 // Clave del día dentro del documento: "DD_punto"  (ej: "26_principal")
 function getDayKey(fecha, punto) { return `${fecha.slice(8, 10)}_${punto}`; }
 
-// Punto por defecto según el usuario logueado
+// Punto por defecto según configuración cargada por dashboard.js desde Firebase
 function getDefaultPunto() {
-    if (currentUser && DOMICILIO_USERS.includes(currentUser.email)) return 'domicilio';
-    return 'principal';
+    return window.currentUserDefaultPunto ?? 'principal';
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────
