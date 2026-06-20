@@ -7,7 +7,7 @@ import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
 import { logError, logWarn, logInfo } from "./logger.js";
-import { todayString, timeString, isValidColombianPhone, showFeedback, isBeforeOpening } from "./utils.js";
+import { todayString, timeString, isValidColombianPhone, showFeedback, isBeforeOpening, isAfterClosing } from "./utils.js";
 import { loadCatalogWithCache, getAdditionsFromCatalog } from "./catalog.js";
 
 const analytics    = getAnalytics(app);
@@ -29,11 +29,14 @@ remoteConfig.settings = {
     minimumFetchIntervalMillis: 5 * 60 * 1000, // Cada 5 Minutos
 };
 remoteConfig.defaultConfig = {
-    save_order_enabled: true
+    save_order_enabled:          true,
+    schedule_order_before_12:    true,
+    schedule_order_after_7_40:   true,
 };
 
-
-let saveOrderEnabled = true;
+let saveOrderEnabled        = true;
+let scheduleOrderBefore12   = true;
+let scheduleOrderAfter7_40  = true;
 let flavorsCache = null;
 let additionsCache = null;
 
@@ -80,7 +83,9 @@ function showSkeletonLoading() {
 }
 
 function updateFlags() {
-    saveOrderEnabled = getValue(remoteConfig, "save_order_enabled").asBoolean();
+    saveOrderEnabled       = getValue(remoteConfig, "save_order_enabled").asBoolean();
+    scheduleOrderBefore12  = getValue(remoteConfig, "schedule_order_before_12").asBoolean();
+    scheduleOrderAfter7_40 = getValue(remoteConfig, "schedule_order_after_7_40").asBoolean();
 }
 
 function initRemoteConfig() {
@@ -681,10 +686,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function openCustomerInfoModal() {
-        const scheduledBanner = isBeforeOpening()
+        const scheduledBanner = (scheduleOrderBefore12 && isBeforeOpening())
             ? `<div class="scheduled-order-notice">
                    ⏰ <strong>Pedido agendado</strong> — Aún no hemos abierto.
                    Tu pedido quedará registrado y la distribución de productos comienza a la <strong>1:00 PM</strong>.
+               </div>`
+            : (scheduleOrderAfter7_40 && isAfterClosing())
+            ? `<div class="scheduled-order-notice scheduled-order-notice--closed">
+                   🌙 <strong>Por hoy no tenemos más servicio</strong>, pero podemos agendar tu pedido
+                   para el día de <strong>mañana</strong> con entrega a partir de la <strong>1:00 PM</strong>.
                </div>`
             : '';
 
@@ -830,28 +840,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
             currentOrder.customerInfo = { name, phone, address, neighborhood, payment };
 
-            // Si es antes de apertura, mostrar popup de confirmación de pedido agendado
-            if (isBeforeOpening()) {
+            // Popup de confirmación para pedidos fuera de horario
+            const needsScheduleConfirm = (scheduleOrderBefore12 && isBeforeOpening()) ||
+                                          (scheduleOrderAfter7_40 && isAfterClosing());
+            if (needsScheduleConfirm) {
+                const isMorning = isBeforeOpening();
                 const schedulePopup = document.createElement('div');
                 schedulePopup.className = 'schedule-confirm-overlay';
-                schedulePopup.innerHTML = `
-                    <div class="schedule-confirm-popup">
-                        <button class="schedule-confirm-close">&times;</button>
-                        <div class="schedule-confirm-icon">⏰</div>
-                        <h3>Pedido agendado</h3>
-                        <p>
-                            Entiendo que la atención al público empieza a las
-                            <strong>12:30 PM</strong> y mi pedido queda agendado
-                            para entrega a partir de la <strong>1:00 PM</strong>.
-                        </p>
-                        <button class="schedule-confirm-send">Enviar pedido por WhatsApp</button>
-                    </div>
-                `;
+                schedulePopup.innerHTML = isMorning
+                    ? `<div class="schedule-confirm-popup">
+                           <button class="schedule-confirm-close">&times;</button>
+                           <div class="schedule-confirm-icon">⏰</div>
+                           <h3>Pedido agendado</h3>
+                           <p>
+                               Entiendo que la atención al público empieza a las
+                               <strong>12:30 PM</strong> y mi pedido queda agendado
+                               para entrega a partir de la <strong>1:00 PM</strong>.
+                           </p>
+                           <button class="schedule-confirm-send">Enviar pedido por WhatsApp</button>
+                       </div>`
+                    : `<div class="schedule-confirm-popup">
+                           <button class="schedule-confirm-close">&times;</button>
+                           <div class="schedule-confirm-icon">🌙</div>
+                           <h3>Pedido para mañana</h3>
+                           <p>
+                               Entiendo que la atención al público termina a las
+                               <strong>7:40 PM</strong>. Quiero agendar mi pedido
+                               para el día de <strong>mañana</strong> con entrega
+                               a partir de la <strong>1:00 PM</strong>.
+                           </p>
+                           <button class="schedule-confirm-send">Enviar pedido por WhatsApp</button>
+                       </div>`;
+
                 document.body.appendChild(schedulePopup);
 
                 schedulePopup.querySelector('.schedule-confirm-close').addEventListener('click', () => {
                     document.body.removeChild(schedulePopup);
-                    // Re-habilitar el botón principal para que puedan volver a intentarlo
                     sendWhatsappBtn.disabled = false;
                     sendWhatsappBtn.textContent = '📲 Enviar pedido por WhatsApp';
                 });
@@ -916,8 +940,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function generateWhatsAppMessage() {
         let message = `¡Hola! Quiero hacer un pedido en la Heladeria Los Espejos:\n\n`;
-        if (isBeforeOpening()) {
+        if (scheduleOrderBefore12 && isBeforeOpening()) {
             message += `⏰ *PEDIDO AGENDADO* — La distribución de productos comienza a la 1:00 PM.\n\n`;
+        } else if (scheduleOrderAfter7_40 && isAfterClosing()) {
+            message += `🌙 *PEDIDO PARA MAÑANA* — El cliente sabe que el servicio de hoy terminó. Entrega a partir de la 1:00 PM del día siguiente.\n\n`;
         }
         message += `*Pedido:*\n`;
         currentOrder.items.forEach((item, index) => {

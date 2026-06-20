@@ -579,3 +579,9 @@ font-weight: bold;
     color: #78350f;
     line-height: 1.5;
 }
+
+.scheduled-order-notice--closed {
+    background: #eff6ff;
+    border-left-color: #3b82f6;
+    color: #1e3a5f;
+}
