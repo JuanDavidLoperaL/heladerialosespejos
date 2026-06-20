@@ -3,6 +3,7 @@ import {
     doc, setDoc, getDoc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { todayString } from './utils.js';
 
 // ── Estado ────────────────────────────────────────────────────────────────
 let currentUser          = null;
@@ -13,6 +14,11 @@ let gastosItems          = [];
 let gastosTransferItems  = [];
 let gastosCajaMayorItems = [];
 let allRecords           = [];
+
+const DOMICILIO_USERS = [
+    'saray.mejia@heladerialosespejos.com',
+    'salome.mejia@heladerialosespejos.com'
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function fmt(n) {
@@ -59,6 +65,12 @@ function getMonthDoc(fecha) { return fecha.slice(0, 7); }
 // Clave del día dentro del documento: "DD_punto"  (ej: "26_principal")
 function getDayKey(fecha, punto) { return `${fecha.slice(8, 10)}_${punto}`; }
 
+// Punto por defecto según el usuario logueado
+function getDefaultPunto() {
+    if (currentUser && DOMICILIO_USERS.includes(currentUser.email)) return 'domicilio';
+    return 'principal';
+}
+
 // ── Toast ─────────────────────────────────────────────────────────────────
 function showToast(msg, type = 'success') {
     const t = document.getElementById('fr-toast');
@@ -95,9 +107,8 @@ function setEditMode(on) {
 
 // ── Limpiar formulario ────────────────────────────────────────────────────
 function clearForm() {
-    const today = new Date().toISOString().slice(0, 10);
-    document.getElementById('fr-date').value          = today;
-    document.getElementById('fr-punto').value         = 'principal';
+    document.getElementById('fr-date').value          = todayString();
+    document.getElementById('fr-punto').value         = getDefaultPunto();
     document.getElementById('fr-transferencia').value = '0';
     document.getElementById('fr-efectivo').value      = '0';
     document.getElementById('fr-caja').value          = '0';
@@ -291,7 +302,8 @@ async function saveEntry() {
             // Actualiza solo el campo del día — no toca los demás días del mes
             await updateDoc(monthRef, { [`dias.${dayKey}`]: data });
         } catch (e) {
-            if (e.code === 'not-found') {
+            // El código puede venir como 'not-found' o 'firestore/not-found' según la versión
+            if (e.code === 'not-found' || String(e.code).includes('not-found')) {
                 // Primera entrada del mes: crea el documento
                 await setDoc(monthRef, { dias: { [dayKey]: data } });
             } else {
@@ -845,6 +857,11 @@ function init() {
         currentUser = user;
         const userField = document.getElementById('fr-usuario');
         if (userField) userField.value = user?.email || 'desconocido';
+        // Ajustar punto por defecto según el usuario (solo si no está en modo edición)
+        if (!isEditMode) {
+            const puntoSel = document.getElementById('fr-punto');
+            if (puntoSel) puntoSel.value = getDefaultPunto();
+        }
     });
 
     // Cambio de mes
@@ -954,8 +971,63 @@ function init() {
         }
     });
 
-    // Guardar
-    document.getElementById('fr-btn-save')?.addEventListener('click', saveEntry);
+    // Guardar → validación de duplicado → popup de confirmación → saveEntry
+    document.getElementById('fr-btn-save')?.addEventListener('click', async () => {
+        const fecha = document.getElementById('fr-date').value;
+        const punto = document.getElementById('fr-punto').value;
+        if (!fecha) { showToast('⚠️ Selecciona una fecha', 'error'); return; }
+
+        if (!isEditMode) {
+            // Verificar si ya existe un registro con esa fecha y punto
+            const dayKey   = getDayKey(fecha, punto);
+            const existing = allRecords.find(r => r.id === dayKey);
+            if (existing) {
+                const puntolabel = punto === 'principal' ? '🏪 Punto Principal' : '🛵 Punto Domicilio';
+                const creator    = existing.usuario || 'un usuario desconocido';
+                const popup  = document.getElementById('fr-duplicate-popup');
+                const msgEl  = document.getElementById('fr-duplicate-msg');
+                if (msgEl) msgEl.innerHTML =
+                    `Ya existe un registro para <strong>${fecha}</strong> en <strong>${puntolabel}</strong>, ` +
+                    `creado por <strong>${escHtml(creator)}</strong>.`;
+                if (popup) popup.style.display = 'flex';
+                return;
+            }
+        }
+
+        // Sin duplicado → mostrar popup de confirmación
+        const confirmPopup = document.getElementById('fr-confirm-popup');
+        if (confirmPopup) confirmPopup.style.display = 'flex';
+    });
+
+    // Popup confirmación: confirmar guardar
+    document.getElementById('fr-confirm-yes')?.addEventListener('click', () => {
+        const confirmPopup = document.getElementById('fr-confirm-popup');
+        if (confirmPopup) confirmPopup.style.display = 'none';
+        saveEntry();
+    });
+
+    // Popup confirmación: cancelar
+    document.getElementById('fr-confirm-no')?.addEventListener('click', () => {
+        const confirmPopup = document.getElementById('fr-confirm-popup');
+        if (confirmPopup) confirmPopup.style.display = 'none';
+    });
+
+    // Popup duplicado: editar el existente
+    document.getElementById('fr-duplicate-edit')?.addEventListener('click', () => {
+        const popup = document.getElementById('fr-duplicate-popup');
+        if (popup) popup.style.display = 'none';
+        // Reconstruir la key del duplicado para cargarlo en el formulario
+        const fecha = document.getElementById('fr-date').value;
+        const punto = document.getElementById('fr-punto').value;
+        const dayKey = getDayKey(fecha, punto);
+        loadForEdit(dayKey);
+    });
+
+    // Popup duplicado: cerrar (el usuario ajusta la fecha/punto manualmente)
+    document.getElementById('fr-duplicate-close')?.addEventListener('click', () => {
+        const popup = document.getElementById('fr-duplicate-popup');
+        if (popup) popup.style.display = 'none';
+    });
 
     // Limpiar / Cancelar edición
     document.getElementById('fr-btn-clear')?.addEventListener('click', clearForm);
