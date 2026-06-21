@@ -334,7 +334,6 @@ document.addEventListener('DOMContentLoaded', function () {
             "banana especial",
             "banana super especial",
             "fresas con crema super especial",
-            "sunday super especial",
             "brownie super especial"
         ].includes(titleNorm);
         const bananaShouldSelectFruit = [
@@ -383,8 +382,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="flavor-option">
                             <select class="fruit-flavor">
                                 ${fruitFlavors.map(f => `
-                                    <option 
-                                    value="${f}" 
+                                    <option
+                                    value="${f}"
                                     ${(
                             bananaShouldSelectFruit &&
                             f.toLowerCase() === "frutos amarillos"
@@ -507,11 +506,25 @@ document.addEventListener('DOMContentLoaded', function () {
             fruitSelects.forEach(select => {
                 select.disabled = hasFrutosAmarillos;
 
-                // opcional: resetear selección si se bloquea
                 if (hasFrutosAmarillos) {
                     select.selectedIndex = 0;
                 }
             });
+
+            // Si se selecciona Frutos Amarillos en Sunday Súper Especial,
+            // ocultar los demás selectores de sunday (solo aplica cuando hay más de uno)
+            if (sundaySelects.length > 1) {
+                sundaySelects.forEach(select => {
+                    const parentDiv = select.closest('.flavor-option');
+                    if (hasFrutosAmarillos && select.value.toLowerCase() !== 'frutos amarillos') {
+                        select.disabled = true;
+                        if (parentDiv) parentDiv.style.display = 'none';
+                    } else {
+                        select.disabled = false;
+                        if (parentDiv) parentDiv.style.display = '';
+                    }
+                });
+            }
         }
 
         sundaySelects.forEach(select => {
