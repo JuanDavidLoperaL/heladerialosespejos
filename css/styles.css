@@ -569,6 +569,27 @@ font-weight: bold;
     background: #1ebe59;
 }
 
+.min-order-popup p strong {
+    color: #e05c00;
+}
+
+.min-order-back-btn {
+    background: #f97316;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 13px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s;
+}
+
+.min-order-back-btn:hover {
+    background: #ea6c0a;
+}
+
 .scheduled-order-notice {
     background: #fff8e1;
     border-left: 4px solid #f59e0b;
