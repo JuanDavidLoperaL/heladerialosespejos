@@ -795,16 +795,49 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.body.appendChild(modal);
 
-        modal.querySelectorAll('.remove-item').forEach(btn => {
-            btn.addEventListener('click', function () {
-                const itemIndex = parseInt(this.closest('.order-item').getAttribute('data-index'));
-                currentOrder.items.splice(itemIndex, 1);
-                currentOrder.total = currentOrder.items.reduce((sum, item) => sum + (item.price * item.numberOfItems), 0);
+        function bindRemoveButtons() {
+            modal.querySelectorAll('.remove-item').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const itemIndex = parseInt(this.closest('.order-item').getAttribute('data-index'));
+                    currentOrder.items.splice(itemIndex, 1);
+                    currentOrder.total = currentOrder.items.reduce((sum, item) => sum + (item.price * item.numberOfItems), 0);
 
-                if (currentOrder.items.length === 0) {
-                    document.body.removeChild(modal);
-                    showFeedback('Has eliminado todos los productos del pedido', 'error');
-                } else {
+                    updateOrderButton();
+
+                    if (currentOrder.items.length === 0) {
+                        document.body.removeChild(modal);
+                        showFeedback('Has eliminado todos los productos del pedido', 'error');
+                        return;
+                    }
+
+                    const MIN_ORDER = 12000;
+                    if (currentOrder.total < MIN_ORDER) {
+                        document.body.removeChild(modal);
+                        const faltante = (MIN_ORDER - currentOrder.total).toLocaleString('es-CO');
+                        const minPopup = document.createElement('div');
+                        minPopup.className = 'schedule-confirm-overlay';
+                        minPopup.innerHTML = `
+                            <div class="schedule-confirm-popup min-order-popup">
+                                <button class="schedule-confirm-close">&times;</button>
+                                <div class="schedule-confirm-icon">🍦</div>
+                                <h3>Pedido mínimo: $12.000</h3>
+                                <p>
+                                    Tu pedido quedó en <strong>$${currentOrder.total.toLocaleString('es-CO')}</strong>.<br><br>
+                                    Solo te faltan <strong>$${faltante}</strong> para alcanzar el mínimo.
+                                    ¡Agrégale algo rico para completarlo — una bola extra, un topping o una salsa!
+                                </p>
+                                <button class="min-order-back-btn">Volver y agregar más 🛒</button>
+                            </div>`;
+                        document.body.appendChild(minPopup);
+                        minPopup.querySelector('.schedule-confirm-close').addEventListener('click', () => {
+                            document.body.removeChild(minPopup);
+                        });
+                        minPopup.querySelector('.min-order-back-btn').addEventListener('click', () => {
+                            document.body.removeChild(minPopup);
+                        });
+                        return;
+                    }
+
                     const orderItemsContainer = modal.querySelector('#order-items');
                     orderItemsContainer.innerHTML = currentOrder.items.map((item, index) => `
                       <div class="order-item" data-index="${index}">
@@ -820,10 +853,11 @@ document.addEventListener('DOMContentLoaded', function () {
                       </div>
                   `).join('');
                     modal.querySelector('.order-total h3').textContent = `Total: $${currentOrder.total.toLocaleString('es-CO')}`;
-                }
-                updateOrderButton();
+                    bindRemoveButtons();
+                });
             });
-        });
+        }
+        bindRemoveButtons();
 
         modal.querySelector('.close-modal').addEventListener('click', function () {
             document.body.removeChild(modal);
@@ -1021,9 +1055,37 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('confirm-order-btn').addEventListener('click', function () {
         if (currentOrder.items.length === 0) {
             showFeedback('Por favor agrega al menos un producto a tu pedido', 'error');
-        } else {
-            openCustomerInfoModal();
+            return;
         }
+
+        const MIN_ORDER = 12000;
+        if (currentOrder.total < MIN_ORDER) {
+            const faltante = (MIN_ORDER - currentOrder.total).toLocaleString('es-CO');
+            const minPopup = document.createElement('div');
+            minPopup.className = 'schedule-confirm-overlay';
+            minPopup.innerHTML = `
+                <div class="schedule-confirm-popup min-order-popup">
+                    <button class="schedule-confirm-close">&times;</button>
+                    <div class="schedule-confirm-icon">🍦</div>
+                    <h3>Pedido mínimo: $12.000</h3>
+                    <p>
+                        Tu pedido actual es de <strong>$${currentOrder.total.toLocaleString('es-CO')}</strong>.<br><br>
+                        Solo te faltan <strong>$${faltante}</strong> para alcanzar el mínimo.
+                        ¡Agrégale algo rico para completarlo — una bola extra, un topping o una salsa!
+                    </p>
+                    <button class="min-order-back-btn">Volver y agregar más 🛒</button>
+                </div>`;
+            document.body.appendChild(minPopup);
+            minPopup.querySelector('.schedule-confirm-close').addEventListener('click', () => {
+                document.body.removeChild(minPopup);
+            });
+            minPopup.querySelector('.min-order-back-btn').addEventListener('click', () => {
+                document.body.removeChild(minPopup);
+            });
+            return;
+        }
+
+        openCustomerInfoModal();
     });
 
     prevBtn.addEventListener('click', () => {
