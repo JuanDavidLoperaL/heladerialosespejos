@@ -16,8 +16,8 @@ function pendingPath(orderNumber) {
     return doc(db, 'productOrder', 'pending', todayString(), orderNumber);
 }
 
-function completedPath(orderNumber) {
-    return doc(db, 'productOrder', 'completed', todayString(), orderNumber);
+function printedPath(orderNumber) {
+    return doc(db, 'productOrder', 'printed', todayString(), orderNumber);
 }
 
 // ─── Mock ──────────────────────────────────────────────────────────────────────
@@ -148,7 +148,7 @@ document.getElementById('confirm-print').addEventListener('click', async () => {
     };
 
     printTicketWIFI(orderWithDelivery);
-    await completeOrder(orderWithDelivery);
+    await printOrder(orderWithDelivery);
     closePopup(printPopup);
 });
 
@@ -170,7 +170,11 @@ async function cancelOrder(order) {
     await deleteDoc(pendingPath(order.orderNumber));
 }
 
-async function completeOrder(order) {
+// Imprimir solo pone el pedido en la fila de preparación (colección "printed").
+// El estado real (en preparación / en camino / entregado) se controla aparte,
+// desde "Pedidos en proceso". La analítica se sigue contando aquí, en el momento
+// de imprimir, exactamente como antes — no se mueve al paso de "entregado".
+async function printOrder(order) {
     if (USE_MOCK) {
         currentOrders = currentOrders.filter(o => o.orderNumber !== order.orderNumber);
         renderOrders(currentOrders);
@@ -185,8 +189,9 @@ async function completeOrder(order) {
     const valorDomicilio    = order.valorDomicilio    || 0;
     const totalConDomicilio = order.totalConDomicilio ?? order.total;
 
-    await setDoc(completedPath(order.orderNumber), {
+    await setDoc(printedPath(order.orderNumber), {
         ...snap.data(),
+        status:            snap.data().status ?? 'inPreparation',
         domiciliario:      order.domiciliario || '',
         valorDomicilio,
         subtotal:          order.total,          // total de productos sin domicilio
@@ -204,7 +209,7 @@ async function completeOrder(order) {
                 transferencia: increment(order.paymentMethod === "Transferencia" ? 1 : 0)
             }
         }, { merge: true });
-        logInfo("completeOrder", "Analítica actualizada", {
+        logInfo("printOrder", "Analítica actualizada", {
             paymentMethod: order.paymentMethod,
             subtotal:      order.total,
             valorDomicilio,
@@ -213,7 +218,7 @@ async function completeOrder(order) {
             fecha:         date
         });
     } catch (err) {
-        logError("completeOrder", "Fallo guardando analítica", err);
+        logError("printOrder", "Fallo guardando analítica", err);
     }
 
     deliveryData.delete(order.orderNumber);
