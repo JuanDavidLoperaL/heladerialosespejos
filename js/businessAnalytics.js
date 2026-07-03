@@ -30,18 +30,25 @@ async function loadAnalytics() {
 
     let totalOrders = 0;
     let totalSales  = 0;
+    let hasAnyDocs  = false;
 
-    const ordersRef  = collection(db, "productOrder", "completed", targetDate);
-    const ordersSnap = await getDocs(ordersRef);
+    // Un pedido impreso vive en "printed" hasta que se marca como entregado, momento en el
+    // que pasa a "completed". Sumamos las dos colecciones para que el resumen del día siga
+    // contando lo mismo que contaba antes (todo lo que se imprimió ese día).
+    for (const collectionName of ["printed", "completed"]) {
+        const ordersRef  = collection(db, "productOrder", collectionName, targetDate);
+        const ordersSnap = await getDocs(ordersRef);
+        if (!ordersSnap.empty) hasAnyDocs = true;
 
-    ordersSnap.forEach(docSnap => {
-        const data = docSnap.data();
-        if (selectedPayment && data.paymentMethod !== selectedPayment) return;
-        totalOrders++;
-        totalSales += data.total || 0;
-    });
+        ordersSnap.forEach(docSnap => {
+            const data = docSnap.data();
+            if (selectedPayment && data.paymentMethod !== selectedPayment) return;
+            totalOrders++;
+            totalSales += data.total || 0;
+        });
+    }
 
-    if (ordersSnap.empty || totalOrders === 0) {
+    if (!hasAnyDocs || totalOrders === 0) {
         noDataMsg.style.display = "block";
         tableBody.innerHTML     = "";
     } else {

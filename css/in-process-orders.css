@@ -1,0 +1,255 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+    padding: 20px;
+}
+
+.page-header {
+    margin-bottom: 25px;
+}
+
+.page-header h1 {
+    color: #194073;
+    font-size: 24px;
+}
+
+.orders-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+
+.no-orders {
+    color: #999;
+    font-size: 16px;
+}
+
+/* Ticket */
+.ticket {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+.ticket-badge {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: #194073;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+.ticket-number {
+    font-size: 21px;
+    font-weight: bold;
+    color: #194073;
+}
+
+.ticket-date {
+    font-size: 14px;
+    color: #999;
+}
+
+.ticket-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+
+.ticket-label {
+    font-size: 13px;
+    font-weight: bold;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ticket-value {
+    font-size: 16px;
+    color: #333;
+    margin-top: 2px;
+}
+
+.ticket-value.ticket-total {
+    font-size: 20px;
+    font-weight: bold;
+    color: #F27127;
+}
+
+.order-list {
+    list-style: none;
+    margin-top: 4px;
+}
+
+.order-list li {
+    font-size: 13px;
+    color: #333;
+    padding: 3px 0;
+    border-bottom: 1px dashed #eee;
+}
+
+.order-list li:last-child {
+    border-bottom: none;
+}
+
+.item-detail {
+    font-size: 12px;
+    color: #666;
+    margin-left: 8px;
+}
+
+/* Selector de estado */
+.status-toggle {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.btn-status {
+    flex: 1;
+    background: #f0f0f0;
+    color: #555;
+    border: none;
+    padding: 10px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-status.active {
+    background: #194073;
+    color: white;
+}
+
+.btn-status:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.btn-mark-delivered {
+    width: 100%;
+    margin-top: 10px;
+    background: #F27127;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    transition: opacity 0.2s ease;
+}
+
+.btn-mark-delivered:hover {
+    opacity: 0.85;
+}
+
+.btn-mark-delivered:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* Popup (mismo look que el resto del dashboard) */
+.popup-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.popup-overlay.visible {
+    display: flex;
+}
+
+.popup {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 360px;
+    width: 90%;
+    text-align: center;
+}
+
+.popup h3 {
+    color: #194073;
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.popup p {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.popup-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.popup-btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.confirm-deliver { background-color: #F27127; color: white; }
+.dismiss         { background-color: #eee;    color: #333;  }
+
+.search-bar input {
+    padding: 9px 14px;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 260px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-bar input:focus {
+    border-color: #194073;
+}
+
+@media (min-width: 1600px) {
+    .orders-container {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (min-width: 1200px) and (max-width: 1599px) {
+    .orders-container {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}

@@ -12,6 +12,7 @@ const btnHowToDoIt = document.getElementById('btn-howtodoit');
 const btnPayrollManagement = document.getElementById('btn-payroll-management');
 const btnCompletedOrders     = document.getElementById('btn-completed-orders');
 const btnFinancialReporting  = document.getElementById('btn-financial-reporting');
+const btnInProcessOrders     = document.getElementById('btn-in-process-orders');
 
 // ── Roles de usuario (cargados desde Firebase config/userRoles) ───────────────
 let userConfigCache = [];   // array de { email, role, defaultPunto }
@@ -53,7 +54,8 @@ const pages = {
     howtodoit: { html: 'howToDoIt.html', js: 'js/howToDoIt.js' },
     payrollManagement: { html: 'payrollManagement.html', js: 'js/Payrollmanagement.js' },
     completedOrders    : { html: 'completed-orders.html',    js: 'js/completed-orders.js'    },
-    financialReporting : { html: 'financialReporting.html',  js: 'js/financialReporting.js'  }
+    financialReporting : { html: 'financialReporting.html',  js: 'js/financialReporting.js'  },
+    inProcessOrders    : { html: 'in-process-orders.html',    js: 'js/in-process-orders.js'   }
 };
 
 let currentScript = null;
@@ -152,6 +154,11 @@ btnPayrollManagement.addEventListener('click', () => {
 btnCompletedOrders.addEventListener('click', () => {
     loadPage('completedOrders');
     setActive(btnCompletedOrders);
+});
+
+btnInProcessOrders.addEventListener('click', () => {
+    loadPage('inProcessOrders');
+    setActive(btnInProcessOrders);
 });
 
 btnFinancialReporting.addEventListener('click', () => {

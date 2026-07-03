@@ -667,6 +667,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const orderDoc = {
             createdAt: serverTimestamp(),
+            status: 'inPreparation',
             customer: orderData.customerInfo.name,
             customerNeighborhood: orderData.customerInfo.neighborhood,
             customerAddress: orderData.customerInfo.address,
