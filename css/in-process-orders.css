@@ -11,12 +11,141 @@ body {
 }
 
 .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
     margin-bottom: 25px;
 }
 
 .page-header h1 {
     color: #194073;
     font-size: 24px;
+}
+
+.header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.orders-count {
+    font-size: 13px;
+    color: #999;
+    font-weight: normal;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ─── Date picker ───────────────────────────────────────────────────────────── */
+.date-picker-wrap {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.date-picker-wrap label {
+    font-size: 13px;
+    color: #555;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+#date-input {
+    padding: 8px 12px;
+    border: 1.5px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    background: white;
+    cursor: pointer;
+}
+
+#date-input:focus {
+    border-color: #194073;
+}
+
+/* ─── Search button ─────────────────────────────────────────────────────────── */
+.btn-search {
+    padding: 12px 28px;
+    background-color: #194073;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+}
+
+.btn-search:hover  { opacity: 0.88; }
+.btn-search:active { transform: scale(0.97); }
+
+.btn-search:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* ─── Filtros ───────────────────────────────────────────────────────────────── */
+.filter-bar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.btn-filter {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 2px solid #194073;
+    background: white;
+    color: #194073;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+.btn-filter:hover {
+    background: #dce8f7;
+}
+
+.btn-filter.active {
+    background: #194073;
+    color: white;
+}
+
+/* ─── Loading state ─────────────────────────────────────────────────────────── */
+.loading-msg {
+    color: #194073;
+    font-size: 15px;
+    grid-column: 1 / -1;
+    padding: 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.spinner {
+    width: 18px;
+    height: 18px;
+    border: 3px solid #dde3ed;
+    border-top-color: #194073;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 .orders-container {
@@ -252,4 +381,9 @@ body {
     .orders-container {
         grid-template-columns: repeat(4, 1fr);
     }
+}
+
+@media (max-width: 600px) {
+    .page-header { flex-direction: column; align-items: flex-start; }
+    .search-bar input { width: 100%; }
 }

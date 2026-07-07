@@ -4,14 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pedidos en proceso</title>
-    <link rel="stylesheet" href="css/in-process-orders.css?v=1.1.7">
+    <link rel="stylesheet" href="css/in-process-orders.css?v=1.1.8">
 </head>
 <body>
 
     <div class="page-header">
-        <h1>🚚 Pedidos en proceso</h1>
-        <div class="search-bar">
-            <input type="text" id="search-input" placeholder="🔍 Buscar por # de comanda..." />
+        <div class="header-left">
+            <h1>🚚 Pedidos en proceso</h1>
+            <span class="orders-count" id="orders-count">— pedidos</span>
+        </div>
+        <div class="header-controls">
+            <div class="date-picker-wrap">
+                <label for="date-input">📅 Fecha</label>
+                <input type="date" id="date-input" />
+            </div>
+            <button class="btn-search" id="btn-search">Buscar</button>
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="🔍 Buscar por # de comanda..." />
+            </div>
+            <div class="filter-bar">
+                <button class="btn-filter active" data-filter="all">Todos</button>
+                <button class="btn-filter" data-filter="Efectivo">💵 Efectivo</button>
+                <button class="btn-filter" data-filter="transfer">📲 Transferencia</button>
+            </div>
         </div>
     </div>
     <div class="orders-container" id="orders-container">
