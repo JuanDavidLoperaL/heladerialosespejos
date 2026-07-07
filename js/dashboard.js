@@ -76,7 +76,7 @@ async function loadPage(page) {
     const { html, js } = pages[page];
 
     try {
-        const response = await fetch(html);
+        const response = await fetch(`${html}?t=${Date.now()}`);
         const text = await response.text();
         const parser = new DOMParser();
         const doc = parser.parseFromString(text, 'text/html');

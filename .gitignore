@@ -20,3 +20,4 @@ build/
 # Archivos del editor
 *.sublime-workspace
 *.vscode/
+.claude/

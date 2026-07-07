@@ -1,6 +1,6 @@
 import { db } from "./firebase.js";
 import {
-    collection, onSnapshot,
+    collection, getDocs, onSnapshot,
     doc, getDoc, setDoc, deleteDoc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { logError, logInfo } from "./logger.js";
@@ -11,26 +11,34 @@ const STATUS_OPTIONS = [
     { value: 'onTheWay',      label: 'En camino' }
 ];
 
-let currentOrders = [];
+let allOrders           = [];    // pedidos cargados para la fecha vigente
+let activeFilter        = 'all'; // 'all' | 'Efectivo' | 'transfer'
 let pendingDeliverOrder = null;
-let unsubscribe = null;
+let unsubscribe         = null;
 
 const ordersContainer = document.getElementById('orders-container');
 const noOrders         = document.getElementById('no-orders');
+const ordersCount      = document.getElementById('orders-count');
 const deliverPopup     = document.getElementById('deliver-popup');
+const dateInput        = document.getElementById('date-input');
+const btnSearch        = document.getElementById('btn-search');
+const searchInput      = document.getElementById('search-input');
 
-function printedPath(orderNumber) {
-    return doc(db, 'productOrder', 'printed', todayString(), orderNumber);
+dateInput.value = todayString();
+
+function printedPath(orderNumber, dateString) {
+    return doc(db, 'productOrder', 'printed', dateString, orderNumber);
 }
 
-function completedPath(orderNumber) {
-    return doc(db, 'productOrder', 'completed', todayString(), orderNumber);
+function completedPath(orderNumber, dateString) {
+    return doc(db, 'productOrder', 'completed', dateString, orderNumber);
 }
 
-function normalizeOrder(docSnap) {
+function normalizeOrder(docSnap, dateString) {
     const d = docSnap.data();
     return {
         orderNumber:          docSnap.id,
+        dateString,
         createdAt:            d.createdAt?.toDate?.() ?? new Date(),
         customer:             d.customer             ?? '—',
         customerAddress:      d.customerAddress      ?? '—',
@@ -44,31 +52,68 @@ function normalizeOrder(docSnap) {
     };
 }
 
-function initOrders() {
-    if (unsubscribe) unsubscribe();
+// ─── Carga de pedidos ────────────────────────────────────────────────────────────
 
-    const colRef = collection(db, 'productOrder', 'printed', todayString());
+// El día de hoy se observa en tiempo real, para que un pedido impreso desde otro
+// puesto aparezca solo, sin recargar. Cualquier otro día se consulta una sola vez
+// (igual que en "Pedidos completados") — un día pasado ya no cambia en vivo.
+function watchToday() {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+
+    const dateStr = todayString();
+    const colRef = collection(db, 'productOrder', 'printed', dateStr);
     unsubscribe = onSnapshot(colRef,
         (snapshot) => {
-            currentOrders = snapshot.docs.map(normalizeOrder);
-            renderOrders(currentOrders);
+            allOrders = snapshot.docs.map(d => normalizeOrder(d, dateStr));
+            renderOrders(getFilteredOrders());
         },
         (error) => {
-            logError("initOrders", "Fallo escuchando pedidos en proceso", error);
+            logError("watchToday", "Fallo escuchando pedidos en proceso", error);
             noOrders.textContent = 'Error al cargar pedidos. Recarga la página.';
             noOrders.style.display = 'block';
         }
     );
 }
 
-initOrders();
+async function fetchOrdersForDate(dateStr) {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    showLoading();
+
+    try {
+        const colRef = collection(db, 'productOrder', 'printed', dateStr);
+        const snapshot = await getDocs(colRef);
+        allOrders = snapshot.docs.map(d => normalizeOrder(d, dateStr));
+        renderOrders(getFilteredOrders());
+    } catch (err) {
+        logError("fetchOrdersForDate", "Fallo cargando pedidos en proceso", err);
+        ordersContainer.querySelectorAll('.ticket, .loading-msg').forEach(el => el.remove());
+        noOrders.textContent = 'Error al cargar. Intenta de nuevo.';
+        noOrders.style.display = 'block';
+    }
+}
+
+function showLoading() {
+    ordersContainer.querySelectorAll('.ticket, .loading-msg').forEach(el => el.remove());
+    noOrders.style.display = 'none';
+    ordersCount.textContent = '…';
+
+    const msg = document.createElement('p');
+    msg.className = 'loading-msg';
+    msg.innerHTML = '<span class="spinner"></span> Cargando pedidos…';
+    ordersContainer.appendChild(msg);
+}
+
+watchToday();
+
+// ─── Render ──────────────────────────────────────────────────────────────────────
 
 function renderOrders(orders) {
-    document.querySelectorAll('.ticket').forEach(t => t.remove());
+    ordersContainer.querySelectorAll('.ticket, .loading-msg').forEach(el => el.remove());
 
     if (orders.length === 0) {
         noOrders.style.display = 'block';
         noOrders.textContent = 'No hay pedidos en proceso.';
+        ordersCount.textContent = '0 pedidos';
         return;
     }
 
@@ -79,7 +124,10 @@ function renderOrders(orders) {
     });
 
     noOrders.style.display = 'none';
+    ordersCount.textContent = `${orders.length} pedido${orders.length !== 1 ? 's' : ''}`;
     sorted.forEach(order => ordersContainer.appendChild(buildTicket(order)));
+
+    applySearchFilter();
 }
 
 function buildTicket(order) {
@@ -141,6 +189,10 @@ function buildTicket(order) {
             <span class="ticket-label">Total</span>
             <span class="ticket-value ticket-total">$${Number(order.total).toLocaleString('es-CO')}</span>
         </div>
+        <div class="ticket-row">
+            <span class="ticket-label">Método de pago</span>
+            <span class="ticket-value">${order.paymentMethod}</span>
+        </div>
         ${order.domiciliario ? `
         <div class="ticket-row">
             <span class="ticket-label">Domiciliario</span>
@@ -162,10 +214,75 @@ function buildTicket(order) {
     return ticket;
 }
 
+// ─── Filtro por método de pago ──────────────────────────────────────────────────
+
+function getFilteredOrders() {
+    if (activeFilter === 'all')      return allOrders;
+    if (activeFilter === 'Efectivo') return allOrders.filter(o => o.paymentMethod === 'Efectivo');
+    if (activeFilter === 'transfer') return allOrders.filter(o => o.paymentMethod !== 'Efectivo');
+    return allOrders;
+}
+
+document.querySelectorAll('.btn-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+        activeFilter = btn.dataset.filter;
+        document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        searchInput.value = '';
+        renderOrders(getFilteredOrders());
+    });
+});
+
+// ─── Búsqueda por comanda ────────────────────────────────────────────────────────
+
+function applySearchFilter() {
+    const query = searchInput.value.trim().toLowerCase();
+
+    document.querySelectorAll('.ticket').forEach(ticket => {
+        const orderNumber = ticket.querySelector('.ticket-number')?.textContent?.toLowerCase() ?? '';
+        ticket.style.display = (!query || orderNumber.includes(query)) ? '' : 'none';
+    });
+
+    const hasVisible = [...document.querySelectorAll('.ticket')].some(t => t.style.display !== 'none');
+    noOrders.style.display = hasVisible ? 'none' : 'block';
+    noOrders.textContent = query
+        ? `No se encontró la comanda "${query.toUpperCase()}".`
+        : 'No hay pedidos en proceso.';
+}
+
+searchInput.addEventListener('input', applySearchFilter);
+
+// ─── Botón buscar por fecha ──────────────────────────────────────────────────────
+
+btnSearch.addEventListener('click', () => {
+    const dateStr = dateInput.value;
+    if (!dateStr) {
+        alert('Por favor selecciona una fecha.');
+        return;
+    }
+
+    searchInput.value = '';
+    activeFilter = 'all';
+    document.querySelectorAll('.btn-filter').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+
+    if (dateStr === todayString()) {
+        watchToday();
+    } else {
+        fetchOrdersForDate(dateStr);
+    }
+});
+
+// También buscar al presionar Enter en el date input
+dateInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') btnSearch.click();
+});
+
+// ─── Acciones sobre un pedido ────────────────────────────────────────────────────
+
 async function updateStatus(order, status) {
     if (order.status === status) return;
     try {
-        await updateDoc(printedPath(order.orderNumber), { status });
+        await updateDoc(printedPath(order.orderNumber, order.dateString), { status });
     } catch (err) {
         logError("updateStatus", "Fallo actualizando estado", err);
         alert('No se pudo actualizar el estado. Intenta de nuevo.');
@@ -173,18 +290,21 @@ async function updateStatus(order, status) {
 }
 
 async function markDelivered(order) {
-    const snap = await getDoc(printedPath(order.orderNumber));
+    const snap = await getDoc(printedPath(order.orderNumber, order.dateString));
     if (!snap.exists()) return;
 
     // Solo mueve el pedido de colección — la analítica ya se contó al imprimir,
     // así que aquí NO se vuelve a incrementar (evita duplicar la venta).
-    await setDoc(completedPath(order.orderNumber), {
+    await setDoc(completedPath(order.orderNumber, order.dateString), {
         ...snap.data(),
         status: 'delivered'
     });
-    await deleteDoc(printedPath(order.orderNumber));
+    await deleteDoc(printedPath(order.orderNumber, order.dateString));
 
-    logInfo("markDelivered", "Pedido marcado como entregado", { orderNumber: order.orderNumber });
+    logInfo("markDelivered", "Pedido marcado como entregado", {
+        orderNumber: order.orderNumber,
+        dateString: order.dateString
+    });
 }
 
 document.getElementById('dismiss-deliver').addEventListener('click', () => {
@@ -197,19 +317,4 @@ document.getElementById('confirm-deliver').addEventListener('click', async () =>
     await markDelivered(pendingDeliverOrder);
     deliverPopup.classList.remove('visible');
     pendingDeliverOrder = null;
-});
-
-document.getElementById('search-input').addEventListener('input', function () {
-    const query = this.value.trim().toLowerCase();
-
-    document.querySelectorAll('.ticket').forEach(ticket => {
-        const orderNumber = ticket.querySelector('.ticket-number')?.textContent?.toLowerCase() ?? '';
-        ticket.style.display = (!query || orderNumber.includes(query)) ? '' : 'none';
-    });
-
-    const hasVisible = [...document.querySelectorAll('.ticket')].some(t => t.style.display !== 'none');
-    noOrders.style.display = hasVisible ? 'none' : 'block';
-    noOrders.textContent = query
-        ? `No se encontró la comanda "${query.toUpperCase()}".`
-        : 'No hay pedidos en proceso.';
 });
