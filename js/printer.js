@@ -20,6 +20,29 @@ function bytesToBase64(bytes) {
     return btoa(binary);
 }
 
+// Comandos GS ( k del set "2D barcode" ESC/POS, soportados por la mayoría de
+// impresoras térmicas (Epson y clones). No requiere librerías externas: la
+// propia impresora dibuja el QR a partir de los bytes de la data.
+function qrCodeBytes(data, moduleSize = 6, errorCorrection = 0x31) {
+    const dataBytes = toBytes(data);
+    const storeLen = dataBytes.length + 3;
+    const pL = storeLen & 0xFF;
+    const pH = (storeLen >> 8) & 0xFF;
+
+    return [
+        // Seleccionar modelo de QR (modelo 2, el estándar)
+        0x1D, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00,
+        // Tamaño del módulo (1-16 px por punto)
+        0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, moduleSize,
+        // Nivel de corrección de errores (48=L, 49=M, 50=Q, 51=H)
+        0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, errorCorrection,
+        // Guardar los datos del símbolo
+        0x1D, 0x28, 0x6B, pL, pH, 0x31, 0x50, 0x30, ...dataBytes,
+        // Imprimir el símbolo guardado
+        0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30
+    ];
+}
+
 async function logoToESCBytes(imagePath, targetWidth = 400) {
     return new Promise((resolve) => {
         const img = new Image();
@@ -112,6 +135,8 @@ async function buildTicketBytes(order) {
     add(`Cliente   : ${order.customer}`, LF);
     add(`Tel       : ${order.customerPhoneNumber}`, LF);
     add(`Dirección : ${order.customerAddress}`, LF);
+    if (order.customerApartmentTower) add(`Torre     : ${order.customerApartmentTower}`, LF);
+    if (order.customerApartmentUnit) add(`Apto/Casa : ${order.customerApartmentUnit}`, LF);
     add(`Barrio    : ${order.customerNeighborhood}`, LF);
     add('--------------------------------', LF);
 
@@ -156,6 +181,10 @@ async function buildTicketBytes(order) {
     add('--------------------------------', LF);
 
     add(ESC, [0x61, 0x01]);
+    add('Escanea para ubicar el pedido', LF);
+    add(qrCodeBytes(order.orderNumber));
+    add(LF);
+
     add('Gracias por tu pedido!', LF);
     add('Lun - Dom 12:00 PM - 8:00 PM', LF);
     add(LF, LF, LF);

@@ -9,6 +9,9 @@ import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic
 import { logError, logWarn, logInfo } from "./logger.js";
 import { todayString, timeString, isValidColombianPhone, showFeedback, isBeforeOpening, isAfterClosing } from "./utils.js";
 import { loadCatalogWithCache, getAdditionsFromCatalog } from "./catalog.js";
+import { fetchAddressSuggestions, fetchPlaceDetails } from "./placesAutocomplete.js";
+import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_TIERS_JSON } from "./deliveryFee.js";
+import { openMapPinPicker } from "./mapPinPicker.js";
 
 const analytics    = getAnalytics(app);
 const remoteConfig = getRemoteConfig(app);
@@ -32,6 +35,7 @@ remoteConfig.defaultConfig = {
     save_order_enabled:          true,
     schedule_order_before_12:    true,
     schedule_order_after_7_40:   true,
+    delivery_fee_tiers:          DEFAULT_DELIVERY_FEE_TIERS_JSON,
 };
 
 let saveOrderEnabled        = true;
@@ -143,6 +147,11 @@ document.addEventListener('DOMContentLoaded', function () {
             phone: '',
             address: '',
             neighborhood: '',
+            apartmentTower: '',
+            apartmentUnit: '',
+            latitude: null,
+            longitude: null,
+            valorDomicilio: null,
             payment: ''
         }
     };
@@ -675,6 +684,12 @@ document.addEventListener('DOMContentLoaded', function () {
             paymentMethod: orderData.customerInfo.payment,
             total: orderData.total,
             orderNumber: displayNumber,
+            ...(orderData.customerInfo.latitude != null && orderData.customerInfo.longitude != null
+                ? { customerLatitude: orderData.customerInfo.latitude, customerLongitude: orderData.customerInfo.longitude }
+                : {}),
+            ...(orderData.customerInfo.valorDomicilio != null ? { valorDomicilio: orderData.customerInfo.valorDomicilio } : {}),
+            ...(orderData.customerInfo.apartmentTower ? { customerApartmentTower: orderData.customerInfo.apartmentTower } : {}),
+            ...(orderData.customerInfo.apartmentUnit ? { customerApartmentUnit: orderData.customerInfo.apartmentUnit } : {}),
             order: orderData.items.map(item => ({
                 productTitle: item.title,
                 flavor: item.sundayFlavor ?? '',
@@ -697,6 +712,133 @@ document.addEventListener('DOMContentLoaded', function () {
         );
 
         return displayNumber;
+    }
+
+    function orderTotalHTML() {
+        const fee = currentOrder.customerInfo.valorDomicilio;
+        if (fee == null) {
+            return `<h3>Total: $${currentOrder.total.toLocaleString('es-CO')}</h3>`;
+        }
+        const grandTotal = currentOrder.total + fee;
+        return `
+            <p>Subtotal productos: $${currentOrder.total.toLocaleString('es-CO')}</p>
+            <p>Domicilio: $${fee.toLocaleString('es-CO')}</p>
+            <h3>Total a pagar: $${grandTotal.toLocaleString('es-CO')}</h3>
+        `;
+    }
+
+    function bindAddressAutocomplete(modal) {
+        const addressInput = modal.querySelector('#customer-address');
+        const suggestionsBox = modal.querySelector('#address-suggestions');
+        const mapPinLink = modal.querySelector('#map-pin-link');
+        const feeHint = modal.querySelector('#delivery-fee-hint');
+        let debounceTimer = null;
+        let searchToken = 0;
+
+        if (currentOrder.customerInfo.valorDomicilio != null) {
+            feeHint.textContent = `Domicilio estimado: $${currentOrder.customerInfo.valorDomicilio.toLocaleString('es-CO')}`;
+        }
+
+        function refreshOrderTotal() {
+            const orderTotalEl = modal.querySelector('#order-total');
+            if (orderTotalEl) orderTotalEl.innerHTML = orderTotalHTML();
+        }
+
+        function clearSelectedLocation() {
+            currentOrder.customerInfo.latitude = null;
+            currentOrder.customerInfo.longitude = null;
+            currentOrder.customerInfo.valorDomicilio = null;
+            feeHint.textContent = '';
+            refreshOrderTotal();
+        }
+
+        async function selectLocation(address, coordinate) {
+            addressInput.value = address;
+            currentOrder.customerInfo.address = address;
+            currentOrder.customerInfo.latitude = coordinate.lat;
+            currentOrder.customerInfo.longitude = coordinate.lng;
+            currentOrder.customerInfo.valorDomicilio = null;
+            hideSuggestions();
+            refreshOrderTotal();
+
+            feeHint.textContent = 'Calculando domicilio…';
+            try {
+                const fee = await calculateDeliveryFee(remoteConfig, coordinate);
+                currentOrder.customerInfo.valorDomicilio = fee;
+                feeHint.textContent = `Domicilio estimado: $${fee.toLocaleString('es-CO')}`;
+            } catch (error) {
+                logWarn('bindAddressAutocomplete', 'Fallo calculando domicilio', { error: error.message });
+                feeHint.textContent = '';
+            }
+            refreshOrderTotal();
+        }
+
+        function hideSuggestions() {
+            suggestionsBox.style.display = 'none';
+            suggestionsBox.innerHTML = '';
+        }
+
+        function renderSuggestions(suggestions) {
+            if (suggestions.length === 0) {
+                hideSuggestions();
+                return;
+            }
+            suggestionsBox.innerHTML = suggestions.map(s => `
+                <div class="address-suggestion" data-place-id="${s.placeId}">
+                    <div class="main-text">${s.mainText}</div>
+                    <div class="secondary-text">${s.secondaryText}</div>
+                </div>
+            `).join('');
+            suggestionsBox.style.display = 'block';
+
+            suggestionsBox.querySelectorAll('.address-suggestion').forEach(el => {
+                el.addEventListener('click', async () => {
+                    try {
+                        const details = await fetchPlaceDetails(el.dataset.placeId);
+                        await selectLocation(details.address, details.coordinate);
+                    } catch (error) {
+                        logWarn('bindAddressAutocomplete', 'Fallo trayendo detalle del lugar', { error: error.message });
+                        showFeedback('No pudimos confirmar esa dirección. Intenta de nuevo o márcala en el mapa.', 'error');
+                    }
+                });
+            });
+        }
+
+        addressInput.addEventListener('input', () => {
+            clearSelectedLocation();
+            const query = addressInput.value;
+            clearTimeout(debounceTimer);
+
+            if (!query.trim()) {
+                hideSuggestions();
+                return;
+            }
+
+            const token = ++searchToken;
+            debounceTimer = setTimeout(async () => {
+                try {
+                    const suggestions = await fetchAddressSuggestions(query);
+                    if (token !== searchToken) return; // el usuario ya siguió escribiendo
+                    renderSuggestions(suggestions);
+                } catch (error) {
+                    if (token !== searchToken) return;
+                    logWarn('bindAddressAutocomplete', 'Fallo buscando direcciones', { error: error.message });
+                }
+            }, 300);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!suggestionsBox.contains(e.target) && e.target !== addressInput) {
+                hideSuggestions();
+            }
+        });
+
+        mapPinLink.addEventListener('click', () => {
+            hideSuggestions();
+            openMapPinPicker((address, coordinate) => {
+                selectLocation(address, coordinate);
+            });
+        });
     }
 
     function openCustomerInfoModal() {
@@ -747,8 +889,8 @@ document.addEventListener('DOMContentLoaded', function () {
                           </div>
                       `).join('')}
                   </div>
-                  <div class="order-total">
-                      <h3>Total: $${currentOrder.total.toLocaleString('es-CO')}</h3>
+                  <div class="order-total" id="order-total">
+                      ${orderTotalHTML()}
                   </div>
               </div>
               
@@ -764,14 +906,27 @@ document.addEventListener('DOMContentLoaded', function () {
                       <input type="tel" id="customer-phone" placeholder="Ej: 3001234567" value="${currentOrder.customerInfo.phone}" required>
                   </div>
                   
-                  <div class="info-field">
-                      <label>Barrio:</label>
-                      <input type="text" id="customer-neighborhood" placeholder="Barrio:" value="${currentOrder.customerInfo.neighborhood}" required>
+                  <div class="info-field address-field-wrapper">
+                      <label>Dirección de entrega:</label>
+                      <input type="text" id="customer-address" placeholder="Busca tu dirección" value="${currentOrder.customerInfo.address}" autocomplete="off" required>
+                      <div class="address-suggestions" id="address-suggestions" style="display:none;"></div>
+                      <span class="map-pin-link" id="map-pin-link">No encuentro mi dirección, marcar en el mapa</span>
+                      <div class="delivery-fee-hint" id="delivery-fee-hint"></div>
                   </div>
 
                   <div class="info-field">
-                      <label>Dirección de entrega:</label>
-                      <input type="text" id="customer-address" placeholder="Tu dirección completa" value="${currentOrder.customerInfo.address}" required>
+                      <label>Torre (opcional):</label>
+                      <input type="text" id="customer-apartment-tower" placeholder="Torre" value="${currentOrder.customerInfo.apartmentTower}">
+                  </div>
+
+                  <div class="info-field">
+                      <label>Apto o casa (opcional):</label>
+                      <input type="text" id="customer-apartment-unit" placeholder="Apto o casa" value="${currentOrder.customerInfo.apartmentUnit}">
+                  </div>
+
+                  <div class="info-field">
+                      <label>Barrio:</label>
+                      <input type="text" id="customer-neighborhood" placeholder="Barrio:" value="${currentOrder.customerInfo.neighborhood}" required>
                   </div>
 
                   <div class="info-field">
@@ -795,6 +950,7 @@ document.addEventListener('DOMContentLoaded', function () {
       `;
 
         document.body.appendChild(modal);
+        bindAddressAutocomplete(modal);
 
         function bindRemoveButtons() {
             modal.querySelectorAll('.remove-item').forEach(btn => {
@@ -853,7 +1009,7 @@ document.addEventListener('DOMContentLoaded', function () {
                           <button class="remove-item">Eliminar</button>
                       </div>
                   `).join('');
-                    modal.querySelector('.order-total h3').textContent = `Total: $${currentOrder.total.toLocaleString('es-CO')}`;
+                    modal.querySelector('#order-total').innerHTML = orderTotalHTML();
                     bindRemoveButtons();
                 });
             });
@@ -873,11 +1029,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const sendWhatsappBtn = modal.querySelector('.send-whatsapp');
 
         async function submitOrder() {
-            const name         = document.getElementById('customer-name').value.trim();
-            const phone        = document.getElementById('customer-phone').value.trim();
-            const address      = document.getElementById('customer-address').value.trim();
-            const neighborhood = document.getElementById('customer-neighborhood').value.trim();
-            const payment      = document.getElementById('customer-payment-method').value.trim();
+            const name           = document.getElementById('customer-name').value.trim();
+            const phone          = document.getElementById('customer-phone').value.trim();
+            const address        = document.getElementById('customer-address').value.trim();
+            const neighborhood   = document.getElementById('customer-neighborhood').value.trim();
+            const apartmentTower = document.getElementById('customer-apartment-tower').value.trim();
+            const apartmentUnit  = document.getElementById('customer-apartment-unit').value.trim();
+            const payment        = document.getElementById('customer-payment-method').value.trim();
 
             if (!name)         { showFeedback('Por favor ingresa tu nombre completo', 'error'); return; }
             if (!phone)        { showFeedback('Por favor ingresa tu número de teléfono', 'error'); return; }
@@ -886,7 +1044,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!neighborhood) { showFeedback('Por favor ingresa tu barrio de entrega', 'error'); return; }
             if (!payment)      { showFeedback('Por favor ingresa tu método de pago', 'error'); return; }
 
-            currentOrder.customerInfo = { name, phone, address, neighborhood, payment };
+            // No se reemplaza el objeto completo — conserva latitude/longitude/valorDomicilio
+            // que ya haya dejado el autocompletado o el selector de mapa.
+            Object.assign(currentOrder.customerInfo, {
+                name, phone, address, neighborhood, apartmentTower, apartmentUnit, payment
+            });
 
             // Popup de confirmación para pedidos fuera de horario
             const needsScheduleConfirm = (scheduleOrderBefore12 && isBeforeOpening()) ||
@@ -1026,15 +1188,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         message += `*Total productos: $${currentOrder.total.toLocaleString('es-CO')}*\n`;
-        message += `*Domicilio no incluido!* Nuestra asesora te dara el precio final con domicilio incluido\n\n`;
+        if (currentOrder.customerInfo.valorDomicilio != null) {
+            const grandTotal = currentOrder.total + currentOrder.customerInfo.valorDomicilio;
+            message += `*Domicilio estimado: $${currentOrder.customerInfo.valorDomicilio.toLocaleString('es-CO')}* (sujeto a confirmación de nuestra asesora)\n`;
+            message += `*Total a pagar (aprox.): $${grandTotal.toLocaleString('es-CO')}*\n\n`;
+        } else {
+            message += `*Domicilio no incluido!* Nuestra asesora te dara el precio final con domicilio incluido\n\n`;
+        }
         message += `📅 *Fecha:* ${todayString()} — ${timeString()}\n\n`;
         message += `*Mis datos:*\n`;
         message += `*Nombre:* ${currentOrder.customerInfo.name}\n`;
         message += `*Teléfono:* ${currentOrder.customerInfo.phone}\n`;
         message += `*Dirección:* ${currentOrder.customerInfo.address}\n`;
+        if (currentOrder.customerInfo.apartmentTower) {
+            message += `*Torre:* ${currentOrder.customerInfo.apartmentTower}\n`;
+        }
+        if (currentOrder.customerInfo.apartmentUnit) {
+            message += `*Apto/Casa:* ${currentOrder.customerInfo.apartmentUnit}\n`;
+        }
         message += `*Barrio:* ${currentOrder.customerInfo.neighborhood}\n`;
         message += `*Metodo de pago:* ${currentOrder.customerInfo.payment}\n\n`;
-        message += `¡Gracias!`;
+
+        if (currentOrder.customerInfo.payment === 'Transferencia') {
+            message += `MEDIO DE PAGO💰\nAhorros Bancolombia\n61700006389\n\nllave Bancolombia Negocios 0089084344 la plata llega a HELADERIA LOS ESPEJOS SAS.\nPor favor al enviar el comprobante, escribe a nombre de quién está la transferencia y los últimos 4 dígitos de tu cuenta🫶🏼\n\nMuchas gracias por tu compra, recuerda que tu pedido será válido una vez envíes el comprobante de pago🥰💙`;
+        } else if (currentOrder.customerInfo.payment === 'Efectivo') {
+            message += `Deseas que te enviemos devuelta? o los tienes completos\nMuchas gracias por preferir la Heladeria los Espejos`;
+        } else {
+            message += `¡Gracias!`;
+        }
 
         return message;
     }
