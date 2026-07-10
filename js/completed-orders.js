@@ -35,8 +35,13 @@ function normalizeOrder(docSnap) {
         customer:             d.customer             ?? '—',
         customerAddress:      d.customerAddress      ?? '—',
         customerNeighborhood: d.customerNeighborhood ?? '—',
+        customerApartmentTower: d.customerApartmentTower ?? '',
+        customerApartmentUnit:  d.customerApartmentUnit  ?? '',
         customerPhoneNumber:  d.customerPhoneNumber  ?? '—',
+        customerLatitude:     d.customerLatitude     ?? null,
+        customerLongitude:    d.customerLongitude    ?? null,
         paymentMethod:        d.paymentMethod        ?? '—',
+        valorDomicilio:       d.valorDomicilio       ?? null,
         total:                d.total                ?? 0,
         order:                Array.isArray(d.order) ? d.order : [],
         paymentStatus:        d.paymentStatus        ?? 'completado'
@@ -137,6 +142,10 @@ function buildTicket(order) {
     const date  = formatDate(order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt));
     const items = Array.isArray(order.order) ? order.order : [];
 
+    const mapsUrl = (order.customerLatitude != null && order.customerLongitude != null)
+        ? `https://www.google.com/maps/search/?api=1&query=${order.customerLatitude},${order.customerLongitude}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customerAddress)}`;
+
     const itemsHTML = items.length > 0
         ? items.map(i => `
             <li>
@@ -167,8 +176,18 @@ function buildTicket(order) {
         </div>
         <div class="ticket-row">
             <span class="ticket-label">Dirección</span>
-            <span class="ticket-value">${order.customerAddress}</span>
+            <span class="ticket-value"><a href="${mapsUrl}" target="_blank" rel="noopener">${order.customerAddress} 🗺️</a></span>
         </div>
+        ${order.customerApartmentTower ? `
+        <div class="ticket-row">
+            <span class="ticket-label">Torre</span>
+            <span class="ticket-value">${order.customerApartmentTower}</span>
+        </div>` : ''}
+        ${order.customerApartmentUnit ? `
+        <div class="ticket-row">
+            <span class="ticket-label">Apto/Casa</span>
+            <span class="ticket-value">${order.customerApartmentUnit}</span>
+        </div>` : ''}
         <div class="ticket-row">
             <span class="ticket-label">Barrio</span>
             <span class="ticket-value">${order.customerNeighborhood}</span>

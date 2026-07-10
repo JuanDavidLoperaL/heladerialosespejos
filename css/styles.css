@@ -381,6 +381,123 @@ header {
     display: none;
 }
 
+/* Autocompletado de dirección */
+.address-field-wrapper {
+    position: relative;
+}
+
+.address-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 5px 5px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 10;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.address-suggestion {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.address-suggestion:hover {
+    background: #f7f7f7;
+}
+
+.address-suggestion .main-text {
+    font-weight: bold;
+}
+
+.address-suggestion .secondary-text {
+    font-size: 12px;
+    color: #777;
+}
+
+.map-pin-link {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--color-primario);
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.delivery-fee-hint {
+    font-size: 13px;
+    color: var(--color-primario);
+    margin-top: 6px;
+}
+
+/* Selector de pin en el mapa */
+.map-pin-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1100;
+}
+
+.map-pin-modal {
+    background: white;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    padding: 20px;
+}
+
+.map-pin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.map-pin-close {
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.map-pin-canvas {
+    width: 100%;
+    height: 350px;
+    border-radius: 8px;
+    background: #eee;
+}
+
+.map-pin-hint {
+    font-size: 13px;
+    color: #777;
+    margin: 10px 0;
+}
+
+.map-pin-confirm {
+    background-color: var(--color-primario);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+}
+
+.map-pin-confirm:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
     .carousel-item {
         padding: 12px 20px;
