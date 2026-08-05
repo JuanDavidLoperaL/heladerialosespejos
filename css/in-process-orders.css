@@ -201,10 +201,11 @@ body {
     font-size: 16px;
 }
 
-/* Grupo de 2 pedidos cercanos — ocupa el espacio de 2 columnas del grid para
-   que las comandas queden una al lado de la otra dentro de un mismo borde. */
+/* Grupo de pedidos cercanos (tamaño configurable) — ocupa todo el ancho de la
+   fila del grid para que las comandas del grupo queden una al lado de otra
+   dentro de un mismo borde, sin importar cuántas sean. */
 .order-group {
-    grid-column: span 2;
+    grid-column: 1 / -1;
     border: 3px solid var(--group-color, #6a3fa0);
     border-radius: 16px;
     padding: 14px;

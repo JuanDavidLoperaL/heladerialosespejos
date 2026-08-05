@@ -1,6 +1,8 @@
 import { GOOGLE_MAPS_API_KEY } from "./googleApiConfig.js";
 
-export const PROXIMITY_METERS = 180;
+// Se usan solo si Firestore (settings/orderGrouping) no existe o falla la lectura.
+export const DEFAULT_PROXIMITY_METERS = 180;
+export const DEFAULT_MAX_GROUP_SIZE = 2;
 
 // 1 sola llamada a Route Matrix para todas las combinaciones de puntos, en vez
 // de N*(N-1)/2 llamadas individuales a computeRoutes (mismo criterio de costo/
@@ -29,24 +31,28 @@ async function fetchDistanceMatrixMeters(points) {
     return response.json();
 }
 
-// Agrupa pedidos por cercanía SOLO en pares (nunca 3 o más — evita que el
-// helado se derrita por hacer una ruta mas larga de lo necesario). Un pedido
-// que ya quedó emparejado no puede volver a aparecer en otro par.
+// Agrupa pedidos por cercanía en grupos de hasta `maxGroupSize` pedidos, donde
+// TODOS los miembros quedan a <=`proximityMeters` de TODOS los demás del mismo
+// grupo (no solo del vecino más cercano) — evita rutas largas que derritan el
+// helado, sea cual sea el tamaño de grupo configurado. Un pedido que ya quedó
+// en un grupo no puede volver a aparecer en otro.
 //
 // Se recorre de más antiguo a más nuevo (por createdAt), así el pedido que
-// más tiempo lleva esperando siempre tiene la primera oportunidad de
-// emparejarse con su vecino más cercano disponible dentro de PROXIMITY_METERS.
-// Los pedidos sin coordenadas (dirección mal puesta por el cliente) quedan
-// afuera del cálculo, tal como se sabe que va a pasar.
-export async function groupOrdersByProximity(orders) {
+// más tiempo lleva esperando siempre tiene la primera oportunidad de armar
+// grupo con sus vecinos disponibles más cercanos. Los pedidos sin coordenadas
+// (dirección mal puesta por el cliente) quedan afuera del cálculo.
+export async function groupOrdersByProximity(orders, config = {}) {
+    const proximityMeters = config.proximityMeters ?? DEFAULT_PROXIMITY_METERS;
+    const maxGroupSize    = config.maxGroupSize    ?? DEFAULT_MAX_GROUP_SIZE;
+
     const geocoded = orders
         .filter(o => o.customerLatitude != null && o.customerLongitude != null)
         .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
     const noCoordsCount = orders.length - geocoded.length;
 
-    if (geocoded.length < 2) {
-        return { pairs: [], geocodedCount: geocoded.length, noCoordsCount };
+    if (geocoded.length < 2 || maxGroupSize < 2) {
+        return { groups: [], geocodedCount: geocoded.length, noCoordsCount, proximityMeters, maxGroupSize };
     }
 
     const points = geocoded.map(o => ({ lat: o.customerLatitude, lng: o.customerLongitude }));
@@ -59,33 +65,47 @@ export async function groupOrdersByProximity(orders) {
             matrix[el.originIndex][el.destinationIndex] = el.distanceMeters;
         }
     }
+    const distanceBetween = (i, j) => Math.min(matrix[i][j], matrix[j][i]);
 
     const claimed = new Array(n).fill(false);
-    const pairs = [];
+    const groups = [];
 
     for (let i = 0; i < n; i++) {
         if (claimed[i]) continue;
 
-        let bestJ = -1;
-        let bestDist = Infinity;
+        const candidates = [];
         for (let j = 0; j < n; j++) {
             if (j === i || claimed[j]) continue;
-            const dist = Math.min(matrix[i][j], matrix[j][i]);
-            if (dist <= PROXIMITY_METERS && dist < bestDist) {
-                bestDist = dist;
-                bestJ = j;
-            }
+            const dist = distanceBetween(i, j);
+            if (dist <= proximityMeters) candidates.push({ j, dist });
+        }
+        candidates.sort((a, b) => a.dist - b.dist);
+
+        // Crece el grupo agregando el candidato disponible más cercano, pero
+        // solo si sigue a <=proximityMeters de TODOS los ya incluidos.
+        const clique = [i];
+        for (const { j } of candidates) {
+            if (clique.length >= maxGroupSize) break;
+            const fitsAll = clique.every(k => distanceBetween(k, j) <= proximityMeters);
+            if (fitsAll) clique.push(j);
         }
 
-        if (bestJ !== -1) {
-            claimed[i] = true;
-            claimed[bestJ] = true;
-            pairs.push({
-                orderNumbers: [geocoded[i].orderNumber, geocoded[bestJ].orderNumber],
-                distanceMeters: Math.round(bestDist)
+        if (clique.length >= 2) {
+            clique.forEach(idx => { claimed[idx] = true; });
+
+            let maxDistanceMeters = 0;
+            for (let a = 0; a < clique.length; a++) {
+                for (let b = a + 1; b < clique.length; b++) {
+                    maxDistanceMeters = Math.max(maxDistanceMeters, distanceBetween(clique[a], clique[b]));
+                }
+            }
+
+            groups.push({
+                orderNumbers: clique.map(idx => geocoded[idx].orderNumber),
+                maxDistanceMeters: Math.round(maxDistanceMeters)
             });
         }
     }
 
-    return { pairs, geocodedCount: geocoded.length, noCoordsCount };
+    return { groups, geocodedCount: geocoded.length, noCoordsCount, proximityMeters, maxGroupSize };
 }
