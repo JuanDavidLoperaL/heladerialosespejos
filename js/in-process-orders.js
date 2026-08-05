@@ -5,19 +5,44 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { logError, logInfo } from "./logger.js";
 import { todayString, formatDate } from "./utils.js";
+import { groupOrdersByProximity, DEFAULT_PROXIMITY_METERS, DEFAULT_MAX_GROUP_SIZE } from "./orderGrouping.js";
 
 const STATUS_OPTIONS = [
     { value: 'inPreparation', label: 'En preparación' },
     { value: 'onTheWay',      label: 'En camino' }
 ];
 
+const GROUP_COLORS = ['#6a3fa0', '#16a085', '#d35400', '#2980b9', '#c0392b', '#8e5b3f'];
+
 let allOrders           = [];    // pedidos cargados para la fecha vigente
 let activeFilter        = 'all'; // 'all' | 'Efectivo' | 'transfer'
 let pendingDeliverOrder = null;
 let pendingCancelOrder  = null;
 let unsubscribe         = null;
+let orderGroups         = new Map(); // orderNumber -> { groupId, memberNumbers, maxDistanceMeters, colorIndex }
+let groupCounter        = 0;
 
-const ordersContainer = document.getElementById('orders-container');
+// Parametrizable desde Firestore (config/orderGrouping) — se actualiza en vivo
+// para que un cambio del dueño aplique al instante en todas las pantallas abiertas.
+let groupingConfig = { proximityMeters: DEFAULT_PROXIMITY_METERS, maxGroupSize: DEFAULT_MAX_GROUP_SIZE };
+
+onSnapshot(doc(db, 'config', 'orderGrouping'),
+    (snap) => {
+        const d = snap.data();
+        const proximityMeters = Number(d?.proximityMeters);
+        const maxGroupSize    = Number(d?.maxGroupSize);
+        groupingConfig = {
+            proximityMeters: proximityMeters > 0 ? proximityMeters : DEFAULT_PROXIMITY_METERS,
+            maxGroupSize:    maxGroupSize >= 2 ? Math.floor(maxGroupSize) : DEFAULT_MAX_GROUP_SIZE
+        };
+    },
+    (error) => {
+        logError("groupingConfig", "Fallo leyendo configuración de agrupación, usando valores por defecto", error);
+        groupingConfig = { proximityMeters: DEFAULT_PROXIMITY_METERS, maxGroupSize: DEFAULT_MAX_GROUP_SIZE };
+    }
+);
+
+const ordersContainer  = document.getElementById('orders-container');
 const noOrders         = document.getElementById('no-orders');
 const ordersCount      = document.getElementById('orders-count');
 const deliverPopup     = document.getElementById('deliver-popup');
@@ -25,6 +50,9 @@ const cancelPopup      = document.getElementById('cancel-order-popup');
 const dateInput        = document.getElementById('date-input');
 const btnSearch        = document.getElementById('btn-search');
 const searchInput      = document.getElementById('search-input');
+const btnGroupProximity = document.getElementById('btn-group-proximity');
+const btnClearGrouping  = document.getElementById('btn-clear-grouping');
+const groupingSummary   = document.getElementById('grouping-summary');
 
 dateInput.value = todayString();
 
@@ -119,7 +147,7 @@ watchToday();
 // ─── Render ──────────────────────────────────────────────────────────────────────
 
 function renderOrders(orders) {
-    ordersContainer.querySelectorAll('.ticket, .loading-msg').forEach(el => el.remove());
+    ordersContainer.querySelectorAll('.ticket, .order-group, .loading-msg').forEach(el => el.remove());
 
     if (orders.length === 0) {
         noOrders.style.display = 'block';
@@ -136,9 +164,50 @@ function renderOrders(orders) {
 
     noOrders.style.display = 'none';
     ordersCount.textContent = `${orders.length} pedido${orders.length !== 1 ? 's' : ''}`;
-    sorted.forEach(order => ordersContainer.appendChild(buildTicket(order)));
+
+    // El pedido más antiguo (el que más tiempo lleva esperando) siempre manda
+    // el orden general. Si quedó en un grupo por cercanía, sus compañeros se
+    // muestran justo a su lado (aunque sean pedidos más nuevos) y no se vuelven
+    // a mostrar sueltos más abajo en su propia posición cronológica.
+    const rendered = new Set();
+    sorted.forEach(order => {
+        if (rendered.has(order.orderNumber)) return;
+
+        const groupInfo = orderGroups.get(order.orderNumber);
+        const members = groupInfo
+            ? groupInfo.memberNumbers
+                .map(num => sorted.find(o => o.orderNumber === num))
+                .filter(Boolean) // por si un compañero ya no está visible (entregado/cancelado/filtro de pago)
+            : [];
+
+        if (members.length >= 2) {
+            ordersContainer.appendChild(buildGroupWrapper(members, groupInfo));
+            members.forEach(m => rendered.add(m.orderNumber));
+        } else {
+            ordersContainer.appendChild(buildTicket(order));
+            rendered.add(order.orderNumber);
+        }
+    });
 
     applySearchFilter();
+}
+
+function buildGroupWrapper(members, groupInfo) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'order-group';
+    wrapper.style.setProperty('--group-color', GROUP_COLORS[groupInfo.colorIndex % GROUP_COLORS.length]);
+
+    const header = document.createElement('div');
+    header.className = 'group-header';
+    header.textContent = `🔗 Grupo ${groupInfo.groupId} — ${members.length} pedidos, máximo ${groupInfo.maxDistanceMeters} m entre sí`;
+
+    const ticketsRow = document.createElement('div');
+    ticketsRow.className = 'group-tickets';
+    members.forEach(order => ticketsRow.appendChild(buildTicket(order)));
+
+    wrapper.appendChild(header);
+    wrapper.appendChild(ticketsRow);
+    return wrapper;
 }
 
 function buildTicket(order) {
@@ -260,6 +329,7 @@ document.querySelectorAll('.btn-filter').forEach(btn => {
         document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         searchInput.value = '';
+        clearGrouping();
         renderOrders(getFilteredOrders());
     });
 });
@@ -295,6 +365,7 @@ btnSearch.addEventListener('click', () => {
     searchInput.value = '';
     activeFilter = 'all';
     document.querySelectorAll('.btn-filter').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
+    clearGrouping();
 
     if (dateStr === todayString()) {
         watchToday();
@@ -306,6 +377,66 @@ btnSearch.addEventListener('click', () => {
 // También buscar al presionar Enter en el date input
 dateInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') btnSearch.click();
+});
+
+// ─── Agrupar por cercanía ────────────────────────────────────────────────────────
+
+function clearGrouping() {
+    orderGroups = new Map();
+    groupingSummary.textContent = '';
+    btnClearGrouping.style.display = 'none';
+}
+
+btnClearGrouping.addEventListener('click', () => {
+    clearGrouping();
+    renderOrders(getFilteredOrders());
+});
+
+btnGroupProximity.addEventListener('click', async () => {
+    btnGroupProximity.disabled = true;
+    const originalLabel = btnGroupProximity.textContent;
+    btnGroupProximity.textContent = 'Agrupando…';
+    groupingSummary.textContent = '';
+
+    try {
+        // Se agrupa sobre TODOS los pedidos del día vigente, sin importar el
+        // filtro de método de pago activo en pantalla — la ruta del domiciliario
+        // no depende de si el cliente pagó en efectivo o por transferencia.
+        const { groups, geocodedCount, noCoordsCount, proximityMeters, maxGroupSize } =
+            await groupOrdersByProximity(allOrders, groupingConfig);
+
+        orderGroups = new Map();
+        groups.forEach(({ orderNumbers, maxDistanceMeters }) => {
+            groupCounter++;
+            const colorIndex = (groupCounter - 1) % GROUP_COLORS.length;
+            orderNumbers.forEach(num => {
+                orderGroups.set(num, { groupId: groupCounter, memberNumbers: orderNumbers, maxDistanceMeters, colorIndex });
+            });
+        });
+
+        const groupedCount = groups.reduce((sum, g) => sum + g.orderNumbers.length, 0);
+        const unmatchedGeocoded = geocodedCount - groupedCount;
+        groupingSummary.textContent =
+            `🔗 ${groups.length} grupo${groups.length !== 1 ? 's' : ''} formado${groups.length !== 1 ? 's' : ''} ` +
+            `(≤${proximityMeters} m, hasta ${maxGroupSize} por grupo) · ${unmatchedGeocoded} sin pareja cercana · ${noCoordsCount} sin dirección geolocalizada`;
+        btnClearGrouping.style.display = groups.length > 0 ? '' : 'none';
+
+        renderOrders(getFilteredOrders());
+
+        logInfo("groupOrdersByProximity", "Pedidos agrupados por cercanía", {
+            grupos: groups.length,
+            sinParejaCercana: unmatchedGeocoded,
+            sinCoordenadas: noCoordsCount,
+            proximityMeters,
+            maxGroupSize
+        });
+    } catch (err) {
+        logError("groupOrdersByProximity", "Fallo agrupando pedidos por cercanía", err);
+        alert('No se pudo agrupar los pedidos por cercanía. Intenta de nuevo.');
+    } finally {
+        btnGroupProximity.disabled = false;
+        btnGroupProximity.textContent = originalLabel;
+    }
 });
 
 // ─── Acciones sobre un pedido ────────────────────────────────────────────────────

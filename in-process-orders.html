@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pedidos en proceso</title>
-    <link rel="stylesheet" href="css/in-process-orders.css?v=1.1.11">
+    <link rel="stylesheet" href="css/in-process-orders.css?v=1.1.12">
 </head>
 <body>
 
@@ -27,8 +27,11 @@
                 <button class="btn-filter" data-filter="Efectivo">💵 Efectivo</button>
                 <button class="btn-filter" data-filter="transfer">📲 Transferencia</button>
             </div>
+            <button class="btn-group-proximity" id="btn-group-proximity">🔗 Agrupar por cercanía</button>
+            <button class="btn-clear-grouping" id="btn-clear-grouping" style="display: none;">✕ Quitar agrupación</button>
         </div>
     </div>
+    <p class="grouping-summary" id="grouping-summary"></p>
     <div class="orders-container" id="orders-container">
         <p class="no-orders" id="no-orders">No hay pedidos en proceso.</p>
     </div>
