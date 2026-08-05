@@ -181,6 +181,30 @@ body {
     border-radius: 20px;
 }
 
+.btn-cancel-order {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    width: 26px;
+    height: 26px;
+    background: #ff4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s ease;
+}
+
+.btn-cancel-order:hover {
+    opacity: 0.85;
+}
+
 .ticket-header {
     display: flex;
     justify-content: space-between;
@@ -194,6 +218,7 @@ body {
     font-size: 21px;
     font-weight: bold;
     color: #194073;
+    margin-left: 34px; /* deja espacio al botón X de cancelar, que flota encima */
 }
 
 .ticket-date {
@@ -355,6 +380,7 @@ body {
 }
 
 .confirm-deliver { background-color: #F27127; color: white; }
+.confirm-cancel  { background-color: #ff4444; color: white; }
 .dismiss         { background-color: #eee;    color: #333;  }
 
 .search-bar input {

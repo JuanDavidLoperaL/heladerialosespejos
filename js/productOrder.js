@@ -1,9 +1,9 @@
 import { db } from "./firebase.js";
 import {
     getFirestore, collection, onSnapshot,
-    doc, getDoc, setDoc, deleteDoc, increment
+    doc, getDoc, setDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { logError, logWarn, logInfo } from "./logger.js";
+import { logError, logWarn } from "./logger.js";
 import { todayString, formatDate } from "./utils.js";
 import { printTicketWIFI } from "./printer.js";
 
@@ -179,8 +179,8 @@ async function cancelOrder(order) {
 
 // Imprimir solo pone el pedido en la fila de preparación (colección "printed").
 // El estado real (en preparación / en camino / entregado) se controla aparte,
-// desde "Pedidos en proceso". La analítica se sigue contando aquí, en el momento
-// de imprimir, exactamente como antes — no se mueve al paso de "entregado".
+// desde "Pedidos en proceso". La analítica NO se cuenta aquí — se cuenta solo
+// al marcar el pedido como entregado, para que uno cancelado nunca se sume.
 async function printOrder(order) {
     if (USE_MOCK) {
         currentOrders = currentOrders.filter(o => o.orderNumber !== order.orderNumber);
@@ -205,28 +205,6 @@ async function printOrder(order) {
         total:             totalConDomicilio      // total final para el cierre contable
     });
     await deleteDoc(pendingPath(order.orderNumber));
-
-    const date = todayString();
-    try {
-        await setDoc(doc(db, "analytics", "daily"), {
-            [date]: {
-                total:         increment(totalConDomicilio),
-                orders:        increment(1),
-                efectivo:      increment(order.paymentMethod === "Efectivo"      ? 1 : 0),
-                transferencia: increment(order.paymentMethod === "Transferencia" ? 1 : 0)
-            }
-        }, { merge: true });
-        logInfo("printOrder", "Analítica actualizada", {
-            paymentMethod: order.paymentMethod,
-            subtotal:      order.total,
-            valorDomicilio,
-            total:         totalConDomicilio,
-            domiciliario:  order.domiciliario,
-            fecha:         date
-        });
-    } catch (err) {
-        logError("printOrder", "Fallo guardando analítica", err);
-    }
 
     deliveryData.delete(order.orderNumber);
 }

@@ -1,7 +1,7 @@
 import { db } from "./firebase.js";
 import {
     collection, getDocs, onSnapshot,
-    doc, getDoc, setDoc, deleteDoc, updateDoc
+    doc, getDoc, setDoc, deleteDoc, updateDoc, increment
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { logError, logInfo } from "./logger.js";
 import { todayString, formatDate } from "./utils.js";
@@ -14,12 +14,14 @@ const STATUS_OPTIONS = [
 let allOrders           = [];    // pedidos cargados para la fecha vigente
 let activeFilter        = 'all'; // 'all' | 'Efectivo' | 'transfer'
 let pendingDeliverOrder = null;
+let pendingCancelOrder  = null;
 let unsubscribe         = null;
 
 const ordersContainer = document.getElementById('orders-container');
 const noOrders         = document.getElementById('no-orders');
 const ordersCount      = document.getElementById('orders-count');
 const deliverPopup     = document.getElementById('deliver-popup');
+const cancelPopup      = document.getElementById('cancel-order-popup');
 const dateInput        = document.getElementById('date-input');
 const btnSearch        = document.getElementById('btn-search');
 const searchInput      = document.getElementById('search-input');
@@ -32,6 +34,10 @@ function printedPath(orderNumber, dateString) {
 
 function completedPath(orderNumber, dateString) {
     return doc(db, 'productOrder', 'completed', dateString, orderNumber);
+}
+
+function cancelledPath(orderNumber, dateString) {
+    return doc(db, 'productOrder', 'cancelled', dateString, orderNumber);
 }
 
 function normalizeOrder(docSnap, dateString) {
@@ -173,6 +179,7 @@ function buildTicket(order) {
     `).join('');
 
     ticket.innerHTML = `
+        <button class="btn-cancel-order" title="Cancelar pedido">✕</button>
         <span class="ticket-badge">🚚 En proceso</span>
         <div class="ticket-header">
             <span class="ticket-number">🧾 #${order.orderNumber}</span>
@@ -228,6 +235,11 @@ function buildTicket(order) {
     ticket.querySelector('.btn-mark-delivered').addEventListener('click', () => {
         pendingDeliverOrder = order;
         deliverPopup.classList.add('visible');
+    });
+
+    ticket.querySelector('.btn-cancel-order').addEventListener('click', () => {
+        pendingCancelOrder = order;
+        cancelPopup.classList.add('visible');
     });
 
     return ticket;
@@ -312,15 +324,53 @@ async function markDelivered(order) {
     const snap = await getDoc(printedPath(order.orderNumber, order.dateString));
     if (!snap.exists()) return;
 
-    // Solo mueve el pedido de colección — la analítica ya se contó al imprimir,
-    // así que aquí NO se vuelve a incrementar (evita duplicar la venta).
     await setDoc(completedPath(order.orderNumber, order.dateString), {
         ...snap.data(),
         status: 'delivered'
     });
     await deleteDoc(printedPath(order.orderNumber, order.dateString));
 
+    // La analítica se cuenta aquí, al entregar — no al imprimir — para que un
+    // pedido cancelado en "Pedidos en proceso" nunca llegue a sumar a la venta.
+    try {
+        await setDoc(doc(db, "analytics", "daily"), {
+            [order.dateString]: {
+                total:         increment(order.total),
+                orders:        increment(1),
+                efectivo:      increment(order.paymentMethod === "Efectivo"      ? 1 : 0),
+                transferencia: increment(order.paymentMethod === "Transferencia" ? 1 : 0)
+            }
+        }, { merge: true });
+        logInfo("markDelivered", "Analítica actualizada", {
+            orderNumber:   order.orderNumber,
+            dateString:    order.dateString,
+            total:         order.total,
+            paymentMethod: order.paymentMethod
+        });
+    } catch (err) {
+        logError("markDelivered", "Fallo guardando analítica", err);
+    }
+
     logInfo("markDelivered", "Pedido marcado como entregado", {
+        orderNumber: order.orderNumber,
+        dateString: order.dateString
+    });
+}
+
+async function cancelOrder(order) {
+    const snap = await getDoc(printedPath(order.orderNumber, order.dateString));
+    if (!snap.exists()) return;
+
+    // Solo mueve el pedido a "cancelled" para dejar registro — nunca se suma
+    // a la analítica porque esta solo se cuenta al marcar un pedido entregado.
+    await setDoc(cancelledPath(order.orderNumber, order.dateString), {
+        ...snap.data(),
+        status: 'cancelled',
+        cancelledAt: new Date()
+    });
+    await deleteDoc(printedPath(order.orderNumber, order.dateString));
+
+    logInfo("cancelOrder", "Pedido cancelado", {
         orderNumber: order.orderNumber,
         dateString: order.dateString
     });
@@ -336,4 +386,21 @@ document.getElementById('confirm-deliver').addEventListener('click', async () =>
     await markDelivered(pendingDeliverOrder);
     deliverPopup.classList.remove('visible');
     pendingDeliverOrder = null;
+});
+
+document.getElementById('dismiss-cancel-order').addEventListener('click', () => {
+    cancelPopup.classList.remove('visible');
+    pendingCancelOrder = null;
+});
+
+document.getElementById('confirm-cancel-order').addEventListener('click', async () => {
+    if (!pendingCancelOrder) return;
+    try {
+        await cancelOrder(pendingCancelOrder);
+    } catch (err) {
+        logError("confirm-cancel-order", "Fallo cancelando pedido", err);
+        alert('No se pudo cancelar el pedido. Intenta de nuevo.');
+    }
+    cancelPopup.classList.remove('visible');
+    pendingCancelOrder = null;
 });
