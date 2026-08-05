@@ -22,11 +22,11 @@ let unsubscribe         = null;
 let orderGroups         = new Map(); // orderNumber -> { groupId, memberNumbers, maxDistanceMeters, colorIndex }
 let groupCounter        = 0;
 
-// Parametrizable desde Firestore (settings/orderGrouping) — se actualiza en vivo
+// Parametrizable desde Firestore (config/orderGrouping) — se actualiza en vivo
 // para que un cambio del dueño aplique al instante en todas las pantallas abiertas.
 let groupingConfig = { proximityMeters: DEFAULT_PROXIMITY_METERS, maxGroupSize: DEFAULT_MAX_GROUP_SIZE };
 
-onSnapshot(doc(db, 'settings', 'orderGrouping'),
+onSnapshot(doc(db, 'config', 'orderGrouping'),
     (snap) => {
         const d = snap.data();
         const proximityMeters = Number(d?.proximityMeters);

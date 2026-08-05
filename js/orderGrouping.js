@@ -1,6 +1,6 @@
 import { GOOGLE_MAPS_API_KEY } from "./googleApiConfig.js";
 
-// Se usan solo si Firestore (settings/orderGrouping) no existe o falla la lectura.
+// Se usan solo si Firestore (config/orderGrouping) no existe o falla la lectura.
 export const DEFAULT_PROXIMITY_METERS = 180;
 export const DEFAULT_MAX_GROUP_SIZE = 2;
 
