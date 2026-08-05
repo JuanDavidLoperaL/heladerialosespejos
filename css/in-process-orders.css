@@ -123,6 +123,32 @@ body {
     color: white;
 }
 
+/* ─── Agrupar por cercanía ──────────────────────────────────────────────────── */
+.btn-group-proximity {
+    padding: 12px 20px;
+    background-color: #6a3fa0;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+}
+
+.btn-group-proximity:hover  { opacity: 0.88; }
+.btn-group-proximity:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.grouping-summary {
+    font-size: 13px;
+    color: #555;
+    margin: -12px 0 20px;
+}
+
 /* ─── Loading state ─────────────────────────────────────────────────────────── */
 .loading-msg {
     color: #194073;
@@ -158,6 +184,34 @@ body {
 .no-orders {
     color: #999;
     font-size: 16px;
+}
+
+/* Grupo de 2 pedidos cercanos — ocupa el espacio de 2 columnas del grid para
+   que las comandas queden una al lado de la otra dentro de un mismo borde. */
+.order-group {
+    grid-column: span 2;
+    border: 3px solid var(--group-color, #6a3fa0);
+    border-radius: 16px;
+    padding: 14px;
+    background: rgba(0,0,0,0.02);
+}
+
+.group-header {
+    font-weight: bold;
+    font-size: 13px;
+    color: var(--group-color, #6a3fa0);
+    margin-bottom: 12px;
+}
+
+.group-tickets {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.group-tickets .ticket {
+    flex: 1;
+    min-width: 260px;
 }
 
 /* Ticket */
