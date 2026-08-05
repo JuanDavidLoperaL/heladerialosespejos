@@ -143,6 +143,21 @@ body {
     cursor: not-allowed;
 }
 
+.btn-clear-grouping {
+    padding: 12px 20px;
+    background-color: #eee;
+    color: #333;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+}
+
+.btn-clear-grouping:hover { opacity: 0.8; }
+
 .grouping-summary {
     font-size: 13px;
     color: #555;

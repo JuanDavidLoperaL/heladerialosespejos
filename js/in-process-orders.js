@@ -31,6 +31,7 @@ const dateInput        = document.getElementById('date-input');
 const btnSearch        = document.getElementById('btn-search');
 const searchInput      = document.getElementById('search-input');
 const btnGroupProximity = document.getElementById('btn-group-proximity');
+const btnClearGrouping  = document.getElementById('btn-clear-grouping');
 const groupingSummary   = document.getElementById('grouping-summary');
 
 dateInput.value = todayString();
@@ -361,7 +362,13 @@ dateInput.addEventListener('keydown', (e) => {
 function clearGrouping() {
     orderGroups = new Map();
     groupingSummary.textContent = '';
+    btnClearGrouping.style.display = 'none';
 }
+
+btnClearGrouping.addEventListener('click', () => {
+    clearGrouping();
+    renderOrders(getFilteredOrders());
+});
 
 btnGroupProximity.addEventListener('click', async () => {
     btnGroupProximity.disabled = true;
@@ -387,6 +394,7 @@ btnGroupProximity.addEventListener('click', async () => {
         groupingSummary.textContent =
             `🔗 ${pairs.length} grupo${pairs.length !== 1 ? 's' : ''} formado${pairs.length !== 1 ? 's' : ''} ` +
             `(≤${PROXIMITY_METERS} m) · ${unmatchedGeocoded} sin pareja cercana · ${noCoordsCount} sin dirección geolocalizada`;
+        btnClearGrouping.style.display = pairs.length > 0 ? '' : 'none';
 
         renderOrders(getFilteredOrders());
 
