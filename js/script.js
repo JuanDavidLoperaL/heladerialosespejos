@@ -349,6 +349,11 @@ document.addEventListener('DOMContentLoaded', function () {
             "banana especial",
             "banana super especial"
         ].includes(titleNorm);
+        const shouldShowAllSaucesOption = [
+            "banana sencilla",
+            "banana especial",
+            "banana super especial"
+        ].includes(titleNorm);
         modal.className = 'flavor-modal';
         // Formatear precio a string con punto como miles
         const priceFormatted = new Intl.NumberFormat('es-CO').format(price || 0);
@@ -465,7 +470,9 @@ document.addEventListener('DOMContentLoaded', function () {
                               <div class="flavor-option">
                                   <label>Salsa:</label>
                                   <select class="flavor-select-sauces">
-                                      ${saucesFlavors.map(f => `<option value="${f}">${f}</option>`).join('')}
+                                      ${saucesFlavors
+                                          .filter(f => shouldShowAllSaucesOption || f.toLowerCase() !== 'todas')
+                                          .map(f => `<option value="${f}">${f}</option>`).join('')}
                                   </select>
                               </div>
                           `).join('')
