@@ -399,11 +399,14 @@ btnGroupProximity.addEventListener('click', async () => {
     groupingSummary.textContent = '';
 
     try {
-        // Se agrupa sobre TODOS los pedidos del día vigente, sin importar el
-        // filtro de método de pago activo en pantalla — la ruta del domiciliario
-        // no depende de si el cliente pagó en efectivo o por transferencia.
+        // Se agrupa sobre TODOS los pedidos "En preparación" del día vigente, sin importar
+        // el filtro de método de pago activo en pantalla — la ruta del domiciliario
+        // no depende de si el cliente pagó en efectivo o por transferencia. Los pedidos
+        // "En camino" se excluyen a propósito: ya salieron a reparto y agruparlos
+        // confundiría al personal despachando.
+        const ordersToGroup = allOrders.filter(o => o.status === 'inPreparation');
         const { groups, geocodedCount, noCoordsCount, proximityMeters, maxGroupSize } =
-            await groupOrdersByProximity(allOrders, groupingConfig);
+            await groupOrdersByProximity(ordersToGroup, groupingConfig);
 
         orderGroups = new Map();
         groups.forEach(({ orderNumbers, maxDistanceMeters }) => {
