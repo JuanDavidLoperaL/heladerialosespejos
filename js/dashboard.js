@@ -13,6 +13,7 @@ const btnPayrollManagement = document.getElementById('btn-payroll-management');
 const btnCompletedOrders     = document.getElementById('btn-completed-orders');
 const btnFinancialReporting  = document.getElementById('btn-financial-reporting');
 const btnInProcessOrders     = document.getElementById('btn-in-process-orders');
+const btnReglamento          = document.getElementById('btn-reglamento');
 
 // ── Roles de usuario (cargados desde Firebase config/userRoles) ───────────────
 let userConfigCache = [];   // array de { email, role, defaultPunto }
@@ -44,7 +45,16 @@ const RESTRICTED_PAGES = {
     default:  ["analiticas", "payrollManagement", "financialReporting"],
 };
 
+// Roles de lista blanca: solo pueden acceder a las páginas explícitamente listadas aquí.
+// Para darle más acceso a un rol, solo agrega la key de la página (ver objeto `pages`) al arreglo.
+const ALLOWED_PAGES = {
+    basic: ["howtodoit", "reglamento"],
+};
+
 function canAccess(role, page) {
+    if (ALLOWED_PAGES[role]) {
+        return ALLOWED_PAGES[role].includes(page);
+    }
     return !(RESTRICTED_PAGES[role] ?? RESTRICTED_PAGES.default).includes(page);
 }
 
@@ -55,7 +65,8 @@ const pages = {
     payrollManagement: { html: 'payrollManagement.html', js: 'js/Payrollmanagement.js' },
     completedOrders    : { html: 'completed-orders.html',    js: 'js/completed-orders.js'    },
     financialReporting : { html: 'financialReporting.html',  js: 'js/financialReporting.js'  },
-    inProcessOrders    : { html: 'in-process-orders.html',    js: 'js/in-process-orders.js'   }
+    inProcessOrders    : { html: 'in-process-orders.html',    js: 'js/in-process-orders.js'   },
+    reglamento         : { html: 'reglamentoInterno.html',    js: 'js/reglamentoInterno.js'   }
 };
 
 let currentScript = null;
@@ -116,21 +127,32 @@ onAuthStateChanged(auth, async (user) => {
     window.currentUserDefaultPunto = entry?.defaultPunto ?? 'principal';
 
     configureMenuByRole(role);
-    loadPage('pedidos');
+
+    const initialPage = firstAccessiblePage(role);
+    loadPage(initialPage);
+    setActive(PAGE_BUTTONS[initialPage]);
 });
 
-// Mapa página → botón del menú (solo las páginas que pueden restringirse)
+// Mapa página → botón del menú (define también el orden de "primera página accesible")
 const PAGE_BUTTONS = {
-    analiticas:         btnAnaliticas,
+    pedidos:            btnPedidos,
+    inProcessOrders:    btnInProcessOrders,
+    completedOrders:    btnCompletedOrders,
     payrollManagement:  btnPayrollManagement,
+    analiticas:         btnAnaliticas,
     financialReporting: btnFinancialReporting,
+    howtodoit:          btnHowToDoIt,
+    reglamento:         btnReglamento,
 };
 
 function configureMenuByRole(role) {
-    const restricted = RESTRICTED_PAGES[role] ?? RESTRICTED_PAGES.default;
     Object.entries(PAGE_BUTTONS).forEach(([page, btn]) => {
-        btn.style.display = restricted.includes(page) ? 'none' : 'block';
+        btn.style.display = canAccess(role, page) ? 'block' : 'none';
     });
+}
+
+function firstAccessiblePage(role) {
+    return Object.keys(PAGE_BUTTONS).find(page => canAccess(role, page)) ?? 'pedidos';
 }
 
 btnPedidos.addEventListener('click', () => {
@@ -164,6 +186,11 @@ btnInProcessOrders.addEventListener('click', () => {
 btnFinancialReporting.addEventListener('click', () => {
     loadPage('financialReporting');
     setActive(btnFinancialReporting);
+});
+
+btnReglamento.addEventListener('click', () => {
+    loadPage('reglamento');
+    setActive(btnReglamento);
 });
 
 logoutBtn.addEventListener('click', async () => {

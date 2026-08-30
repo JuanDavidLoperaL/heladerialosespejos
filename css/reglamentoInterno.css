@@ -1,0 +1,85 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    background-color: #f5f5f5;
+    padding: 20px;
+}
+
+/* ── Header ── */
+.rit-header {
+    margin-bottom: 20px;
+}
+
+.rit-header h1 {
+    color: #194073;
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.rit-header p {
+    color: #666;
+    font-size: 13px;
+}
+
+/* ── Acciones ── */
+.rit-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.rit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.rit-btn:hover {
+    opacity: 0.85;
+}
+
+.rit-btn-primary {
+    background-color: #F27127;
+    color: white;
+}
+
+.rit-btn-secondary {
+    background-color: white;
+    color: #194073;
+    border: 2px solid #194073;
+}
+
+/* ── Visor ── */
+.rit-viewer {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+
+.rit-viewer iframe {
+    width: 100%;
+    height: 75vh;
+    min-height: 500px;
+    border: none;
+    border-radius: 8px;
+}
+
+.rit-fallback {
+    margin-top: 12px;
+    font-size: 12px;
+    color: #999;
+    text-align: center;
+}
