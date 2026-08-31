@@ -47,26 +47,6 @@ const SECTIONS = [
                 text: 'Ve a <code>Preferencias del Sistema → Impresoras y Escáneres</code>, selecciona las que no uses y presiona <code>−</code> para eliminarlas. El dashboard usa la primera impresora disponible que no sea una IP.'
             }
         ]
-    },
-    {
-        id: 'nomina',
-        navLabel: '💰 Hacer Nómina',
-        title: '💰 Hacer Nómina',
-        description: 'Proceso para calcular y pagar la nómina del equipo de Los Espejos cada período.',
-        note: {
-            icon: '⚠️',
-            text: '<strong>Importante:</strong> Los aportes del empleador a salud (<code>8.5%</code>), pensión (<code>12%</code>) y ARL se pagan aparte y no se descuentan del salario del empleado. Consúltalo con tu contador.'
-        },
-        steps: [
-            {
-                title: 'Reunir las horas trabajadas',
-                text: 'Recopila el registro de horas de cada empleado del período. Verifica horas ordinarias, extras diurnas, extras nocturnas y festivos por separado.'
-            },
-            {
-                title: 'Calcular el salario base',
-                text: 'Multiplica las horas ordinarias por el valor hora acordado. Para 2025 el salario mínimo diario en Colombia es <code>$57.116</code>. Ajusta según el contrato de cada persona.'
-            }
-        ]
     }
 ];
 
