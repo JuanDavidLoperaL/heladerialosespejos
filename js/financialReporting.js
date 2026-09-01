@@ -488,10 +488,13 @@ function updateSummary(records) {
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = fmt(val); };
 
-    // Subtotales y netos
+    // Subtotales, netos (= "Subtotal Global − Gastos − IVA") y total final (neto − GT − GCM)
     const pSub = pV - pG;               const pNeto = pV - pG - pD * 0.19;
     const dSub = dV - dG;               const dNeto = dV - dG - dD * 0.19;
     const tSub = (pV + dV) - (pG + dG); const tNeto = (pV + dV) - (pG + dG) - (pD + dD) * 0.19;
+    const pTotalFinal = pNeto - pGT - pGCM;
+    const dTotalFinal = dNeto - dGT - dGCM;
+    const tTotalFinal = tNeto - (pGT + dGT) - (pGCM + dGCM);
 
     // Principal
     set('sum-p-trans',      pT);    set('sum-p-efec',       pE);
@@ -500,6 +503,7 @@ function updateSummary(records) {
     set('sum-p-dian',       pD);    set('sum-p-iva',        pD * 0.19);
     set('sum-p-neto',       pNeto);
     set('sum-p-gtransfer',  pGT);   set('sum-p-gcajaMayor', pGCM);
+    set('sum-p-total',      pTotalFinal);
 
     // Domicilio
     set('sum-d-trans',      dT);    set('sum-d-efec',       dE);
@@ -508,6 +512,7 @@ function updateSummary(records) {
     set('sum-d-dian',       dD);    set('sum-d-iva',        dD * 0.19);
     set('sum-d-neto',       dNeto);
     set('sum-d-gtransfer',  dGT);   set('sum-d-gcajaMayor', dGCM);
+    set('sum-d-total',      dTotalFinal);
 
     // Total general
     set('sum-t-trans',      pT + dT);   set('sum-t-efec',       pE + dE);
@@ -516,6 +521,7 @@ function updateSummary(records) {
     set('sum-t-dian',       pD + dD);   set('sum-t-iva',       (pD + dD) * 0.19);
     set('sum-t-neto',       tNeto);
     set('sum-t-gtransfer',  pGT + dGT); set('sum-t-gcajaMayor', pGCM + dGCM);
+    set('sum-t-total',      tTotalFinal);
 }
 
 // ── Exportar PDF ───────────────────────────────────────────────────────────
@@ -560,6 +566,10 @@ function buildPDFReport(month, records) {
 
     const tSub = (pV + dV) - (pG + dG);
     const tNeto = (pV + dV) - (pG + dG) - (pD + dD) * 0.19;
+
+    const pTotalFinal = pNeto - pGT - pGCM;
+    const dTotalFinal = dNeto - dGT - dGCM;
+    const tTotalFinal = tNeto - (pGT + dGT) - (pGCM + dGCM);
 
     const filas = records.map(r => {
         const tv        = (r.ventasTransferencia || 0) + (r.ventasEfectivo || 0);
@@ -703,12 +713,14 @@ function buildPDFReport(month, records) {
         <td class="num">${fmt(pD)}</td><td class="num">${fmt(dD)}</td><td class="num">${fmt(pD+dD)}</td></tr>
     <tr class="purp-row"><td>IVA 19% DIAN</td>
         <td class="num">${fmt(pD*0.19)}</td><td class="num">${fmt(dD*0.19)}</td><td class="num">${fmt((pD+dD)*0.19)}</td></tr>
-    <tr class="neto-row"><td>💰 Total Ventas − Gastos − IVA</td>
+    <tr class="neto-row"><td>💰 Subtotal Global − Gastos − IVA</td>
         <td class="num">${fmt(pNeto)}</td><td class="num">${fmt(dNeto)}</td><td class="num">${fmt(tNeto)}</td></tr>
     <tr style="border-top:2px dashed #90a4ae;"><td>📲 Gastos en Transferencias</td>
         <td class="num" style="color:#0277bd;">${fmt(pGT)}</td><td class="num" style="color:#0277bd;">${fmt(dGT)}</td><td class="num" style="color:#0277bd;">${fmt(pGT+dGT)}</td></tr>
     <tr><td>🏦 Gastos Caja Mayor</td>
         <td class="num" style="color:#2e7d32;">${fmt(pGCM)}</td><td class="num" style="color:#2e7d32;">${fmt(dGCM)}</td><td class="num" style="color:#2e7d32;">${fmt(pGCM+dGCM)}</td></tr>
+    <tr class="neto-row"><td>🧮 Total</td>
+        <td class="num">${fmt(pTotalFinal)}</td><td class="num">${fmt(dTotalFinal)}</td><td class="num">${fmt(tTotalFinal)}</td></tr>
   </tfoot>
 </table>
 <div class="footer">Heladería Los Espejos © ${new Date().getFullYear()} — Documento generado automáticamente</div>
@@ -806,6 +818,10 @@ function exportExcel() {
 
     const tSubx = (pVx+dVx)-(pGx+dGx), tNetox = (pVx+dVx)-(pGx+dGx)-(pDx+dDx)*0.19;
 
+    const pTotalFinalx = pNetox - pGTx - pGCMx;
+    const dTotalFinalx = dNetox - dGTx - dGCMx;
+    const tTotalFinalx = tNetox - (pGTx + dGTx) - (pGCMx + dGCMx);
+
     const ws2 = XLSX.utils.aoa_to_sheet([
         [`Reporte Financiero — ${label}`, '', '', ''],
         [''],
@@ -819,11 +835,12 @@ function exportExcel() {
         ['Facturación DIAN',                  pDx,               dDx,               pDx+dDx],
         ['IVA 19% DIAN',                      pDx*0.19,          dDx*0.19,          (pDx+dDx)*0.19],
         [''],
-        ['Total Ventas - Gastos - IVA',       pNetox,            dNetox,            tNetox],
+        ['Subtotal Global - Gastos - IVA',    pNetox,            dNetox,            tNetox],
         [''],
-        ['--- Registro (no afectan cálculos) ---', '', '', ''],
-        ['Gastos en Transferencias',           pGTx,              dGTx,              pGTx+dGTx],
-        ['Gastos Caja Mayor',                  pGCMx,             dGCMx,             pGCMx+dGCMx],
+        ['Gastos en Transferencias (GT)',      pGTx,              dGTx,              pGTx+dGTx],
+        ['Gastos Caja Mayor (GCM)',            pGCMx,             dGCMx,             pGCMx+dGCMx],
+        [''],
+        ['Total (Subtotal Global - GT - GCM)', pTotalFinalx,      dTotalFinalx,      tTotalFinalx],
     ]);
     ws2['!cols'] = [{wch:26},{wch:18},{wch:18},{wch:16}];
     XLSX.utils.book_append_sheet(wb, ws2, 'Resumen');
