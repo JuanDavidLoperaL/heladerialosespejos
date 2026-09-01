@@ -304,6 +304,21 @@
 .fr-card-orange .fr-row-neto strong { color: #e65100 !important; }
 .fr-card-green  .fr-row-neto strong { color: #2e7d32 !important; }
 
+.fr-row-final-total {
+    margin-top: 8px;
+    padding: 12px 10px;
+    border-top: 3px solid rgba(25, 64, 115, 0.35) !important;
+    border-bottom: none !important;
+    border-radius: 8px;
+    background: rgba(25, 64, 115, 0.06);
+    font-weight: bold;
+}
+.fr-row-final-total strong { color: #194073 !important; font-size: 18px !important; }
+.fr-card-orange .fr-row-final-total { background: rgba(230, 81, 0, 0.06); }
+.fr-card-orange .fr-row-final-total strong { color: #e65100 !important; }
+.fr-card-green  .fr-row-final-total { background: rgba(46, 125, 50, 0.06); }
+.fr-card-green  .fr-row-final-total strong { color: #2e7d32 !important; }
+
 /* ── Toast de feedback ────────────────────────────────────────────── */
 .fr-toast {
     position: fixed;
