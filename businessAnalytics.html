@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analíticas</title>
-    <link rel="stylesheet" href="css/businessAnalytics.css?v=1.1.16">
+    <link rel="stylesheet" href="css/businessAnalytics.css?v=1.1.17">
 </head>
 <body>
 
@@ -70,9 +70,29 @@
             <div class="filter">
                 <label>Período</label>
                 <select id="period-filter">
-                    <option value="week">Esta semana</option>
-                    <option value="month" selected>Este mes</option>
-                    <option value="year">Este año</option>
+                    <option value="week">Semana</option>
+                    <option value="month" selected>Mes</option>
+                    <option value="year">Año</option>
+                </select>
+            </div>
+            <div class="filter" id="week-picker-wrap" style="display:none;">
+                <label>Semana de</label>
+                <input type="date" id="week-picker">
+            </div>
+            <div class="filter" id="month-picker-wrap">
+                <label>Mes</label>
+                <input type="month" id="month-picker">
+            </div>
+            <div class="filter" id="year-picker-wrap" style="display:none;">
+                <label>Año</label>
+                <input type="number" id="year-picker" min="2020" step="1">
+            </div>
+            <div class="filter">
+                <label>Punto</label>
+                <select id="punto-filter">
+                    <option value="all" selected>Todos</option>
+                    <option value="principal">Principal</option>
+                    <option value="domicilio">Domicilio</option>
                 </select>
             </div>
         </div>
@@ -82,8 +102,8 @@
 
         <div id="period-summary" style="display:none;">
             <div class="cards-container">
-                <div class="card">
-                    <h3>Pedidos en período</h3>
+                <div class="card" id="card-orders">
+                    <h3 id="period-orders-label">Pedidos en período</h3>
                     <p id="period-orders">0</p>
                 </div>
                 <div class="card">
@@ -91,11 +111,11 @@
                     <p id="period-sales">$0</p>
                 </div>
                 <div class="card">
-                    <h3>Efectivo</h3>
+                    <h3 id="period-efectivo-label">Efectivo</h3>
                     <p id="period-efectivo">0</p>
                 </div>
                 <div class="card">
-                    <h3>Transferencia</h3>
+                    <h3 id="period-transferencia-label">Transferencia</h3>
                     <p id="period-transferencia">0</p>
                 </div>
             </div>
@@ -105,9 +125,65 @@
                 <canvas id="salesChart"></canvas>
             </div>
 
-            <div class="chart-wrapper">
-                <h3 class="chart-label">Pedidos por método de pago</h3>
+            <div class="chart-wrapper" id="payment-chart-wrapper">
+                <h3 class="chart-label" id="payment-chart-label">Pedidos por método de pago</h3>
                 <canvas id="paymentChart"></canvas>
+            </div>
+
+            <!-- ── Resultado del período (Ventas − Gastos − IVA = Utilidad) ─ -->
+            <div class="chart-wrapper">
+                <h3 class="chart-label">Resultado del período</h3>
+                <div class="cards-container resultado-cards">
+                    <div class="card">
+                        <h3>Ventas</h3>
+                        <p id="resultado-ventas-val">$0</p>
+                        <span class="resultado-pct" id="resultado-ventas-pct">—</span>
+                    </div>
+                    <div class="card card-gasto">
+                        <h3>Gastos</h3>
+                        <p id="resultado-gastos-val">$0</p>
+                        <span class="resultado-pct" id="resultado-gastos-pct">—</span>
+                    </div>
+                    <div class="card card-iva">
+                        <h3>IVA 19% DIAN</h3>
+                        <p id="resultado-iva-val">$0</p>
+                        <span class="resultado-pct" id="resultado-iva-pct">—</span>
+                    </div>
+                    <div class="card card-utilidad" id="resultado-utilidad-card">
+                        <h3>Utilidad neta</h3>
+                        <p id="resultado-utilidad-val">$0</p>
+                        <span class="resultado-pct" id="resultado-utilidad-pct">—</span>
+                    </div>
+                </div>
+                <div class="resultado-bar">
+                    <div class="resultado-bar-seg resultado-bar-gastos" id="resultado-bar-gastos"></div>
+                    <div class="resultado-bar-seg resultado-bar-iva" id="resultado-bar-iva"></div>
+                    <div class="resultado-bar-seg resultado-bar-utilidad" id="resultado-bar-utilidad"></div>
+                </div>
+            </div>
+
+            <!-- ── Gastos por categoría ────────────────────────────────── -->
+            <div class="chart-wrapper">
+                <h3 class="chart-label">Gastos por categoría</h3>
+                <div id="gastos-no-data" class="chart-no-data" style="display:none;">
+                    Sin gastos registrados para este período.
+                </div>
+                <div id="gastos-content" style="display:none;">
+                    <div class="gastos-chart-row">
+                        <div class="gastos-chart-canvas-wrap">
+                            <canvas id="gastosChart"></canvas>
+                        </div>
+                        <table class="gastos-table">
+                            <thead>
+                                <tr><th>Categoría</th><th>Valor</th><th>%</th></tr>
+                            </thead>
+                            <tbody id="gastos-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div class="gastos-total-row">
+                        Total Gastos: <strong id="gastos-total-val">$0</strong>
+                    </div>
+                </div>
             </div>
         </div>
     </section>

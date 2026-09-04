@@ -454,6 +454,42 @@ async function updateStatus(order, status) {
     }
 }
 
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+// Reintenta la escritura de analítica antes de darla por perdida: un fallo transitorio de red
+// (típico con wifi de local) no debe traducirse en un pedido que nunca se sumó a las ventas.
+//
+// Un documento POR DÍA (analytics/{fecha}) en vez de un solo documento compartido por todas las
+// fechas (analytics/daily): ese documento único recibía la escritura de CADA pedido entregado en
+// TODO el negocio, sin importar el día, y Firestore soporta ~1 escritura/segundo sostenida por
+// documento — con varios domiciliarios entregando en paralelo en horas pico, la mayoría de esas
+// escrituras terminaban en conflicto y se perdían en silencio. Repartir en un documento por fecha
+// multiplica la capacidad de escritura concurrente y elimina ese cuello de botella.
+async function incrementAnalyticsWithRetry(order, attempts = 3) {
+    for (let i = 1; i <= attempts; i++) {
+        try {
+            await setDoc(doc(db, "analytics", order.dateString), {
+                total:         increment(order.total),
+                orders:        increment(1),
+                efectivo:      increment(order.paymentMethod === "Efectivo"      ? 1 : 0),
+                transferencia: increment(order.paymentMethod === "Transferencia" ? 1 : 0)
+            }, { merge: true });
+            logInfo("markDelivered", "Analítica actualizada", {
+                orderNumber:   order.orderNumber,
+                dateString:    order.dateString,
+                total:         order.total,
+                paymentMethod: order.paymentMethod,
+                intento:       i
+            });
+            return true;
+        } catch (err) {
+            logError("markDelivered", `Fallo guardando analítica (intento ${i}/${attempts})`, err);
+            if (i < attempts) await sleep(800 * i);
+        }
+    }
+    return false;
+}
+
 async function markDelivered(order) {
     const snap = await getDoc(printedPath(order.orderNumber, order.dateString));
     if (!snap.exists()) return;
@@ -466,23 +502,13 @@ async function markDelivered(order) {
 
     // La analítica se cuenta aquí, al entregar — no al imprimir — para que un
     // pedido cancelado en "Pedidos en proceso" nunca llegue a sumar a la venta.
-    try {
-        await setDoc(doc(db, "analytics", "daily"), {
-            [order.dateString]: {
-                total:         increment(order.total),
-                orders:        increment(1),
-                efectivo:      increment(order.paymentMethod === "Efectivo"      ? 1 : 0),
-                transferencia: increment(order.paymentMethod === "Transferencia" ? 1 : 0)
-            }
-        }, { merge: true });
-        logInfo("markDelivered", "Analítica actualizada", {
-            orderNumber:   order.orderNumber,
-            dateString:    order.dateString,
-            total:         order.total,
-            paymentMethod: order.paymentMethod
-        });
-    } catch (err) {
-        logError("markDelivered", "Fallo guardando analítica", err);
+    const analyticsOk = await incrementAnalyticsWithRetry(order);
+    if (!analyticsOk) {
+        alert(
+            `⚠️ El pedido #${order.orderNumber} se marcó como entregado correctamente, ` +
+            `pero no se pudo actualizar "Ver Analíticas" tras varios intentos (posible falla de red). ` +
+            `Avisa para corregirlo manualmente — el pedido en sí no se perdió.`
+        );
     }
 
     logInfo("markDelivered", "Pedido marcado como entregado", {
@@ -517,9 +543,16 @@ document.getElementById('dismiss-deliver').addEventListener('click', () => {
 
 document.getElementById('confirm-deliver').addEventListener('click', async () => {
     if (!pendingDeliverOrder) return;
-    await markDelivered(pendingDeliverOrder);
-    deliverPopup.classList.remove('visible');
-    pendingDeliverOrder = null;
+    const btn = document.getElementById('confirm-deliver');
+    const order = pendingDeliverOrder;
+    pendingDeliverOrder = null; // evita que un segundo clic reprocese el mismo pedido
+    btn.disabled = true;
+    try {
+        await markDelivered(order);
+    } finally {
+        btn.disabled = false;
+        deliverPopup.classList.remove('visible');
+    }
 });
 
 document.getElementById('dismiss-cancel-order').addEventListener('click', () => {

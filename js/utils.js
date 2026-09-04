@@ -1,3 +1,27 @@
+// Categorías de gasto disponibles en todo el sistema (financialReporting.js las usa para
+// clasificar cada gasto al registrarlo; businessAnalytics.js las usa para agrupar el
+// desglose de gastos por categoría).
+export const GASTO_CATEGORIAS = [
+    'Nómina', 
+    'Frutas',
+    'Helados',
+    'Lacteos',
+    'Papelería y oficina',
+    'Materia prima',
+    'Empaques y desechables',
+    'Publicidad y marketing',
+    'Mantenimiento y reparaciones',
+    'Transporte y domicilios',
+    'Impuestos y contabilidad',
+    'Dotación y uniformes',
+    'Seguros',
+    'Tecnología y software',
+    'Servicios públicos',
+    'Arriendo',
+    'Otros'
+];
+export const GASTO_CATEGORIA_DEFAULT = 'Otros';
+
 export function todayString() {
     return new Intl.DateTimeFormat('es-CO', {
         timeZone: 'America/Bogota',
