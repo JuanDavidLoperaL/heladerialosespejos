@@ -3,7 +3,7 @@ import {
     doc, setDoc, getDoc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { todayString } from './utils.js';
+import { todayString, GASTO_CATEGORIAS, GASTO_CATEGORIA_DEFAULT } from './utils.js';
 
 // ── Estado ────────────────────────────────────────────────────────────────
 let currentUser          = null;
@@ -127,6 +127,13 @@ function clearForm() {
 }
 
 // ── Gastos dinámicos ──────────────────────────────────────────────────────
+function categoriaOptionsHtml(selected) {
+    const cat = selected || GASTO_CATEGORIA_DEFAULT;
+    return GASTO_CATEGORIAS
+        .map(c => `<option value="${c}"${c === cat ? ' selected' : ''}>${c}</option>`)
+        .join('');
+}
+
 function renderGastos() {
     const list  = document.getElementById('fr-gastos-list');
     const empty = document.getElementById('fr-gastos-empty');
@@ -146,6 +153,9 @@ function renderGastos() {
                     placeholder="Descripción del gasto"
                     value="${escHtml(item.descripcion)}"
                     data-i="${i}" data-f="descripcion" />
+                <select class="fr-gasto-select-cat" data-i="${i}" data-f="categoria">
+                    ${categoriaOptionsHtml(item.categoria)}
+                </select>
                 <input class="fr-gasto-input-monto" type="text" inputmode="numeric"
                     placeholder="0"
                     value="${item.monto > 0 ? Number(item.monto).toLocaleString('es-CO') : ''}"
@@ -173,6 +183,9 @@ function buildGastoRow(item, i, prefix) {
             placeholder="Descripción"
             value="${escHtml(item.descripcion)}"
             data-i="${i}" data-f="descripcion" data-prefix="${prefix}" />
+        <select class="fr-gasto-select-cat" data-i="${i}" data-f="categoria" data-prefix="${prefix}">
+            ${categoriaOptionsHtml(item.categoria)}
+        </select>
         <input class="fr-gasto-input-monto" type="text" inputmode="numeric"
             placeholder="0"
             value="${item.monto > 0 ? Number(item.monto).toLocaleString('es-CO') : ''}"
@@ -275,15 +288,18 @@ async function saveEntry() {
         facturacionDian     : dian,
         gastos              : gastosItems.map(g => ({
             descripcion : g.descripcion || '',
-            monto       : parseCOP(g.monto)
+            monto       : parseCOP(g.monto),
+            categoria   : g.categoria || GASTO_CATEGORIA_DEFAULT
         })),
         gastosTransfer      : gastosTransferItems.map(g => ({
             descripcion : g.descripcion || '',
-            monto       : parseCOP(g.monto)
+            monto       : parseCOP(g.monto),
+            categoria   : g.categoria || GASTO_CATEGORIA_DEFAULT
         })),
         gastosCajaMayor     : gastosCajaMayorItems.map(g => ({
             descripcion : g.descripcion || '',
-            monto       : parseCOP(g.monto)
+            monto       : parseCOP(g.monto),
+            categoria   : g.categoria || GASTO_CATEGORIA_DEFAULT
         })),
         usuario,
         updatedAt: new Date().toISOString()
@@ -452,9 +468,9 @@ function loadForEdit(dayKey) {
     document.getElementById('fr-efectivo').value      = fmtVal(r.ventasEfectivo);
     document.getElementById('fr-caja').value          = fmtVal(r.efectivoEnCaja);
     document.getElementById('fr-dian').value          = fmtVal(r.facturacionDian);
-    gastosItems          = (r.gastos          || []).map(g => ({ ...g }));
-    gastosTransferItems  = (r.gastosTransfer  || []).map(g => ({ ...g }));
-    gastosCajaMayorItems = (r.gastosCajaMayor || []).map(g => ({ ...g }));
+    gastosItems          = (r.gastos          || []).map(g => ({ categoria: GASTO_CATEGORIA_DEFAULT, ...g }));
+    gastosTransferItems  = (r.gastosTransfer  || []).map(g => ({ categoria: GASTO_CATEGORIA_DEFAULT, ...g }));
+    gastosCajaMayorItems = (r.gastosCajaMayor || []).map(g => ({ categoria: GASTO_CATEGORIA_DEFAULT, ...g }));
     editMonthDoc = document.getElementById('fr-month').value;
     editDayKey   = dayKey;
     renderGastos();
@@ -886,7 +902,7 @@ function init() {
 
     // Agregar fila de gasto
     document.getElementById('fr-btn-add-gasto')?.addEventListener('click', () => {
-        gastosItems.push({ descripcion: '', monto: 0 });
+        gastosItems.push({ descripcion: '', monto: 0, categoria: GASTO_CATEGORIA_DEFAULT });
         renderGastos();
     });
 
@@ -927,7 +943,7 @@ function init() {
 
     // Gastos en Transferencias
     document.getElementById('fr-btn-add-gasto-transfer')?.addEventListener('click', () => {
-        gastosTransferItems.push({ descripcion: '', monto: 0 });
+        gastosTransferItems.push({ descripcion: '', monto: 0, categoria: GASTO_CATEGORIA_DEFAULT });
         renderGastosTransfer();
     });
     document.getElementById('fr-gastos-transfer-list')?.addEventListener('input', e => {
@@ -956,7 +972,7 @@ function init() {
 
     // Gastos Caja Mayor
     document.getElementById('fr-btn-add-gasto-cajaMayor')?.addEventListener('click', () => {
-        gastosCajaMayorItems.push({ descripcion: '', monto: 0 });
+        gastosCajaMayorItems.push({ descripcion: '', monto: 0, categoria: GASTO_CATEGORIA_DEFAULT });
         renderGastosCajaMayor();
     });
     document.getElementById('fr-gastos-cajaMayor-list')?.addEventListener('input', e => {

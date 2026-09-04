@@ -106,10 +106,10 @@
     margin: 0;
 }
 
-/* Fila de un gasto: descripción | monto | borrar */
+/* Fila de un gasto: descripción | categoría | monto | borrar */
 .fr-gasto-item {
     display: grid;
-    grid-template-columns: 1fr 150px auto;
+    grid-template-columns: 1fr 160px 150px auto;
     gap: 8px;
     align-items: center;
     background: white;
@@ -119,17 +119,20 @@
 }
 
 .fr-gasto-input-desc,
-.fr-gasto-input-monto {
+.fr-gasto-input-monto,
+.fr-gasto-select-cat {
     padding: 7px 10px;
     border: 1px solid #d0d0d0;
     border-radius: 7px;
     font-size: 13px;
     color: #333;
     width: 100%;
+    background: white;
     transition: border-color 0.2s;
 }
 .fr-gasto-input-desc:focus,
-.fr-gasto-input-monto:focus { outline: none; border-color: #F27127; }
+.fr-gasto-input-monto:focus,
+.fr-gasto-select-cat:focus { outline: none; border-color: #F27127; }
 
 .fr-gasto-delete {
     background: #ff4444;
@@ -351,5 +354,6 @@
     .fr-summary-grid { grid-template-columns: 1fr; }
     .fr-grid-2 { grid-template-columns: 1fr; }
     .fr-gasto-item { grid-template-columns: 1fr auto; }
-    .fr-gasto-input-monto { grid-column: 1; }
+    .fr-gasto-select-cat,
+    .fr-gasto-input-monto { grid-column: 1 / -1; }
 }

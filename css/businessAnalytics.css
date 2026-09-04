@@ -35,7 +35,9 @@
 }
 
 .filter select,
-.filter input[type="date"] {
+.filter input[type="date"],
+.filter input[type="month"],
+.filter input[type="number"] {
     margin-top: 5px;
     padding: 10px;
     border-radius: 8px;
@@ -144,3 +146,72 @@ tbody tr {
     font-weight: 600;
     margin: 0 0 16px;
 }
+
+/* ── Gastos por categoría ──────────────────────────────────────────── */
+.gastos-chart-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.gastos-chart-canvas-wrap {
+    flex: 1 1 260px;
+    max-width: 320px;
+}
+
+.gastos-table {
+    flex: 2 1 320px;
+}
+
+.gastos-total-row {
+    text-align: right;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #eef2f8;
+    font-size: 15px;
+    color: #194073;
+}
+
+.gastos-total-row strong {
+    color: #F27127;
+}
+
+/* ── Resultado del período ───────────────────────────────────────── */
+.resultado-cards {
+    margin-bottom: 16px;
+}
+
+.resultado-pct {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #999;
+}
+
+.card-gasto { border-left-color: #C62828; }
+.card-gasto p { color: #C62828; }
+
+.card-iva { border-left-color: #6a1b9a; }
+.card-iva p { color: #6a1b9a; }
+
+.card-utilidad { border-left-color: #27a69a; }
+.card-utilidad p { color: #27a69a; }
+.card-utilidad.negative p { color: #C62828; }
+
+.resultado-bar {
+    display: flex;
+    height: 26px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #eef2f8;
+}
+
+.resultado-bar-seg {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.resultado-bar-gastos   { background: #C62828; }
+.resultado-bar-iva      { background: #6a1b9a; }
+.resultado-bar-utilidad { background: #27a69a; }
