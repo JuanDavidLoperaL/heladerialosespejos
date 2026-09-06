@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Publicidad</title>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="payroll-header">
+    <h1>📣 Publicidad del Sitio</h1>
+</div>
+
+<div class="fly-container">
+    <div class="fly-card">
+        <h2 class="section-title">🖼️ Flyer Promocional</h2>
+        <p class="field-hint">
+            Esta imagen aparece como ventana emergente a los clientes al entrar a la página principal
+            (una vez por visita), justo después de aceptar los términos y condiciones.
+            Si no subes ninguna imagen, o la desactivas, la página sigue funcionando normal, sin mostrar nada.
+        </p>
+
+        <div class="fly-test-mode-box">
+            <strong>🧪 Modo prueba</strong>
+            <p>
+                Para ver el flyer todas las veces que necesites (sin el límite de una vez por visita),
+                entra a la página principal agregando <code>?flyerTest=1</code> al final del link, así:
+            </p>
+            <p class="fly-test-mode-example">tu-dominio.com/index.html<strong>?flyerTest=1</strong></p>
+            <p>
+                Con ese modo, además, los cambios que hagas aquí (subir, activar/desactivar) se ven de inmediato,
+                sin esperar a la caché. Sin ese parámetro en el link, la página se comporta normal para los clientes:
+                el flyer aparece solo una vez por visita.
+            </p>
+        </div>
+
+        <div class="fly-preview" id="fly-preview-wrap">
+            <img id="fly-preview-img" class="fly-preview-img" src="" alt="Vista previa del flyer" style="display:none;">
+            <p id="fly-preview-empty" class="fly-preview-empty">No hay ningún flyer subido actualmente.</p>
+        </div>
+
+        <div class="fly-specs-box">
+            <strong>📐 Formato y dimensiones ideales</strong>
+            <ul>
+                <li><strong>Formato:</strong> JPG, PNG o WEBP.</li>
+                <li><strong>Proporción:</strong> vertical (retrato), tipo 4:5 o 9:16 — se ve mejor en celular, que es donde la mayoría de tus clientes la van a ver.</li>
+                <li><strong>Tamaño sugerido:</strong> alrededor de 1080 x 1350 px (o 1080 x 1920 px si es más alargada).</li>
+                <li><strong>Peso:</strong> menos de 2MB, para que cargue rápido.</li>
+                <li>Evita poner texto muy pegado a los bordes: la imagen se recorta un poco con esquinas redondeadas.</li>
+            </ul>
+        </div>
+
+        <div class="form-group">
+            <label>Subir / reemplazar imagen</label>
+            <input type="file" id="fly-file-input" accept="image/*">
+            <span class="field-hint">Formatos: JPG, PNG, WEBP. Usa una imagen liviana (menos de 2MB) para que cargue rápido en el celular.</span>
+        </div>
+
+        <div class="fly-toggle-row">
+            <label class="fly-toggle-label">
+                <input type="checkbox" id="fly-active-toggle">
+                Mostrar el flyer a los clientes
+            </label>
+            <span class="field-hint" id="fly-toggle-hint">Puedes desactivarlo temporalmente sin borrar la imagen.</span>
+        </div>
+
+        <div class="fly-actions">
+            <button class="btn-primary" id="fly-btn-upload">⬆️ Subir imagen</button>
+            <button class="btn-secondary" id="fly-btn-remove">🗑️ Quitar flyer</button>
+        </div>
+    </div>
+</div>
+
+<div id="fly-toast" class="fly-toast"></div>
+
+<div id="fly-status-modal" class="fly-status-overlay" style="display:none;">
+    <div class="fly-status-popup">
+        <div class="fly-status-icon" id="fly-status-icon">⏳</div>
+        <p id="fly-status-text">Subiendo imagen...</p>
+        <button class="fly-status-close" id="fly-status-close-btn" style="display:none;">Cerrar</button>
+    </div>
+</div>
+
+</body>
+</html>

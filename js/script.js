@@ -9,6 +9,7 @@ import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic
 import { logError, logWarn, logInfo } from "./logger.js";
 import { todayString, timeString, isValidColombianPhone, showFeedback, isBeforeOpening, isAfterClosing } from "./utils.js";
 import { loadCatalogWithCache, getAdditionsFromCatalog } from "./catalog.js";
+import { loadFlyerConfig } from "./flyer.js";
 import { fetchAddressSuggestions, fetchPlaceDetails } from "./placesAutocomplete.js";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_TIERS_JSON } from "./deliveryFee.js";
 import { openMapPinPicker } from "./mapPinPicker.js";
@@ -129,8 +130,50 @@ document.addEventListener('DOMContentLoaded', function () {
         acceptTermsBtn.addEventListener('click', () => {
             termsModal.style.display = 'none';
             document.body.style.overflow = 'auto';
+            maybeShowFlyer();
         });
+    } else {
+        maybeShowFlyer();
     }
+
+    // =======================
+    // FLYER PROMOCIONAL
+    // =======================
+    // Se muestra una sola vez por sesión (sessionStorage) si hay un flyer
+    // activo configurado en Firebase. Si no hay ninguno, o falla la
+    // consulta, no pasa nada y la página sigue su flujo normal.
+    const FLYER_SESSION_KEY = 'hle_flyer_shown';
+    // Modo prueba: agregando ?flyerTest=1 a la URL, el flyer se muestra en
+    // cada carga (sin límite de una vez por sesión) y sin caché, para poder
+    // probar cambios hechos desde el dashboard al instante. No afecta a los
+    // clientes normales, que nunca visitan la página con ese parámetro.
+    const flyerTestMode = new URLSearchParams(window.location.search).has('flyerTest');
+
+    async function maybeShowFlyer() {
+        try {
+            if (!flyerTestMode && sessionStorage.getItem(FLYER_SESSION_KEY)) return;
+
+            const { activo, imageUrl } = await loadFlyerConfig(flyerTestMode);
+            if (!activo || !imageUrl) return;
+
+            const flyerOverlay = document.getElementById('flyer-modal');
+            const flyerImage   = document.getElementById('flyer-image');
+            if (!flyerOverlay || !flyerImage) return;
+
+            flyerImage.src = imageUrl;
+            flyerOverlay.style.display = 'flex';
+            if (!flyerTestMode) sessionStorage.setItem(FLYER_SESSION_KEY, '1');
+        } catch (error) {
+            logWarn("maybeShowFlyer", "No se pudo mostrar el flyer", { error: error?.message });
+        }
+    }
+
+    function hideFlyer() {
+        const flyerOverlay = document.getElementById('flyer-modal');
+        if (flyerOverlay) flyerOverlay.style.display = 'none';
+    }
+    document.getElementById('flyer-close-btn')?.addEventListener('click', hideFlyer);
+    document.getElementById('flyer-close-btn-bottom')?.addEventListener('click', hideFlyer);
     const carouselItems = document.querySelectorAll('.carousel-item');
     const categoryInfo = document.getElementById('category-info');
     const prevBtn = document.querySelector('.prev');

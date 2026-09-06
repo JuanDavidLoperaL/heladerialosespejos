@@ -703,6 +703,72 @@ font-weight: bold;
     transition: background 0.2s;
 }
 
+/* ── Flyer promocional (popup, se muestra tras aceptar términos) ────────── */
+.flyer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10500;
+    padding: 20px;
+}
+
+.flyer-modal {
+    position: relative;
+    max-width: 480px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+.flyer-image {
+    max-width: 100%;
+    max-height: 75vh;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    display: block;
+}
+
+.flyer-close-bottom {
+    background: #f97316;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 13px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s;
+}
+
+.flyer-close-bottom:hover { background: #d4601f; }
+
+.flyer-close {
+    position: absolute;
+    top: -14px;
+    right: -14px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #fff;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    color: #333;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flyer-close:hover { background: #f2f2f2; }
+
 .min-order-back-btn:hover {
     background: #ea6c0a;
 }

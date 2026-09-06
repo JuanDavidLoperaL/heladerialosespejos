@@ -7,7 +7,7 @@ const CACHE_TTL     = 24 * 60 * 60 * 1000; // 24 horas — revisar versión desp
 
 // ── Orden de categorías en el carrusel ───────────────────────────────────────
 const CATEGORY_ORDER = [
-    'sunday', 'fresas_con_crema', 'ensaladas', 'salpicones',
+    'de_temporada', 'sunday', 'fresas_con_crema', 'ensaladas', 'salpicones',
     'especialidades', 'bananas', 'cereales', 'brownie',
     'bebidas', 'helado', 'adiciones'
 ];
