@@ -14,6 +14,7 @@ const btnCompletedOrders     = document.getElementById('btn-completed-orders');
 const btnFinancialReporting  = document.getElementById('btn-financial-reporting');
 const btnInProcessOrders     = document.getElementById('btn-in-process-orders');
 const btnReglamento          = document.getElementById('btn-reglamento');
+const btnFlyer               = document.getElementById('btn-flyer');
 
 // ── Roles de usuario (cargados desde Firebase config/userRoles) ───────────────
 let userConfigCache = [];   // array de { email, role, defaultPunto }
@@ -38,11 +39,12 @@ function getRole(email) {
 
 // Páginas bloqueadas por rol (admin = sin restricciones)
 // reporter: accede a financialReporting pero sin ver el resumen del mes (lo controla financialReporting.js)
+// flyer: solo admin gestiona la publicidad del sitio
 const RESTRICTED_PAGES = {
     admin:    [],
-    manager:  ["analiticas", "payrollManagement"],
-    reporter: ["analiticas", "payrollManagement"],
-    default:  ["analiticas", "payrollManagement", "financialReporting"],
+    manager:  ["analiticas", "payrollManagement", "flyer"],
+    reporter: ["analiticas", "payrollManagement", "flyer"],
+    default:  ["analiticas", "payrollManagement", "financialReporting", "flyer"],
 };
 
 // Roles de lista blanca: solo pueden acceder a las páginas explícitamente listadas aquí.
@@ -66,7 +68,8 @@ const pages = {
     completedOrders    : { html: 'completed-orders.html',    js: 'js/completed-orders.js'    },
     financialReporting : { html: 'financialReporting.html',  js: 'js/financialReporting.js'  },
     inProcessOrders    : { html: 'in-process-orders.html',    js: 'js/in-process-orders.js'   },
-    reglamento         : { html: 'reglamentoInterno.html',    js: 'js/reglamentoInterno.js'   }
+    reglamento         : { html: 'reglamentoInterno.html',    js: 'js/reglamentoInterno.js'   },
+    flyer              : { html: 'flyerManagement.html',      js: 'js/flyerManagement.js'     }
 };
 
 let currentScript = null;
@@ -143,6 +146,7 @@ const PAGE_BUTTONS = {
     financialReporting: btnFinancialReporting,
     howtodoit:          btnHowToDoIt,
     reglamento:         btnReglamento,
+    flyer:              btnFlyer,
 };
 
 function configureMenuByRole(role) {
@@ -191,6 +195,11 @@ btnFinancialReporting.addEventListener('click', () => {
 btnReglamento.addEventListener('click', () => {
     loadPage('reglamento');
     setActive(btnReglamento);
+});
+
+btnFlyer.addEventListener('click', () => {
+    loadPage('flyer');
+    setActive(btnFlyer);
 });
 
 logoutBtn.addEventListener('click', async () => {
