@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analíticas</title>
-    <link rel="stylesheet" href="css/businessAnalytics.css?v=1.1.23">
+    <link rel="stylesheet" href="css/businessAnalytics.css?v=1.1.25">
 </head>
 <body>
 
@@ -183,6 +183,67 @@
                     <div class="gastos-total-row">
                         Total Gastos: <strong id="gastos-total-val">$0</strong>
                     </div>
+                </div>
+            </div>
+
+            <!-- ── Productos más vendidos (solo pedidos completados de Domicilio) ── -->
+            <div class="chart-wrapper">
+                <h3 class="chart-label" id="productos-label">Productos más vendidos</h3>
+                <div id="productos-loading" class="chart-loading">Cargando productos...</div>
+                <div id="productos-no-data" class="chart-no-data" style="display:none;">
+                    Sin pedidos completados para este período.
+                </div>
+                <div id="productos-content" style="display:none;">
+                    <div class="productos-chart-wrap" id="productos-chart-wrap">
+                        <canvas id="productosChart"></canvas>
+                    </div>
+                    <div class="productos-table-wrap">
+                        <table class="productos-table">
+                            <thead>
+                                <tr><th>#</th><th>Producto</th><th>Veces vendido</th><th>%</th></tr>
+                            </thead>
+                            <tbody id="productos-tbody"></tbody>
+                        </table>
+                    </div>
+                    <div class="gastos-total-row">
+                        Total unidades vendidas: <strong id="productos-total-val">0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Productos sin ventas / menos vendidos (catálogo activo vs. completados) ── -->
+            <div class="chart-wrapper">
+                <h3 class="chart-label" id="sin-ventas-label">Productos sin ventas y menos vendidos</h3>
+                <div id="sin-ventas-loading" class="chart-loading">Cargando productos...</div>
+                <div id="sin-ventas-no-data" class="chart-no-data" style="display:none;"></div>
+                <div id="sin-ventas-content" style="display:none;">
+                    <h4 class="productos-sublabel">Sin ventas en el período (<span id="sin-ventas-count">0</span>)</h4>
+                    <p id="sin-ventas-empty" class="productos-empty" style="display:none;">
+                        Todos los productos activos se vendieron al menos una vez. 🎉
+                    </p>
+                    <div class="productos-table-wrap">
+                        <table class="productos-table productos-table-plain" id="sin-ventas-table">
+                            <thead>
+                                <tr><th>Producto</th><th>Categoría</th><th>Precio</th></tr>
+                            </thead>
+                            <tbody id="sin-ventas-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <h4 class="productos-sublabel">Menos vendidos</h4>
+                    <div class="productos-table-wrap">
+                        <table class="productos-table productos-table-plain">
+                            <thead>
+                                <tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Veces vendido</th></tr>
+                            </thead>
+                            <tbody id="menos-vendidos-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <p class="productos-note">
+                        Solo se cuentan productos activos del catálogo (sin Adiciones) y pedidos de Domicilio.
+                        Antes de sacar un producto, confirma cómo se vende en el Punto Principal y si es nuevo o le cambiaste el nombre.
+                    </p>
                 </div>
             </div>
         </div>

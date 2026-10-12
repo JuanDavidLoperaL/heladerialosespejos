@@ -215,3 +215,56 @@ tbody tr {
 .resultado-bar-gastos   { background: #C62828; }
 .resultado-bar-iva      { background: #6a1b9a; }
 .resultado-bar-utilidad { background: #27a69a; }
+/* ── Productos más vendidos ──────────────────────────────────────── */
+.productos-chart-wrap {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.productos-table-wrap {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.productos-table {
+    width: 100%;
+}
+
+.productos-table td:first-child,
+.productos-table th:first-child {
+    width: 40px;
+    color: #999;
+}
+
+/* La primera columna "#" en gris solo aplica a la tabla de más vendidos. */
+.productos-table-plain td:first-child,
+.productos-table-plain th:first-child {
+    width: auto;
+    color: inherit;
+}
+
+.productos-sublabel {
+    color: #194073;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 16px 0 8px;
+}
+
+.productos-sublabel:first-child {
+    margin-top: 0;
+}
+
+.productos-empty {
+    color: #27a69a;
+    font-size: 14px;
+    margin: 0 0 8px;
+}
+
+.productos-note {
+    margin: 16px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid #eef2f8;
+    font-size: 12px;
+    color: #999;
+}

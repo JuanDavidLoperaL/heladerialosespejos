@@ -403,6 +403,226 @@ function renderGastosSection(totals, grandTotal) {
     });
 }
 
+// ── Productos más vendidos ────────────────────────────────────────────────────
+// Solo cuentan pedidos en productOrder/completed/{fecha}: antes de entregarse, el cliente (o un
+// trabajador por orden del cliente) puede cancelarlo, y los cancelados viven en "cancelled".
+// Solo Domicilio tiene pedidos registrados producto por producto — Principal nunca los digita.
+// Se cuenta la "quantity" de cada línea (un mismo producto pedido varias veces suma varias
+// unidades). Las adiciones dentro de un producto no cuentan; pedidas solas sí, son un producto.
+const PRODUCTOS_TOP_N = 10;
+let productosChartInstance = null;
+let productosRequestId     = 0;
+const completedDayCache    = new Map(); // "YYYY-MM-DD" -> [{ name, quantity }]
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// Los Sunday se guardan como "Sunday (Fresa)" con el sabor también en "flavor" — se agrupan
+// por producto del menú quitando ese sufijo (si no eligieron sabor queda "Sunday ()").
+function baseProductName(item) {
+    const title  = (item.productTitle || "").trim();
+    const flavor = (item.flavor || "").trim();
+    const suffix = ` (${flavor})`;
+    return title.endsWith(suffix) ? title.slice(0, -suffix.length).trim() : title;
+}
+
+function datesBetween(start, end) {
+    const dates = [];
+    const cur  = new Date(start + "T00:00:00");
+    const last = new Date(end   + "T00:00:00");
+    while (cur <= last) {
+        dates.push(toDateStr(cur));
+        cur.setDate(cur.getDate() + 1);
+    }
+    return dates;
+}
+
+async function fetchCompletedItemsForDay(dateStr) {
+    if (completedDayCache.has(dateStr)) return completedDayCache.get(dateStr);
+    const snap  = await getDocs(collection(db, "productOrder", "completed", dateStr));
+    const items = [];
+    snap.forEach(docSnap => {
+        const lines = docSnap.data().order;
+        if (!Array.isArray(lines)) return;
+        lines.forEach(line => {
+            const name = baseProductName(line);
+            if (name) items.push({ name, quantity: Number(line.quantity) || 1 });
+        });
+    });
+    // Hoy todavía pueden entrar pedidos completados — no se cachea.
+    if (dateStr !== todayString()) completedDayCache.set(dateStr, items);
+    return items;
+}
+
+// Una colección por día: se consultan en tandas para no disparar ~365 lecturas a la vez en "Año".
+async function aggregateProductos(start, end) {
+    const today = todayString();
+    const dates = datesBetween(start, end).filter(d => d <= today);
+    const counts = {};
+    const CHUNK = 31;
+    for (let i = 0; i < dates.length; i += CHUNK) {
+        const days = await Promise.all(dates.slice(i, i + CHUNK).map(fetchCompletedItemsForDay));
+        days.flat().forEach(({ name, quantity }) => {
+            counts[name] = (counts[name] || 0) + quantity;
+        });
+    }
+    return counts;
+}
+
+// Catálogo actual (productCategories/categories) para cruzarlo con lo vendido y encontrar los
+// productos que no se venden. Se lee directo de Firestore (1 lectura por carga de la página) en
+// vez del caché de 24h del sitio, para que un producto recién agregado o apagado se refleje ya.
+let catalogProductsPromise = null;
+
+function fetchCatalogProducts() {
+    if (!catalogProductsPromise) {
+        catalogProductsPromise = getDoc(doc(db, "productCategories", "categories"))
+            .then(snap => {
+                const products = [];
+                (snap.exists() ? snap.data().products || [] : []).forEach(cat => {
+                    // Las adiciones casi siempre van dentro de otro producto (no cuentan), así
+                    // que saldrían "sin ventas" aunque sí se vendan. Lo inactivo no se puede pedir.
+                    if (cat.active === false || (cat.title || "").trim().toLowerCase() === "adiciones") return;
+                    (cat.items || []).forEach(item => {
+                        if (item.active === false || !item.name) return;
+                        products.push({ name: item.name.trim(), categoria: cat.title, price: item.price || 0 });
+                    });
+                });
+                return products;
+            })
+            .catch(err => { catalogProductsPromise = null; throw err; });
+    }
+    return catalogProductsPromise;
+}
+
+// Los dos bloques (más vendidos / sin ventas) comparten carga, filtro de punto y mensajes.
+const PRODUCTOS_BLOCKS = ["productos", "sin-ventas"];
+
+function setProductosBlocksState(state, message = "") {
+    PRODUCTOS_BLOCKS.forEach(prefix => {
+        document.getElementById(`${prefix}-loading`).style.display = state === "loading" ? "block" : "none";
+        document.getElementById(`${prefix}-content`).style.display = state === "content" ? "block" : "none";
+        const noDataEl = document.getElementById(`${prefix}-no-data`);
+        noDataEl.style.display = state === "message" ? "block" : "none";
+        if (state === "message") noDataEl.textContent = message;
+    });
+}
+
+function renderSinVentasSection(counts, catalogProducts) {
+    const fmtPrice = p => `$${Number(p).toLocaleString("es-CO")}`;
+
+    const sinVentas = catalogProducts.filter(p => !counts[p.name]);
+    const sinVentasBody = document.getElementById("sin-ventas-tbody");
+    document.getElementById("sin-ventas-count").textContent = sinVentas.length;
+    document.getElementById("sin-ventas-table").style.display = sinVentas.length ? "" : "none";
+    document.getElementById("sin-ventas-empty").style.display = sinVentas.length ? "none" : "block";
+    sinVentasBody.innerHTML = sinVentas
+        .map(p => `<tr>
+            <td>${escapeHtml(p.name)}</td>
+            <td>${escapeHtml(p.categoria)}</td>
+            <td>${fmtPrice(p.price)}</td>
+        </tr>`)
+        .join("");
+
+    const menosVendidos = catalogProducts
+        .filter(p => counts[p.name] > 0)
+        .sort((a, b) => counts[a.name] - counts[b.name] || a.name.localeCompare(b.name))
+        .slice(0, PRODUCTOS_TOP_N);
+    document.getElementById("menos-vendidos-tbody").innerHTML = menosVendidos
+        .map(p => `<tr>
+            <td>${escapeHtml(p.name)}</td>
+            <td>${escapeHtml(p.categoria)}</td>
+            <td>${fmtPrice(p.price)}</td>
+            <td>${counts[p.name].toLocaleString()}</td>
+        </tr>`)
+        .join("");
+}
+
+async function renderProductosSection(punto, start, end) {
+    const requestId = ++productosRequestId;
+    const suffix = punto === "all" ? " (Domicilio)" : "";
+
+    document.getElementById("productos-label").textContent  = `Productos más vendidos${suffix}`;
+    document.getElementById("sin-ventas-label").textContent = `Productos sin ventas y menos vendidos${suffix}`;
+    setProductosBlocksState("loading");
+
+    if (punto === "principal") {
+        setProductosBlocksState("message", "Los productos vendidos solo se registran para pedidos de Domicilio.");
+        return;
+    }
+
+    let counts, catalogProducts;
+    try {
+        [counts, catalogProducts] = await Promise.all([aggregateProductos(start, end), fetchCatalogProducts()]);
+    } catch (err) {
+        console.error("Error cargando productos más vendidos:", err);
+        if (requestId !== productosRequestId) return;
+        setProductosBlocksState("message", "No se pudieron cargar los productos. Intenta de nuevo.");
+        return;
+    }
+    // El usuario cambió el filtro mientras cargaba: este resultado ya no aplica.
+    if (requestId !== productosRequestId) return;
+
+    const ranking = Object.entries(counts).sort(([an, a], [bn, b]) => b - a || an.localeCompare(bn));
+    const totalUnits = ranking.reduce((s, [, n]) => s + n, 0);
+
+    // Sin ningún pedido completado, todo el catálogo saldría "sin ventas" — no aporta nada.
+    if (totalUnits === 0) {
+        setProductosBlocksState("message", "Sin pedidos completados para este período.");
+        return;
+    }
+    setProductosBlocksState("content");
+    renderSinVentasSection(counts, catalogProducts);
+
+    document.getElementById("productos-total-val").textContent = totalUnits.toLocaleString();
+    document.getElementById("productos-tbody").innerHTML = ranking
+        .map(([name, n], i) => `<tr>
+            <td>${i + 1}</td>
+            <td>${escapeHtml(name)}</td>
+            <td>${n.toLocaleString()}</td>
+            <td>${(n / totalUnits * 100).toFixed(1)}%</td>
+        </tr>`)
+        .join("");
+
+    const top = ranking.slice(0, PRODUCTOS_TOP_N);
+    // Alto fijo por barra para que los nombres no se apiñen con muchos productos.
+    document.getElementById("productos-chart-wrap").style.height = `${top.length * 34 + 40}px`;
+
+    if (productosChartInstance) productosChartInstance.destroy();
+    productosChartInstance = new Chart(document.getElementById("productosChart"), {
+        type: "bar",
+        data: {
+            labels: top.map(([name]) => name),
+            datasets: [{
+                label: "Veces vendido",
+                data: top.map(([, n]) => n),
+                backgroundColor: "rgba(242, 113, 39, 0.8)",
+                borderColor: "#F27127",
+                borderWidth: 2,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => `${ctx.parsed.x.toLocaleString()} vendidos (${(ctx.parsed.x / totalUnits * 100).toFixed(1)}%)`
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { precision: 0 }, grid: { color: "#f0f0f0" } },
+                y: { grid: { display: false } }
+            }
+        }
+    });
+}
+
 // ── Resultado del período (Ventas − Gastos − IVA = Utilidad neta) ───────────────
 // Misma fórmula que "Total (STG - GT - GCM)" en financialReporting: Gastos aquí ya
 // incluye gastos + gastosTransfer + gastosCajaMayor (GT y GCM son solo gastos que
@@ -471,6 +691,8 @@ async function renderCharts() {
 
     renderGastosSection(gastosPorCategoria, gastosGrandTotal);
     renderResultadoSection(ventasTotal, gastosGrandTotal, ivaTotal);
+    // Sin await: en "Año" son muchas lecturas y no deben frenar los gráficos de ventas.
+    renderProductosSection(punto, start, end);
 
     chartLoading.style.display = "none";
 
