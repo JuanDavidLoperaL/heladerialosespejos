@@ -215,3 +215,24 @@ tbody tr {
 .resultado-bar-gastos   { background: #C62828; }
 .resultado-bar-iva      { background: #6a1b9a; }
 .resultado-bar-utilidad { background: #27a69a; }
+/* ── Productos más vendidos ──────────────────────────────────────── */
+.productos-chart-wrap {
+    position: relative;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.productos-table-wrap {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.productos-table {
+    width: 100%;
+}
+
+.productos-table td:first-child,
+.productos-table th:first-child {
+    width: 40px;
+    color: #999;
+}

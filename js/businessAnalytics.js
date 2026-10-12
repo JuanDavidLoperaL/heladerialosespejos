@@ -403,6 +403,166 @@ function renderGastosSection(totals, grandTotal) {
     });
 }
 
+// ── Productos más vendidos ────────────────────────────────────────────────────
+// Solo cuentan pedidos en productOrder/completed/{fecha}: antes de entregarse, el cliente (o un
+// trabajador por orden del cliente) puede cancelarlo, y los cancelados viven en "cancelled".
+// Solo Domicilio tiene pedidos registrados producto por producto — Principal nunca los digita.
+// Se cuenta la "quantity" de cada línea (un mismo producto pedido varias veces suma varias
+// unidades). Las adiciones dentro de un producto no cuentan; pedidas solas sí, son un producto.
+const PRODUCTOS_TOP_N = 10;
+let productosChartInstance = null;
+let productosRequestId     = 0;
+const completedDayCache    = new Map(); // "YYYY-MM-DD" -> [{ name, quantity }]
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// Los Sunday se guardan como "Sunday (Fresa)" con el sabor también en "flavor" — se agrupan
+// por producto del menú quitando ese sufijo.
+function baseProductName(item) {
+    const title  = (item.productTitle || "").trim();
+    const flavor = (item.flavor || "").trim();
+    const suffix = ` (${flavor})`;
+    return flavor && title.endsWith(suffix) ? title.slice(0, -suffix.length) : title;
+}
+
+function datesBetween(start, end) {
+    const dates = [];
+    const cur  = new Date(start + "T00:00:00");
+    const last = new Date(end   + "T00:00:00");
+    while (cur <= last) {
+        dates.push(toDateStr(cur));
+        cur.setDate(cur.getDate() + 1);
+    }
+    return dates;
+}
+
+async function fetchCompletedItemsForDay(dateStr) {
+    if (completedDayCache.has(dateStr)) return completedDayCache.get(dateStr);
+    const snap  = await getDocs(collection(db, "productOrder", "completed", dateStr));
+    const items = [];
+    snap.forEach(docSnap => {
+        const lines = docSnap.data().order;
+        if (!Array.isArray(lines)) return;
+        lines.forEach(line => {
+            const name = baseProductName(line);
+            if (name) items.push({ name, quantity: Number(line.quantity) || 1 });
+        });
+    });
+    // Hoy todavía pueden entrar pedidos completados — no se cachea.
+    if (dateStr !== todayString()) completedDayCache.set(dateStr, items);
+    return items;
+}
+
+// Una colección por día: se consultan en tandas para no disparar ~365 lecturas a la vez en "Año".
+async function aggregateProductos(start, end) {
+    const today = todayString();
+    const dates = datesBetween(start, end).filter(d => d <= today);
+    const counts = {};
+    const CHUNK = 31;
+    for (let i = 0; i < dates.length; i += CHUNK) {
+        const days = await Promise.all(dates.slice(i, i + CHUNK).map(fetchCompletedItemsForDay));
+        days.flat().forEach(({ name, quantity }) => {
+            counts[name] = (counts[name] || 0) + quantity;
+        });
+    }
+    return counts;
+}
+
+async function renderProductosSection(punto, start, end) {
+    const requestId = ++productosRequestId;
+    const loadingEl = document.getElementById("productos-loading");
+    const noDataEl  = document.getElementById("productos-no-data");
+    const contentEl = document.getElementById("productos-content");
+
+    document.getElementById("productos-label").textContent = punto === "all"
+        ? "Productos más vendidos (Domicilio)"
+        : "Productos más vendidos";
+    loadingEl.style.display = "block";
+    noDataEl.style.display  = "none";
+    contentEl.style.display = "none";
+
+    if (punto === "principal") {
+        loadingEl.style.display = "none";
+        noDataEl.textContent    = "Los productos vendidos solo se registran para pedidos de Domicilio.";
+        noDataEl.style.display  = "block";
+        return;
+    }
+
+    let counts;
+    try {
+        counts = await aggregateProductos(start, end);
+    } catch (err) {
+        console.error("Error cargando productos más vendidos:", err);
+        if (requestId !== productosRequestId) return;
+        loadingEl.style.display = "none";
+        noDataEl.textContent    = "No se pudieron cargar los productos. Intenta de nuevo.";
+        noDataEl.style.display  = "block";
+        return;
+    }
+    // El usuario cambió el filtro mientras cargaba: este resultado ya no aplica.
+    if (requestId !== productosRequestId) return;
+    loadingEl.style.display = "none";
+
+    const ranking = Object.entries(counts).sort(([an, a], [bn, b]) => b - a || an.localeCompare(bn));
+    const totalUnits = ranking.reduce((s, [, n]) => s + n, 0);
+
+    if (totalUnits === 0) {
+        noDataEl.textContent   = "Sin pedidos completados para este período.";
+        noDataEl.style.display = "block";
+        return;
+    }
+    contentEl.style.display = "block";
+
+    document.getElementById("productos-total-val").textContent = totalUnits.toLocaleString();
+    document.getElementById("productos-tbody").innerHTML = ranking
+        .map(([name, n], i) => `<tr>
+            <td>${i + 1}</td>
+            <td>${escapeHtml(name)}</td>
+            <td>${n.toLocaleString()}</td>
+            <td>${(n / totalUnits * 100).toFixed(1)}%</td>
+        </tr>`)
+        .join("");
+
+    const top = ranking.slice(0, PRODUCTOS_TOP_N);
+    // Alto fijo por barra para que los nombres no se apiñen con muchos productos.
+    document.getElementById("productos-chart-wrap").style.height = `${top.length * 34 + 40}px`;
+
+    if (productosChartInstance) productosChartInstance.destroy();
+    productosChartInstance = new Chart(document.getElementById("productosChart"), {
+        type: "bar",
+        data: {
+            labels: top.map(([name]) => name),
+            datasets: [{
+                label: "Veces vendido",
+                data: top.map(([, n]) => n),
+                backgroundColor: "rgba(242, 113, 39, 0.8)",
+                borderColor: "#F27127",
+                borderWidth: 2,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => `${ctx.parsed.x.toLocaleString()} vendidos (${(ctx.parsed.x / totalUnits * 100).toFixed(1)}%)`
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { precision: 0 }, grid: { color: "#f0f0f0" } },
+                y: { grid: { display: false } }
+            }
+        }
+    });
+}
+
 // ── Resultado del período (Ventas − Gastos − IVA = Utilidad neta) ───────────────
 // Misma fórmula que "Total (STG - GT - GCM)" en financialReporting: Gastos aquí ya
 // incluye gastos + gastosTransfer + gastosCajaMayor (GT y GCM son solo gastos que
@@ -471,6 +631,8 @@ async function renderCharts() {
 
     renderGastosSection(gastosPorCategoria, gastosGrandTotal);
     renderResultadoSection(ventasTotal, gastosGrandTotal, ivaTotal);
+    // Sin await: en "Año" son muchas lecturas y no deben frenar los gráficos de ventas.
+    renderProductosSection(punto, start, end);
 
     chartLoading.style.display = "none";
 
