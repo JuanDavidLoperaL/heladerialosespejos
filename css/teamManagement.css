@@ -1,0 +1,251 @@
+/* =============================================
+   TEAM MANAGEMENT CSS
+   Paleta: #194073 azul | #F27127 naranja
+   ============================================= */
+
+.team-container {
+    padding: 20px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.team-card {
+    background: white;
+    border-radius: 12px;
+    padding: 22px 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    border: 1px solid #e8ecf0;
+    max-width: 720px;
+}
+
+.team-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.team-section-title {
+    font-size: 17px;
+    color: #194073;
+    margin-bottom: 8px;
+}
+
+.team-hint {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 14px;
+}
+
+.team-search-row {
+    display: flex;
+    gap: 10px;
+}
+
+.team-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cfd8e3;
+    border-radius: 8px;
+    font-size: 16px; /* 16px evita el zoom automático de Safari en iPhone */
+    color: #194073;
+    background: white;
+}
+
+.team-input:focus {
+    outline: none;
+    border-color: #F27127;
+}
+
+.team-search-results {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.team-staff-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.team-member {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid #e8ecf0;
+    border-radius: 10px;
+    background: #fafbfc;
+}
+
+.team-result-new {
+    border-style: dashed;
+    border-color: #F27127;
+    background: #fff8f3;
+}
+
+.team-member-info {
+    min-width: 0; /* permite cortar correos largos */
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.team-member-name {
+    font-weight: bold;
+    color: #194073;
+    font-size: 14px;
+}
+
+.team-member-email {
+    font-size: 13px;
+    color: #444;
+    overflow-wrap: anywhere;
+}
+
+.team-member-action {
+    flex-shrink: 0;
+}
+
+.team-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.team-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #eef1f5;
+    color: #194073;
+    white-space: nowrap;
+}
+
+.team-badge-employee     { background: #e3f2e6; color: #1e6b2f; }
+.team-badge-customer     { background: #eef1f5; color: #555; }
+.team-badge-pending      { background: #fff3cd; color: #8a6100; }
+.team-badge-web-admin    { background: #194073; color: white; }
+.team-badge-web-none     { background: #f5e1e1; color: #8b2b2b; }
+
+.team-muted {
+    color: #999;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.team-empty {
+    font-size: 13px;
+    color: #888;
+}
+
+.team-error {
+    font-size: 13px;
+    color: #c0392b;
+    margin-top: 8px;
+}
+
+.team-lock {
+    font-size: 18px;
+    padding: 0 8px;
+}
+
+.team-link-btn {
+    background: none;
+    border: none;
+    color: #194073;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 10px;
+}
+
+.team-link-btn:hover { color: #F27127; }
+
+/* ── Modal ── */
+.team-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 2000;
+}
+
+.team-modal {
+    background: white;
+    border-radius: 14px;
+    padding: 22px 24px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.team-modal-email {
+    font-size: 14px;
+    color: #444;
+    overflow-wrap: anywhere;
+    margin-bottom: 8px;
+}
+
+.team-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #194073;
+    margin: 10px 0 6px;
+}
+
+.team-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+/* ── Toast ── */
+.team-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #194073;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 2100;
+}
+
+.team-toast.team-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.team-toast.team-error { background: #c0392b; color: white; margin-top: 0; }
+
+/* ── Celular ── */
+@media (max-width: 600px) {
+    .team-container { padding: 14px 12px; }
+    .team-card { padding: 16px; }
+    .team-search-row { flex-direction: column; }
+    .team-member { flex-direction: column; align-items: stretch; }
+    .team-member-action { display: flex; justify-content: flex-end; }
+}

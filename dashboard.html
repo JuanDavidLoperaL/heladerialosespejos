@@ -4,18 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Los Espejos Heladería - Dashboard</title>
-    <link rel="stylesheet" href="css/dashboard.css?v=1.1.25">
-    <link rel="stylesheet" href="css/productOrder.css?v=1.1.25">
-    <link rel="stylesheet" href="css/businessAnalytics.css?v=1.1.25">
-    <link rel="stylesheet" href="css/howToDoIt.css?v=1.1.25">
-    <link rel="stylesheet" href="css/payrollManagement.css?v=1.1.25">
-    <link rel="stylesheet" href="css/completed-orders.css?v=1.1.25">
-    <link rel="stylesheet" href="css/financialReporting.css?v=1.1.25">
-    <link rel="stylesheet" href="css/in-process-orders.css?v=1.1.25">
-    <link rel="stylesheet" href="css/reglamentoInterno.css?v=1.1.25">
-    <link rel="stylesheet" href="css/flyerManagement.css?v=1.1.25">
+    <link rel="stylesheet" href="css/dashboard.css?v=1.1.26">
+    <link rel="stylesheet" href="css/productOrder.css?v=1.1.26">
+    <link rel="stylesheet" href="css/businessAnalytics.css?v=1.1.26">
+    <link rel="stylesheet" href="css/howToDoIt.css?v=1.1.26">
+    <link rel="stylesheet" href="css/payrollManagement.css?v=1.1.26">
+    <link rel="stylesheet" href="css/completed-orders.css?v=1.1.26">
+    <link rel="stylesheet" href="css/financialReporting.css?v=1.1.26">
+    <link rel="stylesheet" href="css/in-process-orders.css?v=1.1.26">
+    <link rel="stylesheet" href="css/reglamentoInterno.css?v=1.1.26">
+    <link rel="stylesheet" href="css/flyerManagement.css?v=1.1.26">
+    <link rel="stylesheet" href="css/teamManagement.css?v=1.1.26">
 </head>
-<body>
+<body style="visibility: hidden;"><!-- dashboard.js lo muestra tras validar acceso -->
 
     <button id="toggle-sidebar" class="toggle-btn">☰</button>
     <nav class="sidebar">
@@ -67,6 +68,11 @@
                         📣 Publicidad
                     </button>
                 </li>
+                <li>
+                    <button class="menu-btn" id="btn-equipo" style="display: none;">
+                        👥 Equipo
+                    </button>
+                </li>
             </ul>
         </div>
         <div class="sidebar-bottom">
@@ -80,10 +86,10 @@
         <div id="content-frame"></div>
     </main>
 
-    <script src="js/qz-tray.js?v=1.1.25"></script>
+    <script src="js/qz-tray.js?v=1.1.26"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script type="module" src="js/dashboard.js?v=1.1.25"></script>
+    <script type="module" src="js/dashboard.js?v=1.1.26"></script>
 </body>
 </body>
 </html>

@@ -15,6 +15,7 @@ const btnFinancialReporting  = document.getElementById('btn-financial-reporting'
 const btnInProcessOrders     = document.getElementById('btn-in-process-orders');
 const btnReglamento          = document.getElementById('btn-reglamento');
 const btnFlyer               = document.getElementById('btn-flyer');
+const btnEquipo              = document.getElementById('btn-equipo');
 
 // ── Roles de usuario (cargados desde Firebase config/userRoles) ───────────────
 let userConfigCache = [];   // array de { email, role, defaultPunto }
@@ -30,7 +31,8 @@ async function loadUserConfig() {
 }
 
 function getUserEntry(email) {
-    return userConfigCache.find(u => u.email === email);
+    const normalized = email?.trim().toLowerCase();
+    return userConfigCache.find(u => u.email?.trim().toLowerCase() === normalized);
 }
 
 function getRole(email) {
@@ -53,7 +55,13 @@ const ALLOWED_PAGES = {
     basic: ["howtodoit", "reglamento"],
 };
 
+// Páginas exclusivas de admin, sin importar qué roles se agreguen en el futuro.
+const ADMIN_ONLY_PAGES = ["equipo"];
+
 function canAccess(role, page) {
+    if (ADMIN_ONLY_PAGES.includes(page)) {
+        return role === 'admin';
+    }
     if (ALLOWED_PAGES[role]) {
         return ALLOWED_PAGES[role].includes(page);
     }
@@ -69,7 +77,8 @@ const pages = {
     financialReporting : { html: 'financialReporting.html',  js: 'js/financialReporting.js'  },
     inProcessOrders    : { html: 'in-process-orders.html',    js: 'js/in-process-orders.js'   },
     reglamento         : { html: 'reglamentoInterno.html',    js: 'js/reglamentoInterno.js'   },
-    flyer              : { html: 'flyerManagement.html',      js: 'js/flyerManagement.js'     }
+    flyer              : { html: 'flyerManagement.html',      js: 'js/flyerManagement.js'     },
+    equipo             : { html: 'teamManagement.html',       js: 'js/teamManagement.js'      }
 };
 
 let currentScript = null;
@@ -124,7 +133,16 @@ onAuthStateChanged(auth, async (user) => {
     await loadUserConfig();
 
     const entry = getUserEntry(user.email);
-    const role  = entry?.role ?? 'default';
+
+    // Sin entrada en config/userRoles (o con rol "none") no hay acceso al panel.
+    if (!entry || entry.role === 'none') {
+        await signOut(auth);
+        window.location.href = 'login.html?noAccess=1';
+        return;
+    }
+
+    const role  = entry.role ?? 'default';
+    document.body.style.visibility = 'visible';
 
     window.currentUserRole         = role;          // disponible para los módulos cargados dinámicamente
     window.currentUserDefaultPunto = entry?.defaultPunto ?? 'principal';
@@ -147,6 +165,7 @@ const PAGE_BUTTONS = {
     howtodoit:          btnHowToDoIt,
     reglamento:         btnReglamento,
     flyer:              btnFlyer,
+    equipo:             btnEquipo,
 };
 
 function configureMenuByRole(role) {
@@ -202,6 +221,11 @@ btnFlyer.addEventListener('click', () => {
     setActive(btnFlyer);
 });
 
+btnEquipo.addEventListener('click', () => {
+    loadPage('equipo');
+    setActive(btnEquipo);
+});
+
 logoutBtn.addEventListener('click', async () => {
     try {
         await signOut(auth);
@@ -211,6 +235,16 @@ logoutBtn.addEventListener('click', async () => {
     }
 });
 
+// En celular el sidebar es un menú desplegable (ver media query en dashboard.css).
+const mobileQuery = window.matchMedia('(max-width: 768px)');
+
 toggleBtn.addEventListener('click', () => {
-    sidebar.classList.toggle('collapsed');
+    sidebar.classList.toggle(mobileQuery.matches ? 'open' : 'collapsed');
+});
+
+// Al elegir una sección en celular, cerramos el menú para mostrar el contenido.
+document.querySelectorAll('.sidebar .menu-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (mobileQuery.matches) sidebar.classList.remove('open');
+    });
 });

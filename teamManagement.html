@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Equipo</title>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="payroll-header">
+    <h1>👥 Equipo</h1>
+</div>
+
+<div class="team-container">
+
+    <div class="team-card">
+        <h2 class="team-section-title">➕ Agregar o ascender a alguien</h2>
+        <p class="team-hint">
+            Busca por el inicio del correo a un cliente que ya usa la app, o escribe el correo completo
+            de alguien que todavía no la ha descargado: cuando se registre, la app le dará su rol automáticamente.
+        </p>
+        <div class="team-search-row">
+            <input type="email" id="team-search-input" class="team-input"
+                   placeholder="correo@ejemplo.com" autocomplete="off" autocapitalize="none">
+            <button id="team-search-btn" class="btn-secondary">Buscar</button>
+        </div>
+        <div id="team-search-results" class="team-search-results"></div>
+    </div>
+
+    <div class="team-card">
+        <div class="team-card-header">
+            <h2 class="team-section-title">🧑‍🍳 Personal actual</h2>
+            <button id="team-refresh-btn" class="team-link-btn">↻ Actualizar</button>
+        </div>
+        <p class="team-hint">
+            Los administradores 🔒 solo se pueden cambiar desde la consola de Firebase.
+        </p>
+        <div id="team-staff-list" class="team-staff-list">
+            <p class="team-empty">Cargando…</p>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR ROL -->
+<div id="team-modal" class="team-modal-overlay" style="display:none;">
+    <div class="team-modal">
+        <h2 class="team-section-title">Editar acceso</h2>
+        <p id="team-modal-email" class="team-modal-email"></p>
+
+        <label class="team-label" for="team-app-role">📱 En la app</label>
+        <select id="team-app-role" class="team-input">
+            <option value="customer">Cliente</option>
+            <option value="employee">Empleado</option>
+        </select>
+
+        <label class="team-label" for="team-web-role">💻 En este panel web</label>
+        <select id="team-web-role" class="team-input">
+            <option value="none">Sin acceso</option>
+            <option value="basic">Básico — Cómo hacerlo y Reglamento</option>
+            <option value="default">Empleado — Pedidos, Cómo hacerlo, Reglamento</option>
+            <option value="reporter">Reportero — + Reporte financiero (sin resumen del mes)</option>
+            <option value="manager">Manager — + Reporte financiero completo</option>
+        </select>
+
+        <div id="team-punto-group">
+            <label class="team-label" for="team-punto">📍 Punto por defecto</label>
+            <select id="team-punto" class="team-input">
+                <option value="principal">🏪 Punto Principal</option>
+                <option value="domicilio">🛵 Punto Domicilio</option>
+            </select>
+        </div>
+
+        <p id="team-modal-error" class="team-error" style="display:none;"></p>
+
+        <div class="team-modal-actions">
+            <button id="team-modal-cancel" class="team-link-btn">Cancelar</button>
+            <button id="team-modal-save" class="btn-primary">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<div id="team-toast" class="team-toast"></div>
+
+</body>
+</html>
