@@ -1,10 +1,10 @@
-import { db } from "./firebase.js";
+import { db, auth } from "./firebase.js";
 import {
     getFirestore, collection, onSnapshot,
-    doc, getDoc, setDoc, deleteDoc
+    doc, getDoc, setDoc, deleteDoc, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { logError, logWarn } from "./logger.js";
-import { todayString, formatDate } from "./utils.js";
+import { logError, logWarn, logInfo } from "./logger.js";
+import { todayString, formatDate, paymentMethodSelectHTML } from "./utils.js";
 import { printTicketWIFI } from "./printer.js";
 
 
@@ -209,6 +209,41 @@ async function printOrder(order) {
     deliveryData.delete(order.orderNumber);
 }
 
+// El listener en tiempo real vuelve a pintar el ticket con el valor guardado.
+async function updatePaymentMethod(order, select) {
+    const previous = order.paymentMethod;
+    const next     = select.value;
+    if (next === previous) return;
+
+    if (!confirm(`¿Cambiar el método de pago del pedido #${order.orderNumber} de "${previous}" a "${next}"?`)) {
+        select.value = previous;
+        return;
+    }
+
+    if (USE_MOCK) {
+        order.paymentMethod = next;
+        return;
+    }
+
+    select.disabled = true;
+    try {
+        await updateDoc(pendingPath(order.orderNumber), { paymentMethod: next });
+        order.paymentMethod = next;
+        logInfo("updatePaymentMethod", "Método de pago cambiado", {
+            orderNumber: order.orderNumber,
+            from: previous,
+            to: next,
+            by: auth.currentUser?.email ?? null
+        });
+    } catch (err) {
+        logError("updatePaymentMethod", "Fallo cambiando método de pago", err);
+        alert('No se pudo cambiar el método de pago. Intenta de nuevo.');
+        select.value = previous;
+    } finally {
+        select.disabled = false;
+    }
+}
+
 // ─── Init ──────────────────────────────────────────────────────────────────────
 
 function initOrders() {
@@ -362,7 +397,7 @@ function buildTicket(order) {
         </div>
         <div class="ticket-row">
             <span class="ticket-label">Método de pago</span>
-            <span class="ticket-value">${order.paymentMethod}</span>
+            ${paymentMethodSelectHTML(order.paymentMethod)}
         </div>
         <div class="ticket-actions">
             <button class="btn-cancel-ticket">🗑 Cancelar</button>
@@ -408,6 +443,8 @@ function buildTicket(order) {
     }
 
     deliverySelect.addEventListener('change', updateDelivery);
+    ticket.querySelector('.payment-method-select')
+        .addEventListener('change', (e) => updatePaymentMethod(order, e.target));
     deliveryFeeInput.addEventListener('input', updateDelivery);
 
     // Sincroniza deliveryData con lo que se ve en pantalla desde el primer render —

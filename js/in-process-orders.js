@@ -1,10 +1,10 @@
-import { db } from "./firebase.js";
+import { db, auth } from "./firebase.js";
 import {
     collection, getDocs, onSnapshot,
     doc, getDoc, setDoc, deleteDoc, updateDoc, increment
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { logError, logInfo } from "./logger.js";
-import { todayString, formatDate } from "./utils.js";
+import { todayString, formatDate, paymentMethodSelectHTML } from "./utils.js";
 import { groupOrdersByProximity, DEFAULT_PROXIMITY_METERS, DEFAULT_MAX_GROUP_SIZE } from "./orderGrouping.js";
 
 const STATUS_OPTIONS = [
@@ -286,7 +286,7 @@ function buildTicket(order) {
         </div>
         <div class="ticket-row">
             <span class="ticket-label">Método de pago</span>
-            <span class="ticket-value">${order.paymentMethod}</span>
+            ${paymentMethodSelectHTML(order.paymentMethod)}
         </div>
         ${order.domiciliario ? `
         <div class="ticket-row">
@@ -300,6 +300,9 @@ function buildTicket(order) {
     ticket.querySelectorAll('.btn-status').forEach(btn => {
         btn.addEventListener('click', () => updateStatus(order, btn.dataset.status));
     });
+
+    ticket.querySelector('.payment-method-select')
+        .addEventListener('change', (e) => updatePaymentMethod(order, e.target));
 
     ticket.querySelector('.btn-mark-delivered').addEventListener('click', () => {
         pendingDeliverOrder = order;
@@ -451,6 +454,40 @@ async function updateStatus(order, status) {
     } catch (err) {
         logError("updateStatus", "Fallo actualizando estado", err);
         alert('No se pudo actualizar el estado. Intenta de nuevo.');
+    }
+}
+
+// Solo mientras el pedido sigue en "printed": una vez entregado (completed) queda
+// en solo lectura, y las reglas de Firestore también bloquean editarlo.
+async function updatePaymentMethod(order, select) {
+    const previous = order.paymentMethod;
+    const next     = select.value;
+    if (next === previous) return;
+
+    if (!confirm(`¿Cambiar el método de pago del pedido #${order.orderNumber} de "${previous}" a "${next}"?`)) {
+        select.value = previous;
+        return;
+    }
+
+    select.disabled = true;
+    try {
+        await updateDoc(printedPath(order.orderNumber, order.dateString), { paymentMethod: next });
+        // Hoy lo repinta el listener en vivo; en días pasados se actualiza el objeto en memoria
+        // para que "Marcar como entregado" y los filtros usen el valor nuevo.
+        order.paymentMethod = next;
+        logInfo("updatePaymentMethod", "Método de pago cambiado", {
+            orderNumber: order.orderNumber,
+            dateString:  order.dateString,
+            from: previous,
+            to:   next,
+            by:   auth.currentUser?.email ?? null
+        });
+    } catch (err) {
+        logError("updatePaymentMethod", "Fallo cambiando método de pago", err);
+        alert('No se pudo cambiar el método de pago. Intenta de nuevo.');
+        select.value = previous;
+    } finally {
+        select.disabled = false;
     }
 }
 

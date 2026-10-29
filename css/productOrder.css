@@ -311,7 +311,8 @@ body {
 }
 
 .delivery-select,
-.delivery-fee {
+.delivery-fee,
+.payment-method-select {
     flex: 1;
     max-width: 160px;
     border: 1px solid #d0d9e8;
@@ -324,7 +325,8 @@ body {
 }
 
 .delivery-select:focus,
-.delivery-fee:focus {
+.delivery-fee:focus,
+.payment-method-select:focus {
     outline: none;
     border-color: #194073;
     box-shadow: 0 0 0 2px rgba(25, 64, 115, 0.12);
