@@ -25,6 +25,19 @@ export const GASTO_CATEGORIAS = [
 ];
 export const GASTO_CATEGORIA_DEFAULT = 'Otros';
 
+// Métodos de pago que puede elegir el cliente (script.js) y que el personal puede
+// corregir en "Ver pedidos" y "Pedidos en proceso". En "Pedidos completados" es solo lectura.
+export const PAYMENT_METHODS = ['Efectivo', 'Transferencia'];
+
+// <select> con los métodos de pago. Si el pedido trae un valor que no está en la lista
+// (pedidos viejos o "—"), se muestra igual para no cambiarlo sin querer.
+export function paymentMethodSelectHTML(current) {
+    const options = PAYMENT_METHODS.includes(current) ? PAYMENT_METHODS : [current, ...PAYMENT_METHODS];
+    return `<select class="payment-method-select">${options
+        .map(m => `<option value="${m}" ${m === current ? 'selected' : ''}>${m}</option>`)
+        .join('')}</select>`;
+}
+
 export function todayString() {
     return new Intl.DateTimeFormat('es-CO', {
         timeZone: 'America/Bogota',
