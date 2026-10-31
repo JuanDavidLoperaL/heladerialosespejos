@@ -1,0 +1,422 @@
+/* =============================================
+   RAFFLE CSS
+   Paleta: #194073 azul | #F27127 naranja
+   ============================================= */
+
+.raffle-counter {
+    font-size: 13px;
+    font-weight: 600;
+    color: #194073;
+    background: #eef1f5;
+    padding: 6px 12px;
+    border-radius: 999px;
+}
+
+.raffle-container {
+    padding: 20px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.raffle-card {
+    background: white;
+    border-radius: 12px;
+    padding: 22px 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    border: 1px solid #e8ecf0;
+    max-width: 720px;
+}
+
+.raffle-section-title {
+    font-size: 17px;
+    color: #194073;
+    margin-bottom: 8px;
+}
+
+.raffle-hint {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 14px;
+}
+
+.raffle-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.raffle-form .btn-primary {
+    margin-top: 8px;
+    align-self: flex-start;
+}
+
+.raffle-form .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.raffle-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #194073;
+}
+
+.raffle-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cfd8e3;
+    border-radius: 8px;
+    font-size: 16px; /* 16px evita el zoom automático de Safari en iPhone */
+    color: #194073;
+    background: white;
+}
+
+.raffle-input:focus {
+    outline: none;
+    border-color: #F27127;
+}
+
+.raffle-reasons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.raffle-reason {
+    flex: 1 1 220px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid #cfd8e3;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #194073;
+    cursor: pointer;
+}
+
+.raffle-reason:has(input:checked) {
+    border-color: #F27127;
+    background: #fff8f3;
+    font-weight: 600;
+}
+
+.raffle-reason input { accent-color: #F27127; }
+
+.raffle-reason-badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: #eef1f5;
+    color: #194073;
+    margin-bottom: 10px;
+}
+
+.raffle-search-row {
+    display: flex;
+    gap: 10px;
+}
+
+.raffle-result {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #fff8f3;
+    border: 1px dashed #F27127;
+}
+
+.raffle-result-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #194073;
+    margin-bottom: 10px;
+}
+
+.raffle-search-results {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.raffle-sale {
+    padding: 12px 14px;
+    border: 1px solid #e8ecf0;
+    border-radius: 10px;
+    background: #fafbfc;
+}
+
+.raffle-sale-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.raffle-sale-meta span::first-letter { text-transform: uppercase; }
+
+.raffle-tickets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.raffle-ticket {
+    font-family: "Courier New", monospace;
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: white;
+    background: #194073;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border-left: 6px solid #F27127;
+}
+
+.raffle-empty {
+    font-size: 13px;
+    color: #888;
+}
+
+.raffle-error {
+    font-size: 13px;
+    color: #c0392b;
+}
+
+.raffle-card-header,
+.raffle-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.raffle-history-header { margin: 22px 0 6px; }
+
+.raffle-subtitle {
+    font-size: 15px;
+    color: #194073;
+}
+
+.raffle-filter {
+    width: auto;
+    max-width: 100%;
+    font-size: 14px;
+    padding: 8px 10px;
+}
+
+.raffle-link-btn {
+    background: none;
+    border: none;
+    color: #194073;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.raffle-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.raffle-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid #e8ecf0;
+    background: #fafbfc;
+}
+
+.raffle-stat-highlight {
+    border-color: #F27127;
+    background: #fff8f3;
+}
+
+.raffle-stat-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.raffle-stat-value {
+    font-size: 34px;
+    font-weight: bold;
+    color: #194073;
+    line-height: 1.1;
+}
+
+.raffle-stat-caption {
+    font-size: 12px;
+    color: #888;
+}
+
+.raffle-stat-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #194073;
+}
+
+.raffle-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.raffle-sale-customer {
+    font-size: 14px;
+    font-weight: bold;
+    color: #194073;
+    margin-bottom: 6px;
+}
+
+.raffle-more-btn { margin-top: 12px; }
+
+.raffle-alerts-card { border-color: #f5c2c2; }
+
+.raffle-alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid #f5c2c2;
+    border-left: 5px solid #c0392b;
+    border-radius: 10px;
+    background: #fdf3f3;
+}
+
+.raffle-alert-text {
+    font-size: 13px;
+    color: #8b2b2b;
+}
+
+.raffle-alert .raffle-link-btn { flex-shrink: 0; }
+
+.raffle-big-btn {
+    margin-top: 12px;
+    align-self: flex-start;
+}
+
+/* ── Popup "Ver en grande" ── */
+.raffle-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(10, 24, 45, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.raffle-modal {
+    position: relative;
+    width: 80vw;
+    height: 80vh;
+    background: white;
+    border-radius: 18px;
+    border-top: 10px solid #F27127;
+    overflow: hidden; /* el scroll va en .raffle-modal-body; la marca de agua queda fija */
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+}
+
+.raffle-modal-body {
+    position: absolute;
+    inset: 0;
+    padding: 40px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: safe center; /* si no cabe, hace scroll sin cortar el nombre de arriba */
+    gap: 12px;
+    overflow-y: auto;
+}
+
+/* Marca de agua: cubre TODO el popup, encima de las boletas; no recibe clics
+   ni se puede seleccionar. El fondo (SVG en mosaico) lo arma raffle.js. */
+.raffle-watermark {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+    z-index: 1;
+}
+
+/* Capa del doble de grande y girada: así, aun inclinada, tapa todas las esquinas */
+.raffle-watermark-layer {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background-repeat: repeat;
+    transform: rotate(-28deg);
+}
+
+.raffle-modal-close {
+    z-index: 2;
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: #eef1f5;
+    color: #194073;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.raffle-modal-close:hover { background: #dde3ea; }
+
+.raffle-modal-title {
+    font-size: clamp(24px, 4vw, 44px);
+    font-weight: bold;
+    color: #194073;
+    text-align: center;
+}
+
+.raffle-modal-phone {
+    font-size: clamp(16px, 2.2vw, 24px);
+    color: #666;
+    margin-bottom: 16px;
+}
+
+.raffle-modal-tickets {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(12px, 2vw, 28px);
+}
+
+.raffle-ticket-big {
+    font-size: clamp(36px, min(8vw, 11vh), 110px);
+    padding: 0.15em 0.4em;
+    border-left-width: 14px;
+    border-radius: 14px;
+    letter-spacing: 0.08em;
+}
+
+@media (max-width: 768px) {
+    .raffle-container { padding: 16px; }
+    .raffle-card      { padding: 18px 16px; }
+    .raffle-modal      { width: 92vw; }
+    .raffle-modal-body { padding: 56px 16px 24px; }
+}
