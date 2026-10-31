@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Página pública: sin Firebase SDK ni sesión. Solo puede hablar con la function
+         publicRaffleLookup (que enmascara el nombre y limita consultas por IP). -->
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://us-central1-heladerialosespejos-c645e.cloudfunctions.net; base-uri 'self'; form-action 'self'; object-src 'none'">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <title>Gánate el GTA 6 - Los Espejos Heladería</title>
+    <link rel="stylesheet" href="gta6.css?v=1.0.0">
+</head>
+<body>
+    <header class="gta-header">
+        <a href="../"><img src="../images/logo.png" alt="Los Espejos Heladería" class="gta-logo"></a>
+        <h1>🎮 ¡Con Heladería Los Espejos, el GTA 6 se puede hacer realidad!</h1>
+        <p class="gta-tagline">¿Te imaginas estrenar GTA 6 sin gastar? 🤯</p>
+        <p class="gta-intro">
+            ¡En Heladería Los Espejos queremos llevar tu experiencia de juego a otro nivel!
+            Prepárate para participar por un premio increíble.
+        </p>
+    </header>
+
+    <main class="gta-main">
+        <section class="gta-card">
+            <h2>🏆 ¿Qué te puedes ganar?</h2>
+
+            <h3>🎮 ¡Grand Theft Auto VI (GTA 6)!</h3>
+            <ul>
+                <li>Una copia de GTA 6 para la consola de tu elección, entre las plataformas en las que esté disponible.</li>
+            </ul>
+
+            <h3>🍦 ¡Un helado a tu gusto!</h3>
+            <ul>
+                <li>El sabor que quieras.</li>
+                <li>El tamaño que prefieras.</li>
+            </ul>
+            <p>¡Juega GTA 6 sin pasar ningún antojo!</p>
+
+            <h3>🔥 ¡Y muchísimas horas de diversión!</h3>
+            <p>¡Tú pones el control, nosotros ponemos el premio!</p>
+        </section>
+
+        <section class="gta-card">
+            <h2>🎟️ ¿Cómo participar?</h2>
+            <p>¡Es muy fácil! Tienes dos formas de conseguir tus oportunidades:</p>
+
+            <h3>Opción 1. Compra tus paquetes de boletas</h3>
+            <p>Por solo <span class="gta-highlight">$5.000</span>, obtienes un paquete con:</p>
+            <ul>
+                <li>3 boletas.</li>
+                <li>Cada boleta tiene un número aleatorio de 4 cifras.</li>
+            </ul>
+            <p>¡Tres oportunidades de ganar por cada paquete!</p>
+
+            <h3>Opción 2. Compra en Heladería Los Espejos</h3>
+            <p>¡Disfrutar de nuestros productos también tiene recompensa!</p>
+            <p>
+                Por cada <span class="gta-highlight">$60.000</span> en compras, recibirás
+                <span class="gta-highlight">GRATIS</span> un paquete de 3 boletas con números aleatorios de 4 cifras.
+            </p>
+            <p>¡Entre más disfrutes, más oportunidades tendrás de ganar!</p>
+        </section>
+
+        <section class="gta-card">
+            <h2>📅 ¿Cuándo es el sorteo?</h2>
+            <p>Marca esta fecha en tu calendario:</p>
+            <div class="gta-date">
+                <strong>20 de noviembre de 2026</strong>
+                <span>🕚 11:00 p. m.</span>
+            </div>
+            <p>
+                El ganador se determinará con las cuatro cifras del premio mayor de la
+                Lotería de Medellín de esa fecha.
+            </p>
+        </section>
+
+        <section class="gta-card gta-lookup">
+            <h2>🔍 Consulta tus boletas</h2>
+            <p class="gta-hint">Escribe el celular con el que te registraron en la heladería.</p>
+            <form id="gta-form" class="gta-form" autocomplete="off">
+                <input type="tel" id="gta-phone" class="gta-input" placeholder="300-123-45-67"
+                       inputmode="numeric" maxlength="13" aria-label="Celular">
+                <button type="submit" id="gta-btn" class="gta-btn">Consultar</button>
+            </form>
+            <div id="gta-result" class="gta-result" aria-live="polite"></div>
+        </section>
+
+        <section class="gta-card gta-closing">
+            <h2>🚀 ¡No te quedes por fuera!</h2>
+            <p>Compra tus paquetes, disfruta de tus helados favoritos y prepárate…</p>
+            <p class="gta-highlight">¡Porque el próximo en recorrer Los Santos podría ser TÚ!</p>
+            <p>🍦 <strong>Heladería Los Espejos</strong><br>¡Mucho más que helados, experiencias que se disfrutan!</p>
+        </section>
+    </main>
+
+    <footer class="gta-footer">
+        <p>Heladería Los Espejos</p>
+        <p><a href="../tratamiento-datos.html">Tratamiento de datos</a></p>
+    </footer>
+
+    <script src="gta6.js?v=1.0.0"></script>
+</body>
+</html>

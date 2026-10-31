@@ -16,6 +16,7 @@ const btnInProcessOrders     = document.getElementById('btn-in-process-orders');
 const btnReglamento          = document.getElementById('btn-reglamento');
 const btnFlyer               = document.getElementById('btn-flyer');
 const btnEquipo              = document.getElementById('btn-equipo');
+const btnRifa                = document.getElementById('btn-rifa');
 
 // ── Roles de usuario (cargados desde Firebase config/userRoles) ───────────────
 let userConfigCache = [];   // array de { email, role, defaultPunto }
@@ -52,7 +53,7 @@ const RESTRICTED_PAGES = {
 // Roles de lista blanca: solo pueden acceder a las páginas explícitamente listadas aquí.
 // Para darle más acceso a un rol, solo agrega la key de la página (ver objeto `pages`) al arreglo.
 const ALLOWED_PAGES = {
-    basic: ["howtodoit", "reglamento"],
+    basic: ["howtodoit", "reglamento", "rifa"],
 };
 
 // Páginas exclusivas de admin, sin importar qué roles se agreguen en el futuro.
@@ -78,7 +79,8 @@ const pages = {
     inProcessOrders    : { html: 'in-process-orders.html',    js: 'js/in-process-orders.js'   },
     reglamento         : { html: 'reglamentoInterno.html',    js: 'js/reglamentoInterno.js'   },
     flyer              : { html: 'flyerManagement.html',      js: 'js/flyerManagement.js'     },
-    equipo             : { html: 'teamManagement.html',       js: 'js/teamManagement.js'      }
+    equipo             : { html: 'teamManagement.html',       js: 'js/teamManagement.js'      },
+    rifa               : { html: 'raffle.html',               js: 'js/raffle.js'              }
 };
 
 let currentScript = null;
@@ -164,6 +166,7 @@ const PAGE_BUTTONS = {
     financialReporting: btnFinancialReporting,
     howtodoit:          btnHowToDoIt,
     reglamento:         btnReglamento,
+    rifa:               btnRifa,
     flyer:              btnFlyer,
     equipo:             btnEquipo,
 };
@@ -224,6 +227,11 @@ btnFlyer.addEventListener('click', () => {
 btnEquipo.addEventListener('click', () => {
     loadPage('equipo');
     setActive(btnEquipo);
+});
+
+btnRifa.addEventListener('click', () => {
+    loadPage('rifa');
+    setActive(btnRifa);
 });
 
 logoutBtn.addEventListener('click', async () => {

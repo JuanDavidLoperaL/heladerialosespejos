@@ -1,0 +1,123 @@
+/* Página pública Rifa GTA 6 — paleta del sitio: #F27127 naranja | #194073 azul */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+    color: #333;
+    line-height: 1.5;
+}
+
+.gta-header {
+    text-align: center;
+    padding: 28px 16px 40px;
+    background: white;
+    color: #194073;
+    border-bottom: 8px solid #F27127;
+}
+
+.gta-logo { width: 220px; max-width: 70%; height: auto; margin-bottom: 14px; }
+.gta-header h1 { font-size: 30px; line-height: 1.2; max-width: 680px; margin: 0 auto; }
+.gta-tagline { font-size: 18px; color: #555; margin-top: 10px; }
+.gta-intro { font-size: 16px; color: #555; max-width: 600px; margin: 8px auto 0; }
+
+.gta-main {
+    max-width: 680px;
+    margin: -18px auto 0;
+    padding: 0 16px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.gta-card {
+    background: white;
+    border-radius: 14px;
+    padding: 22px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+}
+
+.gta-card h2 { font-size: 19px; color: #194073; margin-bottom: 10px; }
+.gta-card h3 { font-size: 16px; color: #F27127; margin: 14px 0 4px; }
+.gta-card p + p { margin-top: 8px; }
+.gta-card ul { padding-left: 20px; margin: 4px 0 8px; }
+.gta-card li { margin-bottom: 4px; }
+.gta-highlight { font-weight: bold; color: #194073; }
+
+.gta-date {
+    text-align: center;
+    margin: 6px 0 12px;
+    padding: 14px;
+    border-radius: 12px;
+    background: #fff8f3;
+    border: 2px dashed #F27127;
+}
+
+.gta-date strong { display: block; font-size: 26px; color: #194073; }
+.gta-date span { font-size: 18px; color: #F27127; font-weight: bold; }
+
+.gta-closing { text-align: center; border-top: 6px solid #194073; }
+
+.gta-lookup { border-top: 6px solid #F27127; }
+.gta-hint { font-size: 14px; color: #666; margin-bottom: 12px; }
+
+.gta-form { display: flex; gap: 10px; }
+
+.gta-input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid #cfd8e3;
+    border-radius: 10px;
+    font-size: 18px; /* ≥16px evita el zoom automático de Safari en iPhone */
+    color: #194073;
+}
+
+.gta-input:focus { outline: none; border-color: #F27127; }
+
+.gta-btn {
+    background: #F27127;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.gta-btn:disabled { opacity: 0.6; cursor: default; }
+
+.gta-result { margin-top: 16px; }
+.gta-result-title { font-weight: bold; color: #194073; margin-bottom: 10px; }
+
+.gta-tickets { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+
+.gta-ticket {
+    font-family: "Courier New", monospace;
+    font-size: 26px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: white;
+    background: #194073;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border-left: 6px solid #F27127;
+}
+
+.gta-empty { font-size: 14px; color: #666; }
+.gta-error { font-size: 14px; color: #c0392b; }
+
+.gta-footer {
+    text-align: center;
+    font-size: 13px;
+    color: #888;
+    padding: 20px 16px 32px;
+}
+
+.gta-footer a { color: #194073; }
+
+@media (max-width: 480px) {
+    .gta-header h1 { font-size: 24px; }
+    .gta-date strong { font-size: 22px; }
+}

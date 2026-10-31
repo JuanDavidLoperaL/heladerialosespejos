@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Rifa</title>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="payroll-header">
+    <h1>🎟️ Rifa</h1>
+    <span id="raffle-counter" class="raffle-counter"></span>
+</div>
+
+<div class="raffle-container">
+
+    <div class="raffle-card">
+        <h2 class="raffle-section-title">➕ Vender boletas</h2>
+        <p class="raffle-hint">
+            A cada cliente se le entregan 3 boletas de 4 cifras. El sistema escoge los números
+            automáticamente y nunca repite un número ya vendido.
+        </p>
+        <form id="raffle-sell-form" class="raffle-form" autocomplete="off">
+            <label class="raffle-label" for="raffle-name">Nombre del cliente</label>
+            <input type="text" id="raffle-name" class="raffle-input" placeholder="Nombre y apellido" maxlength="80">
+
+            <label class="raffle-label" for="raffle-phone">Celular del cliente</label>
+            <input type="tel" id="raffle-phone" class="raffle-input" placeholder="300-123-45-67" inputmode="numeric">
+
+            <span class="raffle-label">Motivo</span>
+            <div class="raffle-reasons">
+                <label class="raffle-reason">
+                    <input type="radio" name="raffle-reason" value="ticketPurchase">
+                    <span>🎟️ Por compra de boleta</span>
+                </label>
+                <label class="raffle-reason">
+                    <input type="radio" name="raffle-reason" value="productPurchase">
+                    <span>🍦 Por compra de productos (60.000+)</span>
+                </label>
+            </div>
+
+            <p id="raffle-sell-error" class="raffle-error" style="display:none;"></p>
+
+            <button type="submit" id="raffle-sell-btn" class="btn-primary">🎟️ Generar 3 boletas</button>
+        </form>
+
+        <div id="raffle-sell-result" class="raffle-result" style="display:none;"></div>
+    </div>
+
+    <div class="raffle-card">
+        <h2 class="raffle-section-title">🔍 Consultar boletas de un cliente</h2>
+        <form id="raffle-search-form" class="raffle-search-row" autocomplete="off">
+            <input type="tel" id="raffle-search-phone" class="raffle-input" placeholder="300-123-45-67" inputmode="numeric">
+            <button type="submit" id="raffle-search-btn" class="btn-secondary">Buscar</button>
+        </form>
+        <div id="raffle-search-results" class="raffle-search-results"></div>
+    </div>
+
+    <div class="raffle-card">
+        <div class="raffle-card-header">
+            <h2 class="raffle-section-title">📊 Boletas vendidas</h2>
+            <button type="button" id="raffle-history-refresh" class="raffle-link-btn">↻ Actualizar</button>
+        </div>
+
+        <div id="raffle-stats" class="raffle-stats"></div>
+
+        <div class="raffle-history-header">
+            <h3 class="raffle-subtitle">Histórico de ventas</h3>
+            <select id="raffle-history-filter" class="raffle-input raffle-filter">
+                <option value="all">Todos los motivos</option>
+                <option value="ticketPurchase">🎟️ Por compra de boleta</option>
+                <option value="productPurchase">🍦 Por compra de productos (60.000+)</option>
+            </select>
+        </div>
+        <p id="raffle-history-summary" class="raffle-hint"></p>
+        <div id="raffle-history-list" class="raffle-history-list">
+            <p class="raffle-empty">Cargando…</p>
+        </div>
+        <button type="button" id="raffle-history-more" class="btn-secondary raffle-more-btn" style="display:none;">Ver más</button>
+    </div>
+
+    <!-- Solo admin (raffle.js la muestra según window.currentUserRole) -->
+    <div id="raffle-alerts-card" class="raffle-card raffle-alerts-card" style="display:none;">
+        <h2 class="raffle-section-title">🚨 Alertas</h2>
+        <p class="raffle-hint">
+            Solo la ven los administradores. Celulares con muchas boletas o que recibieron
+            boletas varias veces el mismo día.
+        </p>
+        <div id="raffle-alerts-list" class="raffle-history-list"></div>
+    </div>
+</div>
+
+<!-- POPUP VER EN GRANDE -->
+<div id="raffle-modal" class="raffle-modal-overlay" style="display:none;">
+    <div class="raffle-modal">
+        <button id="raffle-modal-close" class="raffle-modal-close" aria-label="Cerrar">✕</button>
+        <div class="raffle-modal-body">
+            <p id="raffle-modal-title" class="raffle-modal-title"></p>
+            <p id="raffle-modal-phone" class="raffle-modal-phone"></p>
+            <div id="raffle-modal-tickets" class="raffle-modal-tickets"></div>
+        </div>
+        <div class="raffle-watermark" aria-hidden="true">
+            <div id="raffle-watermark-layer" class="raffle-watermark-layer"></div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
