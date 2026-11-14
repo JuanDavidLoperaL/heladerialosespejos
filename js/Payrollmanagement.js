@@ -5,6 +5,7 @@
 // =============================================
 
 import { db } from "./firebase.js";
+import { escapeHtml } from "./safeHtml.js";
 import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // =============================================
@@ -177,7 +178,7 @@ function renderTable() {
             sumNeto   += liq.netoAPagar;
 
             tr.innerHTML = `
-                <td><strong>${emp.name}</strong></td>
+                <td><strong>${escapeHtml(emp.name)}</strong></td>
                 <td><span class="badge-cargo">${liq.cargo || '—'}</span></td>
                 <td>${fmt(liq.salario)}</td>
                 <td>${fmt(liq.auxTransporte)}</td>
@@ -195,7 +196,7 @@ function renderTable() {
                 </td>`;
         } else {
             tr.innerHTML = `
-                <td><strong>${emp.name}</strong></td>
+                <td><strong>${escapeHtml(emp.name)}</strong></td>
                 <td><span class="badge-cargo">—</span></td>
                 <td>${fmt(emp.salary)}</td>
                 <td>—</td><td>—</td><td>—</td><td>—</td>
@@ -512,7 +513,7 @@ function buildSlipHTML(emp, liq) {
 
         <!-- DATOS EMPLEADO -->
         <div class="slip-emp-bar">
-            <div class="slip-emp-block"><label>EMPLEADO</label><strong>${emp.name}</strong></div>
+            <div class="slip-emp-block"><label>EMPLEADO</label><strong>${escapeHtml(emp.name)}</strong></div>
             <div class="slip-emp-block"><label>CARGO</label><strong>${liq.cargo || '—'}</strong></div>
             <div class="slip-emp-block"><label>SALARIO MENSUAL</label><strong>${fmt(liq.salarioMensual || liq.salario)}</strong></div>
             <div class="slip-emp-block"><label>HORA ORDINARIA</label><strong>${fmt(hora)}/h</strong></div>
@@ -595,7 +596,7 @@ function buildSlipHTML(emp, liq) {
             <div class="slip-firma-block">
                 <div class="slip-firma-line"></div>
                 <div>Firma Empleado</div>
-                <div class="slip-firma-name">${emp.name}</div>
+                <div class="slip-firma-name">${escapeHtml(emp.name)}</div>
             </div>
             <div class="slip-firma-block">
                 <div class="slip-firma-line"></div>
@@ -622,7 +623,7 @@ function printSlip(emp, liq) {
     win.document.write(`<!DOCTYPE html>
 <html lang="es"><head>
 <meta charset="UTF-8">
-<title>Desprendible ${emp.name} – ${period}</title>
+<title>Desprendible ${escapeHtml(emp.name)} – ${period}</title>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -832,7 +833,7 @@ function buildPreviewHTML() {
         const liq = payrollData[emp.id];
         if (!liq) return `
             <tr>
-                <td>${emp.name}</td>
+                <td>${escapeHtml(emp.name)}</td>
                 <td colspan="7" style="color:#999;font-style:italic;">Pendiente de liquidar</td>
             </tr>`;
         grandNeto += liq.netoAPagar;
@@ -840,7 +841,7 @@ function buildPreviewHTML() {
         grandDed  += liq.totalDeducciones;
         return `
             <tr>
-                <td><strong>${emp.name}</strong></td>
+                <td><strong>${escapeHtml(emp.name)}</strong></td>
                 <td>${liq.cargo || '—'}</td>
                 <td>${fmt(liq.salario)}</td>
                 <td>${fmt(liq.auxTransporte)}</td>

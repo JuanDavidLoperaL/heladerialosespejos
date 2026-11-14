@@ -1,6 +1,6 @@
 import { logError, logInfo } from "./logger.js";
 
-export const APP_VERSION = "1.1.30";
+export const APP_VERSION = "1.1.31";
 
 export function checkAppVersion() {
     const savedVersion = localStorage.getItem("app_version");

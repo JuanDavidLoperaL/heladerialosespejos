@@ -1,3 +1,5 @@
+import { escapeHtml } from "./safeHtml.js";
+
 // Categorías de gasto disponibles en todo el sistema (financialReporting.js las usa para
 // clasificar cada gasto al registrarlo; businessAnalytics.js las usa para agrupar el
 // desglose de gastos por categoría).
@@ -34,9 +36,10 @@ export const PAYMENT_METHODS = ['Efectivo', 'Transferencia'];
 export function paymentMethodSelectHTML(current) {
     const options = PAYMENT_METHODS.includes(current) ? PAYMENT_METHODS : [current, ...PAYMENT_METHODS];
     return `<select class="payment-method-select">${options
-        .map(m => `<option value="${m}" ${m === current ? 'selected' : ''}>${m}</option>`)
+        .map(m => `<option value="${escapeHtml(m)}" ${m === current ? 'selected' : ''}>${escapeHtml(m)}</option>`)
         .join('')}</select>`;
 }
+
 
 export function todayString() {
     return new Intl.DateTimeFormat('es-CO', {

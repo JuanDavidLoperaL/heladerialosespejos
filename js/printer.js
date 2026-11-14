@@ -108,7 +108,10 @@ async function buildTicketBytes(order) {
     const add = (...parts) => {
         for (const p of parts) {
             if (Array.isArray(p)) bytes.push(...p);
-            else bytes.push(...toBytes(String(p)));
+            // Los textos (nombre, dirección, notas...) los escribe el cliente: se quitan los
+            // caracteres de control (ESC, GS, saltos de línea...) para que nadie pueda meter
+            // comandos de impresora en su pedido. Los comandos reales van como arrays.
+            else bytes.push(...toBytes(String(p).replace(/[\x00-\x1F\x7F]/g, ' ')));
         }
     };
 
@@ -155,7 +158,7 @@ async function buildTicketBytes(order) {
         if (i.toppings) add(`   Toppings: ${i.toppings}`, LF);
         if (i.sauces) add(`   Salsa   : ${i.sauces}`, LF);
         if (i.notes) add(`   Retirar porfavor   : ${i.notes}`, LF);
-        if (i.additions) add(`   Adiciones: ${i.additions.map(a => a.name).join(', ')}`, LF);
+        if (Array.isArray(i.additions) && i.additions.length) add(`   Adiciones: ${i.additions.map(a => a?.name).join(', ')}`, LF);
     });
 
     add('--------------------------------', LF);

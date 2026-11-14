@@ -4,10 +4,11 @@ checkAppVersion();
 import { app, db, auth } from "./firebase.js";
 import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-remote-config.js";
 import { logError, logWarn, logInfo } from "./logger.js";
 import { todayString, timeString, isValidColombianPhone, showFeedback, isBeforeOpening, isAfterClosing } from "./utils.js";
+import { escapeHtml } from "./safeHtml.js";
 import { loadCatalogWithCache, getAdditionsFromCatalog } from "./catalog.js";
 import { loadFlyerConfig } from "./flyer.js";
 import { fetchAddressSuggestions, fetchPlaceDetails } from "./placesAutocomplete.js";
@@ -16,17 +17,22 @@ import { openMapPinPicker } from "./mapPinPicker.js";
 
 const analytics    = getAnalytics(app);
 const remoteConfig = getRemoteConfig(app);
-let authReady = false;
-
-signInAnonymously(auth)
-    .then(() => {
-        authReady = true;
-        //logInfo("auth", "Autenticación anónima exitosa");
-    })
-    .catch((error) => {
-        authReady = false;
-        //logError("signInAnonymously", "Error en autenticación anónima app v" + APP_VERSION, error);
+// Sesión anónima (hoy está desactivada en Firebase Auth, así que falla y el pedido se guarda
+// sin sesión; las reglas validan los campos del pedido). Si el navegador ya tiene una sesión
+// (p. ej. una empleada con el dashboard abierto), se reutiliza en vez de reemplazarla por una
+// anónima (antes eso la sacaba del dashboard). saveOrderToFirebase espera esta promesa.
+const authReady = new Promise((resolve) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        unsubscribe();
+        if (user) {
+            resolve(true);
+            return;
+        }
+        signInAnonymously(auth)
+            .then(() => resolve(true))
+            .catch(() => resolve(false));
     });
+});
 
 // Configuración de Remote Config
 remoteConfig.settings = {
@@ -421,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="flavor-option">
                             <label>Sunday sabor ${i + 1}:</label>
                             <select class="sunday-flavor">
-                                ${sundayFlavors.map(f => `<option value="${f}">${f}</option>`).join('')}
+                                ${sundayFlavors.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('')}
                             </select>
                         </div>
                       `).join('')
@@ -440,13 +446,13 @@ document.addEventListener('DOMContentLoaded', function () {
                             <select class="fruit-flavor">
                                 ${fruitFlavors.map(f => `
                                     <option
-                                    value="${f}"
+                                    value="${escapeHtml(f)}"
                                     ${(
                             bananaShouldSelectFruit &&
                             f.toLowerCase() === "frutos amarillos"
                         ) ? "disabled" : ""}
                                     >
-                                ${f}
+                                ${escapeHtml(f)}
                                     </option>
                                 `).join('')}
                             </select>
@@ -482,7 +488,7 @@ document.addEventListener('DOMContentLoaded', function () {
                       <div class="flavor-option">
                           <label>Bola ${i + 1}:</label>
                           <select class="flavor-select">
-                              ${icecreamFlavors.map(f => `<option value="${f}">${f}</option>`).join('')}
+                              ${icecreamFlavors.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('')}
                           </select>
                       </div>
                   `).join('')
@@ -496,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function () {
                               <div class="flavor-option">
                                   <label>Topping ${i + 1}:</label>
                                   <select class="flavor-select-toppings">
-                                      ${toppingsFlavors.map(f => `<option value="${f}">${f}</option>`).join('')}
+                                      ${toppingsFlavors.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('')}
                                   </select>
                               </div>
                           `).join('')
@@ -515,7 +521,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                   <select class="flavor-select-sauces">
                                       ${saucesFlavors
                                           .filter(f => shouldShowAllSaucesOption || f.toLowerCase() !== 'todas')
-                                          .map(f => `<option value="${f}">${f}</option>`).join('')}
+                                          .map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('')}
                                   </select>
                               </div>
                           `).join('')
@@ -721,6 +727,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function saveOrderToFirebase(orderData) {
+        await authReady;
         const orderNumber = crypto.randomUUID();
         const displayNumber = orderNumber.split('-')[0].toUpperCase();
 
