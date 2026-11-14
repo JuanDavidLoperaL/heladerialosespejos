@@ -1,7 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { startAppCheck } from "./appCheck.js";
+import { loadStaffEntry } from "./staffAccess.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAFylb18Y4e1w7TAEoz3_toyCCHMy8s0xA",
@@ -20,11 +21,9 @@ const db = getFirestore(app);
 
 const NO_ACCESS_MESSAGE = 'Tu cuenta no tiene acceso al panel. Pide a un administrador que te lo habilite.';
 
-// Solo entra al dashboard quien esté en config/userRoles con un rol web distinto de "none".
+// Solo entra al dashboard quien esté en la lista del personal con un rol web distinto de "none".
 async function hasDashboardAccess(email) {
-    const snap = await getDoc(doc(db, 'config', 'userRoles'));
-    const users = snap.data()?.users ?? [];
-    const entry = users.find(u => u.email?.trim().toLowerCase() === email.toLowerCase());
+    const entry = await loadStaffEntry(db, email);
     return !!entry && entry.role !== 'none';
 }
 

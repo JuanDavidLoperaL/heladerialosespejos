@@ -7,6 +7,8 @@ const functions       = getFunctions(app, 'us-central1');
 const listStaffFn     = httpsCallable(functions, 'listStaff');
 const searchUsersFn   = httpsCallable(functions, 'searchUsers');
 const setStaffRoleFn  = httpsCallable(functions, 'setStaffRole');
+const createStaffAccountFn = httpsCallable(functions, 'createStaffAccount');
+const verifyStaffAccountsFn = httpsCallable(functions, 'verifyStaffAccounts');
 
 const APP_ROLE_LABELS = { customer: 'Cliente', employee: 'Empleado' };
 const WEB_ROLE_LABELS = {
@@ -76,6 +78,10 @@ function renderStaff() {
             ? `<span class="team-badge team-badge-${escapeHtml(member.appRole)}">📱 ${APP_ROLE_LABELS[member.appRole] ?? escapeHtml(member.appRole)}</span>`
             : `<span class="team-badge team-badge-pending" title="Recibirá este rol cuando se registre en la app">📱 ${APP_ROLE_LABELS[member.appRole] ?? escapeHtml(member.appRole)} · sin cuenta aún</span>`;
         const webBadge = `<span class="team-badge team-badge-web-${escapeHtml(member.webRole)}">💻 ${WEB_ROLE_LABELS[member.webRole] ?? escapeHtml(member.webRole)}</span>`;
+        // Sin cuenta verificada, las reglas no lo tratan como personal (ver "Verificar cuentas").
+        const authBadge = !member.hasAuthAccount
+            ? '<span class="team-badge team-badge-pending" title="Créale la cuenta en Crear cuenta de empleado">🔑 Sin cuenta</span>'
+            : (member.emailVerified ? '' : '<span class="team-badge team-badge-pending" title="Verifícala en Verificar cuentas existentes">⚠️ Sin verificar</span>');
         const puntoBadge = member.webRole !== 'none'
             ? `<span class="team-badge">${PUNTO_LABELS[member.defaultPunto] ?? escapeHtml(member.defaultPunto)}</span>`
             : '';
@@ -88,7 +94,7 @@ function renderStaff() {
                 <div class="team-member-info">
                     <div class="team-member-name">${name}</div>
                     <div class="team-member-email">${escapeHtml(member.email)}</div>
-                    <div class="team-badges">${appBadge}${webBadge}${puntoBadge}</div>
+                    <div class="team-badges">${appBadge}${webBadge}${puntoBadge}${authBadge}</div>
                 </div>
                 <div class="team-member-action">${action}</div>
             </div>`;
@@ -229,6 +235,106 @@ async function save() {
     }
 }
 
+// ── Crear cuenta de empleado ────────────────────────────────────────────────
+async function createAccount() {
+    const name         = $('team-new-name').value.trim();
+    const email        = $('team-new-email').value.trim().toLowerCase();
+    const password     = $('team-new-password').value;
+    const appRole      = $('team-new-app-role').value;
+    const webRole      = $('team-new-web-role').value;
+    const defaultPunto = $('team-new-punto').value;
+    const errorEl      = $('team-new-error');
+    errorEl.style.display = 'none';
+
+    const fail = (msg) => { errorEl.textContent = msg; errorEl.style.display = 'block'; };
+    if (!isValidEmail(email)) return fail('Escribe un correo válido.');
+    if (password.length < 8) return fail('La contraseña debe tener al menos 8 caracteres.');
+    if (appRole === 'customer' && webRole === 'none') return fail('Elige un acceso en la app o en el panel.');
+
+    const summary = `${email}\n\n📱 App: ${APP_ROLE_LABELS[appRole]}\n💻 Panel web: ${WEB_ROLE_LABELS[webRole]}`;
+    if (!confirm(`¿Crear esta cuenta?\n\n${summary}`)) return;
+
+    const btn = $('team-new-btn');
+    btn.disabled = true;
+    btn.textContent = 'Creando…';
+    try {
+        await createStaffAccountFn({ email, password, displayName: name, appRole, webRole, defaultPunto });
+        ['team-new-name', 'team-new-email', 'team-new-password'].forEach(id => { $(id).value = ''; });
+        showToast('✅ Cuenta creada. Ya puede iniciar sesión.');
+        await loadStaff();
+    } catch (error) {
+        console.error('createStaffAccount:', error);
+        fail(errorMessage(error));
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Crear cuenta';
+    }
+}
+
+// ── Verificar cuentas existentes ────────────────────────────────────────────
+function formatDateTime(value) {
+    if (!value) return '—';
+    const d = new Date(value);
+    return isNaN(d) ? '—' : d.toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+async function checkUnverified() {
+    const box = $('team-verify-list');
+    box.innerHTML = '<p class="team-empty">Buscando…</p>';
+    try {
+        const { data } = await verifyStaffAccountsFn({});
+        renderUnverified(data.pending ?? []);
+    } catch (error) {
+        console.error('verifyStaffAccounts:', error);
+        box.innerHTML = `<p class="team-error">${escapeHtml(errorMessage(error))}</p>`;
+    }
+}
+
+function renderUnverified(pending) {
+    const box = $('team-verify-list');
+    if (pending.length === 0) {
+        box.innerHTML = '<p class="team-empty">✅ Todas las cuentas del personal están verificadas.</p>';
+        return;
+    }
+    box.innerHTML = `
+        <p class="team-hint">Marca solo las cuentas que reconozcas (fecha de creación y último ingreso).</p>
+        ${pending.map(p => `
+            <label class="team-member">
+                <div class="team-member-info">
+                    <div class="team-member-email">
+                        <input type="checkbox" class="team-verify-check" value="${escapeHtml(p.email)}" checked>
+                        ${escapeHtml(p.email)}
+                    </div>
+                    <div class="team-muted">Creada: ${escapeHtml(formatDateTime(p.createdAt))} · Último ingreso: ${escapeHtml(formatDateTime(p.lastSignIn))}</div>
+                </div>
+            </label>`).join('')}
+        <div class="team-modal-actions">
+            <button id="team-verify-btn" class="btn-primary">Verificar seleccionadas</button>
+        </div>`;
+    $('team-verify-btn').addEventListener('click', verifySelected);
+}
+
+async function verifySelected() {
+    const emails = [...document.querySelectorAll('.team-verify-check:checked')].map(c => c.value);
+    if (emails.length === 0) return;
+    if (!confirm(`¿Verificar ${emails.length} cuenta(s)?\n\n${emails.join('\n')}`)) return;
+
+    const btn = $('team-verify-btn');
+    btn.disabled = true;
+    btn.textContent = 'Verificando…';
+    try {
+        const { data } = await verifyStaffAccountsFn({ emails });
+        showToast(`✅ ${data.verified?.length ?? 0} cuenta(s) verificada(s). Deben volver a iniciar sesión.`);
+        renderUnverified(data.pending ?? []);
+        await loadStaff();
+    } catch (error) {
+        console.error('verifyStaffAccounts:', error);
+        showToast(errorMessage(error), 'error');
+        btn.disabled = false;
+        btn.textContent = 'Verificar seleccionadas';
+    }
+}
+
 // ── Init ────────────────────────────────────────────────────────────────────
 $('team-search-btn').addEventListener('click', search);
 $('team-search-input').addEventListener('keydown', (e) => {
@@ -238,6 +344,8 @@ $('team-refresh-btn').addEventListener('click', loadStaff);
 $('team-web-role').addEventListener('change', syncPuntoVisibility);
 $('team-modal-cancel').addEventListener('click', closeEditor);
 $('team-modal-save').addEventListener('click', save);
+$('team-new-btn').addEventListener('click', createAccount);
+$('team-verify-check-btn').addEventListener('click', checkUnverified);
 $('team-modal').addEventListener('click', (e) => {
     if (e.target.id === 'team-modal') closeEditor();
 });

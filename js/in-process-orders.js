@@ -5,6 +5,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { logError, logInfo } from "./logger.js";
 import { todayString, formatDate, paymentMethodSelectHTML } from "./utils.js";
+import { escapeHtml, toNumber, orderMapsUrl } from "./safeHtml.js";
 import { groupOrdersByProximity, DEFAULT_PROXIMITY_METERS, DEFAULT_MAX_GROUP_SIZE } from "./orderGrouping.js";
 
 const STATUS_OPTIONS = [
@@ -218,24 +219,22 @@ function buildTicket(order) {
     const date  = formatDate(order.createdAt instanceof Date ? order.createdAt : new Date(order.createdAt));
     const items = Array.isArray(order.order) ? order.order : [];
 
-    const mapsUrl = (order.customerLatitude != null && order.customerLongitude != null)
-        ? `https://www.google.com/maps/search/?api=1&query=${order.customerLatitude},${order.customerLongitude}`
-        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customerAddress)}`;
+    const mapsUrl = orderMapsUrl(order);
 
     const itemsHTML = items.length > 0
         ? items.map(i => `
         <li>
-            <strong>${i.productTitle}</strong> — $${Number(i.price).toLocaleString('es-CO')}
-            ${i.quantity ? `<br><span class="item-detail"><strong>Cantidad:</strong> ${i.quantity}</span>` : ''}
-            ${i.ingredients ? `<br><span class="item-detail">🍨 ${i.ingredients}</span>` : ''}
-            ${i.iceCreamFlavor ? `<br><span class="item-detail">🍦 Helado: ${i.iceCreamFlavor}</span>` : ''}
-            ${i.flavor ? `<br><span class="item-detail">🍓 Sabor: ${i.flavor}</span>` : ''}
-            ${i.fruit ? `<br><span class="item-detail">🍌 Fruta: ${i.fruit}</span>` : ''}
-            ${i.additions ? `<br><span class="item-detail">➕ Adiciones: ${i.additions.map(a => a.name).join(', ')}</span>` : ''}
-            ${i.juice ? `<br><span class="item-detail">🥤 Jugo: ${i.juice}</span>` : ''}
-            ${i.toppings ? `<br><span class="item-detail">🍫 Toppings: ${i.toppings}</span>` : ''}
-            ${i.sauces ? `<br><span class="item-detail">🍯 Salsa: ${i.sauces}</span>` : ''}
-            ${i.notes ? `<br><span class="item-detail">📝 Porfavor Retirar: ${i.notes}</span>` : ''}
+            <strong>${escapeHtml(i.productTitle)}</strong> — $${Number(i.price).toLocaleString('es-CO')}
+            ${i.quantity ? `<br><span class="item-detail"><strong>Cantidad:</strong> ${escapeHtml(i.quantity)}</span>` : ''}
+            ${i.ingredients ? `<br><span class="item-detail">🍨 ${escapeHtml(i.ingredients)}</span>` : ''}
+            ${i.iceCreamFlavor ? `<br><span class="item-detail">🍦 Helado: ${escapeHtml(i.iceCreamFlavor)}</span>` : ''}
+            ${i.flavor ? `<br><span class="item-detail">🍓 Sabor: ${escapeHtml(i.flavor)}</span>` : ''}
+            ${i.fruit ? `<br><span class="item-detail">🍌 Fruta: ${escapeHtml(i.fruit)}</span>` : ''}
+            ${Array.isArray(i.additions) && i.additions.length ? `<br><span class="item-detail">➕ Adiciones: ${escapeHtml(i.additions.map(a => a?.name).join(', '))}</span>` : ''}
+            ${i.juice ? `<br><span class="item-detail">🥤 Jugo: ${escapeHtml(i.juice)}</span>` : ''}
+            ${i.toppings ? `<br><span class="item-detail">🍫 Toppings: ${escapeHtml(i.toppings)}</span>` : ''}
+            ${i.sauces ? `<br><span class="item-detail">🍯 Salsa: ${escapeHtml(i.sauces)}</span>` : ''}
+            ${i.notes ? `<br><span class="item-detail">📝 Porfavor Retirar: ${escapeHtml(i.notes)}</span>` : ''}
         </li>
     `).join('')
         : '<li>Sin detalle</li>';
@@ -251,30 +250,30 @@ function buildTicket(order) {
         <button class="btn-cancel-order" title="Cancelar pedido">✕</button>
         <span class="ticket-badge">🚚 En proceso</span>
         <div class="ticket-header">
-            <span class="ticket-number">🧾 #${order.orderNumber}</span>
+            <span class="ticket-number">🧾 #${escapeHtml(order.orderNumber)}</span>
             <span class="ticket-date">${date}</span>
         </div>
         <div class="ticket-row">
             <span class="ticket-label">Cliente</span>
-            <span class="ticket-value">${order.customer}</span>
+            <span class="ticket-value">${escapeHtml(order.customer)}</span>
         </div>
         <div class="ticket-row">
             <span class="ticket-label">Dirección</span>
-            <span class="ticket-value"><a href="${mapsUrl}" target="_blank" rel="noopener">${order.customerAddress} · ${order.customerNeighborhood} 🗺️</a></span>
+            <span class="ticket-value"><a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener">${escapeHtml(order.customerAddress)} · ${escapeHtml(order.customerNeighborhood)} 🗺️</a></span>
         </div>
         ${order.customerApartmentTower ? `
         <div class="ticket-row">
             <span class="ticket-label">Torre</span>
-            <span class="ticket-value">${order.customerApartmentTower}</span>
+            <span class="ticket-value">${escapeHtml(order.customerApartmentTower)}</span>
         </div>` : ''}
         ${order.customerApartmentUnit ? `
         <div class="ticket-row">
             <span class="ticket-label">Apto/Casa</span>
-            <span class="ticket-value">${order.customerApartmentUnit}</span>
+            <span class="ticket-value">${escapeHtml(order.customerApartmentUnit)}</span>
         </div>` : ''}
         <div class="ticket-row">
             <span class="ticket-label">Teléfono</span>
-            <span class="ticket-value">${order.customerPhoneNumber}</span>
+            <span class="ticket-value">${escapeHtml(order.customerPhoneNumber)}</span>
         </div>
         <div class="ticket-row">
             <span class="ticket-label">Pedido</span>
@@ -291,7 +290,7 @@ function buildTicket(order) {
         ${order.domiciliario ? `
         <div class="ticket-row">
             <span class="ticket-label">Domiciliario</span>
-            <span class="ticket-value">${order.domiciliario}</span>
+            <span class="ticket-value">${escapeHtml(order.domiciliario)}</span>
         </div>` : ''}
         <div class="status-toggle">${statusButtonsHTML}</div>
         <button class="btn-mark-delivered">✅ Marcar como entregado</button>
@@ -464,7 +463,7 @@ async function updatePaymentMethod(order, select) {
     const next     = select.value;
     if (next === previous) return;
 
-    if (!confirm(`¿Cambiar el método de pago del pedido #${order.orderNumber} de "${previous}" a "${next}"?`)) {
+    if (!confirm(`¿Cambiar el método de pago del pedido #${escapeHtml(order.orderNumber)} de "${previous}" a "${next}"?`)) {
         select.value = previous;
         return;
     }
@@ -506,7 +505,7 @@ async function incrementAnalyticsWithRetry(order, attempts = 3) {
     for (let i = 1; i <= attempts; i++) {
         try {
             await setDoc(doc(db, "analytics", order.dateString), {
-                total:         increment(order.total),
+                total:         increment(toNumber(order.total)),
                 orders:        increment(1),
                 efectivo:      increment(order.paymentMethod === "Efectivo"      ? 1 : 0),
                 transferencia: increment(order.paymentMethod === "Transferencia" ? 1 : 0)
@@ -542,7 +541,7 @@ async function markDelivered(order) {
     const analyticsOk = await incrementAnalyticsWithRetry(order);
     if (!analyticsOk) {
         alert(
-            `⚠️ El pedido #${order.orderNumber} se marcó como entregado correctamente, ` +
+            `⚠️ El pedido #${escapeHtml(order.orderNumber)} se marcó como entregado correctamente, ` +
             `pero no se pudo actualizar "Ver Analíticas" tras varios intentos (posible falla de red). ` +
             `Avisa para corregirlo manualmente — el pedido en sí no se perdió.`
         );

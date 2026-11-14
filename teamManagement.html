@@ -14,6 +14,58 @@
 <div class="team-container">
 
     <div class="team-card">
+        <h2 class="team-section-title">🆕 Crear cuenta de empleado</h2>
+        <p class="team-hint">
+            Crea aquí las cuentas del personal (correo de la heladería, p. ej. nombre@heladerialosespejos.com,
+            y contraseña). La cuenta queda lista para entrar: no se envía ningún correo.
+            Ya no las crees desde la consola de Firebase.
+        </p>
+        <label class="team-label" for="team-new-name">Nombre</label>
+        <input type="text" id="team-new-name" class="team-input" placeholder="Saray" maxlength="60" autocomplete="off">
+        <label class="team-label" for="team-new-email">Correo</label>
+        <input type="email" id="team-new-email" class="team-input" placeholder="saray@heladerialosespejos.com"
+               autocomplete="off" autocapitalize="none">
+        <label class="team-label" for="team-new-password">Contraseña (mínimo 8 caracteres)</label>
+        <input type="text" id="team-new-password" class="team-input" autocomplete="new-password" autocapitalize="none">
+        <label class="team-label" for="team-new-app-role">📱 En la app</label>
+        <select id="team-new-app-role" class="team-input">
+            <option value="customer">Cliente</option>
+            <option value="employee">Empleado</option>
+        </select>
+        <label class="team-label" for="team-new-web-role">💻 En este panel web</label>
+        <select id="team-new-web-role" class="team-input">
+            <option value="none">Sin acceso</option>
+            <option value="basic">Básico — Cómo hacerlo y Reglamento</option>
+            <option value="default" selected>Empleado — Pedidos, Cómo hacerlo, Reglamento</option>
+            <option value="reporter">Reportero — + Reporte financiero (sin resumen del mes)</option>
+            <option value="manager">Manager — + Reporte financiero completo</option>
+        </select>
+        <label class="team-label" for="team-new-punto">📍 Punto por defecto</label>
+        <select id="team-new-punto" class="team-input">
+            <option value="principal">🏪 Punto Principal</option>
+            <option value="domicilio">🛵 Punto Domicilio</option>
+        </select>
+        <p id="team-new-error" class="team-error" style="display:none;"></p>
+        <div class="team-modal-actions">
+            <button id="team-new-btn" class="btn-primary">Crear cuenta</button>
+        </div>
+    </div>
+
+    <div class="team-card">
+        <h2 class="team-section-title">🔐 Verificar cuentas existentes</h2>
+        <p class="team-hint">
+            El panel y la app solo reconocen como personal a cuentas verificadas, para que nadie pueda
+            registrarse con el correo de un empleado y entrar como él. Las cuentas que creaste antes
+            desde la consola de Firebase hay que verificarlas una vez aquí (no se envía ningún correo).
+            Verifica solo las que reconozcas.
+        </p>
+        <div class="team-modal-actions">
+            <button id="team-verify-check-btn" class="btn-secondary">Ver cuentas sin verificar</button>
+        </div>
+        <div id="team-verify-list" class="team-staff-list"></div>
+    </div>
+
+    <div class="team-card">
         <h2 class="team-section-title">➕ Agregar o ascender a alguien</h2>
         <p class="team-hint">
             Busca por el inicio del correo a un cliente que ya usa la app, o escribe el correo completo

@@ -1,6 +1,6 @@
 import { auth, db } from "./firebase.js";
 import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { loadStaffEntry, refreshVerification } from "./staffAccess.js";
 
 const toggleBtn = document.getElementById('toggle-sidebar');
 const sidebar = document.querySelector('.sidebar');
@@ -18,26 +18,11 @@ const btnFlyer               = document.getElementById('btn-flyer');
 const btnEquipo              = document.getElementById('btn-equipo');
 const btnRifa                = document.getElementById('btn-rifa');
 
-// ── Roles de usuario (cargados desde Firebase config/userRoles) ───────────────
-let userConfigCache = [];   // array de { email, role, defaultPunto }
+// ── Rol del usuario (lista del personal, ver staffAccess.js) ──────────────────
+let currentEntry = null;   // { role, defaultPunto } del usuario con sesión
 
-async function loadUserConfig() {
-    if (userConfigCache.length > 0) return;
-    try {
-        const snap = await getDoc(doc(db, 'config', 'userRoles'));
-        userConfigCache = snap.data()?.users ?? [];
-    } catch (e) {
-        console.error('Error cargando configuración de usuarios:', e);
-    }
-}
-
-function getUserEntry(email) {
-    const normalized = email?.trim().toLowerCase();
-    return userConfigCache.find(u => u.email?.trim().toLowerCase() === normalized);
-}
-
-function getRole(email) {
-    return getUserEntry(email)?.role ?? 'default';
+function getRole() {
+    return currentEntry?.role ?? 'default';
 }
 
 // Páginas bloqueadas por rol (admin = sin restricciones)
@@ -87,7 +72,7 @@ let currentScript = null;
 
 async function loadPage(page) {
     const user = auth.currentUser;
-    const role = getRole(user?.email);
+    const role = getRole();
 
     if (!canAccess(role, page)) {
         contentFrame.innerHTML = `
@@ -132,19 +117,24 @@ onAuthStateChanged(auth, async (user) => {
         return;
     }
 
-    await loadUserConfig();
+    const entry = user.isAnonymous ? null : await loadStaffEntry(db, user.email);
 
-    const entry = getUserEntry(user.email);
-
-    // Sin entrada en config/userRoles (o con rol "none") no hay acceso al panel.
+    // Sin entrada en la lista del personal (o con rol "none") no hay acceso al panel.
     if (!entry || entry.role === 'none') {
         await signOut(auth);
         window.location.href = 'login.html?noAccess=1';
         return;
     }
+    currentEntry = entry;
 
     const role  = entry.role ?? 'default';
     document.body.style.visibility = 'visible';
+
+    // Cuenta sin verificar: las reglas no le muestran pedidos ni datos hasta que un admin la
+    // verifique en Equipo (no se envía ningún correo).
+    if (!(await refreshVerification(user))) {
+        showUnverifiedBanner(role === 'admin');
+    }
 
     window.currentUserRole         = role;          // disponible para los módulos cargados dinámicamente
     window.currentUserDefaultPunto = entry?.defaultPunto ?? 'principal';
@@ -256,3 +246,14 @@ document.querySelectorAll('.sidebar .menu-btn').forEach(btn => {
         if (mobileQuery.matches) sidebar.classList.remove('open');
     });
 });
+// Aviso fijo arriba cuando la cuenta no está verificada.
+function showUnverifiedBanner(isAdmin) {
+    const banner = document.createElement('div');
+    banner.className = 'unverified-banner';
+    banner.textContent = isAdmin
+        ? '⚠️ Tu cuenta no está verificada. Entra a Equipo y usa "Verificar cuentas existentes" (incluye la tuya); luego vuelve a iniciar sesión.'
+        : '⚠️ Tu cuenta no está verificada, por eso no ves los pedidos. Pide a un administrador que la verifique en Equipo y vuelve a iniciar sesión.';
+    banner.style.cssText = 'position:sticky;top:0;z-index:1000;background:#fff3cd;color:#664d03;'
+        + 'border-bottom:1px solid #ffe69c;padding:10px 16px;font-size:14px;text-align:center;';
+    document.body.prepend(banner);
+}
