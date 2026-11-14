@@ -2,6 +2,7 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { startAppCheck } from "./appCheck.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAFylb18Y4e1w7TAEoz3_toyCCHMy8s0xA",
@@ -14,6 +15,8 @@ const firebaseConfig = {
 };
 
 export const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+// App Check antes de usar Firestore/Auth/Storage, para que todas las llamadas lleven su token.
+startAppCheck(app);
 export const db      = getFirestore(app);
 export const auth    = getAuth(app);
 export const storage = getStorage(app);
