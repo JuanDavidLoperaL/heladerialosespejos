@@ -9,7 +9,12 @@ import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gst
 // página; no hay clave secreta). La misma clave se registra en Firebase Console → App Check →
 // app web → Fraud Defense. Mientras esté vacía, App Check no se activa y la página funciona
 // igual que antes.
-const RECAPTCHA_ENTERPRISE_SITE_KEY = "6Ld0bCAuAAAAAD-Ajwe30S70dptL5mo_v1yLRM8f";
+// DESACTIVADO (nov 2026): con Firebase JS 10.7.1, si App Check no logra el token (403: p. ej.
+// reCAPTCHA le da puntaje bajo a un cliente con VPN, navegador muy privado o bloqueador),
+// Firestore deja de conectarse y el menú no carga, aunque App Check no esté en Enforced.
+// Para reactivarlo: actualizar el SDK de Firebase, comprobar que un token rechazado ya no
+// bloquea Firestore, y volver a poner la clave: "6Ld0bCAuAAAAAD-Ajwe30S70dptL5mo_v1yLRM8f".
+const RECAPTCHA_ENTERPRISE_SITE_KEY = "";
 
 let started = false;
 
