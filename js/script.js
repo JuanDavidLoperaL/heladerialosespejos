@@ -237,7 +237,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const track = document.getElementById('carousel-track');
         track.innerHTML = ''; // Limpiar carrusel
 
-        const categories = Object.keys(categoryData);
+        // Solo categorías activas: si en Firebase la categoría tiene active = false
+        // no se muestra en el carrusel. (categoryData conserva todas para que el
+        // resto del flujo, p. ej. adiciones, siga igual.)
+        const categories = Object.keys(categoryData)
+            .filter(categoryId => availability.categories[categoryId] !== false);
+
+        if (categories.length === 0) {
+            categoryInfo.innerHTML = `
+                <p>Actualmente no tenemos productos disponibles. Vuelve pronto.</p>
+            `;
+            return;
+        }
 
         categories.forEach((categoryId, index) => {
             const cat = categoryData[categoryId];
