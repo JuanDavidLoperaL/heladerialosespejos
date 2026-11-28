@@ -22,9 +22,10 @@ const db = getFirestore(app);
 const NO_ACCESS_MESSAGE = 'Tu cuenta no tiene acceso al panel. Pide a un administrador que te lo habilite.';
 
 // Solo entra al dashboard quien esté en la lista del personal con un rol web distinto de "none".
+// "pos" (tablet del punto principal) tampoco: esas cuentas solo entran al POS.
 async function hasDashboardAccess(email) {
     const entry = await loadStaffEntry(db, email);
-    return !!entry && entry.role !== 'none';
+    return !!entry && entry.role !== 'none' && entry.role !== 'pos';
 }
 
 // Referencias al DOM

@@ -17,6 +17,7 @@ const WEB_ROLE_LABELS = {
     reporter: 'Reportero',
     default:  'Empleado',
     basic:    'Básico',
+    pos:      'Tablet POS',
     none:     'Sin acceso',
 };
 const PUNTO_LABELS = { principal: '🏪 Principal', domicilio: '🛵 Domicilio' };
@@ -82,7 +83,7 @@ function renderStaff() {
         const authBadge = !member.hasAuthAccount
             ? '<span class="team-badge team-badge-pending" title="Créale la cuenta en Crear cuenta de empleado">🔑 Sin cuenta</span>'
             : (member.emailVerified ? '' : '<span class="team-badge team-badge-pending" title="Verifícala en Verificar cuentas existentes">⚠️ Sin verificar</span>');
-        const puntoBadge = member.webRole !== 'none'
+        const puntoBadge = member.webRole !== 'none' && member.webRole !== 'pos'
             ? `<span class="team-badge">${PUNTO_LABELS[member.defaultPunto] ?? escapeHtml(member.defaultPunto)}</span>`
             : '';
         const action = isAdmin
@@ -183,7 +184,8 @@ async function search() {
 
 // ── Editor ──────────────────────────────────────────────────────────────────
 function syncPuntoVisibility() {
-    $('team-punto-group').style.display = $('team-web-role').value === 'none' ? 'none' : 'block';
+    const role = $('team-web-role').value;
+    $('team-punto-group').style.display = role === 'none' || role === 'pos' ? 'none' : 'block';
 }
 
 function openEditor(member) {
