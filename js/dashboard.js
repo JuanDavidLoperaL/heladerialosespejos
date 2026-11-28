@@ -120,7 +120,8 @@ onAuthStateChanged(auth, async (user) => {
     const entry = user.isAnonymous ? null : await loadStaffEntry(db, user.email);
 
     // Sin entrada en la lista del personal (o con rol "none") no hay acceso al panel.
-    if (!entry || entry.role === 'none') {
+    // "pos" es la cuenta de una tablet del punto principal: solo entra al POS.
+    if (!entry || entry.role === 'none' || entry.role === 'pos') {
         await signOut(auth);
         window.location.href = 'login.html?noAccess=1';
         return;
